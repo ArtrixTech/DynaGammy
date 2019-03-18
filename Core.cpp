@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #include "Core.h"
 #include "MyForm.h"
 #include <windows.h>

@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #pragma once
 #include <windows.h>
 

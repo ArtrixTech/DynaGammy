@@ -1,4 +1,9 @@
-﻿#pragma once
+﻿/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
+#pragma once
 #include "Core.h"
 #include <windows.h>
 #include <stdio.h>
