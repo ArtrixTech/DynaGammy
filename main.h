@@ -1,9 +1,8 @@
-/**
- * Copyright (C) 2019 Francesco Fusco. All rights reserved.
- * License: https://github.com/Fushko/gammy#license
- */
+#ifndef CORE_H
+#define CORE_H
 
-#pragma once
+#endif // CORE_H
+
 #include <windows.h>
 
 //#define _db
