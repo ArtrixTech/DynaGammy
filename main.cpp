@@ -6,15 +6,18 @@
 #include "mainwindow.h"
 #include "main.h"
 #include <QApplication>
-#include <windows.h>
+#include <Windows.h>
 #include <vector>
 #include <dxgi.h>
 #include <dxgi1_2.h>
 #include <d3d11.h>
-#include <DXGItype.h>
-#include <Ntddvdeo.h>
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <filesystem>
+//#include <thread>
+//#include <dxgitype.h>
+//#include <ntddvdeo.h>
 
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "user32.lib")
@@ -75,56 +78,49 @@ bool CheckOneInstance(const char* name)
     return true;
 }
 
-/*
-void readSettings() {
+void readSettings()
+{
 #ifdef _db
     printf("Reading settings...\n");
 #endif
 
-    if (useGDI && UPDATE_TIME_MS < UPDATE_TIME_MIN) UPDATE_TIME_MS = UPDATE_TIME_MIN;
+    std::string filename = "gammySettings.cfg";
 
-    String ^fileName = Application::StartupPath + "\\" + "GammySettings.cfg";
-    array<String^> ^arr = gcnew array<String^>(settingsCount);
+    std::fstream file;
+    file.open(filename);
 
-    try {
-        StreamReader^ in = File::OpenText(fileName);
+    std::cout << "File open: " << file.is_open() << std::endl;
 
-        String^ str; UCHAR c = 0;
-        while (str = in->ReadLine())
-        {
-            str = str->Substring(str->IndexOf("=") + 1);
-            arr[c++] = str;
-        }
-
-        if (in) {
-            MIN_BRIGHTNESS = Convert::ToByte(arr[0]);
-            MAX_BRIGHTNESS = Convert::ToByte(arr[1]);
-            OFFSET = Convert::ToInt16(arr[2]);
-            SPEED = Convert::ToByte(arr[3]);
-            TEMP = Convert::ToByte(arr[4]);
-            THRESHOLD = Convert::ToByte(arr[5]);
-            UPDATE_TIME_MS = Convert::ToUInt16(arr[6]);
-
-            if (useGDI && UPDATE_TIME_MS < UPDATE_TIME_MIN) UPDATE_TIME_MS = UPDATE_TIME_MIN;
-
-            in->Close();
-        }
-    }
-    catch (Exception^ e)
+    if(file.is_open())
     {
-#ifdef _db
-        if (dynamic_cast<FileNotFoundException^>(e)) {
-            Console::WriteLine("File '{0}' not found", fileName);
-            getchar();
+        std::string line;
+        int lines[settingsCount];
+        USHORT c = 0;
+
+        while (getline(file, line))
+        {
+            line = line.substr(line.find("=") + 1);
+
+            lines[c++] = std::stoi(line);
         }
-        else {
-            Console::WriteLine("Problem reading file '{0}'", fileName);
-            getchar();
-        }
-#endif
+
+        MIN_BRIGHTNESS = lines[0];
+        MAX_BRIGHTNESS = lines[1];
+        OFFSET         = lines[2];
+        SPEED          = lines[3];
+        TEMP           = lines[4];
+        THRESHOLD      = lines[5];
+        UPDATE_TIME_MS = lines[6];
+
+        file.close();
+    }
+
+    if (useGDI)
+    {
+        if(UPDATE_TIME_MS < UPDATE_TIME_MIN) UPDATE_TIME_MS = UPDATE_TIME_MIN;
     }
 }
-*/
+
 void getBrightness(LPBYTE const &buf)
 {
     UCHAR r = buf[2];
@@ -771,6 +767,8 @@ void checkGammaRange()
 
 int main(int argc, char *argv[])
 {
+    readSettings();
+
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
@@ -798,8 +796,9 @@ int main(int argc, char *argv[])
         UPDATE_TIME_MAX = 5000;
     }
 
-    //readSettings();
 
+
+    //std::thread start(app);
     CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)app, nullptr, 0, nullptr);
 
     return a.exec();
