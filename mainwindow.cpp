@@ -8,8 +8,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    connect(ui->minBrSlider, SIGNAL(valueChanged(int)), ui->minBrLabel, SLOT(setNum(int)));
-
     ui->minBrLabel->setText(QStringLiteral("%1").arg(MIN_BRIGHTNESS));
     ui->maxBrLabel->setText(QStringLiteral("%1").arg(MAX_BRIGHTNESS));
     ui->offsetLabel->setText(QStringLiteral("%1").arg(OFFSET));
