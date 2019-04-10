@@ -14,7 +14,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <filesystem>
 //#include <thread>
 //#include <dxgitype.h>
 //#include <ntddvdeo.h>
@@ -61,8 +60,6 @@ USHORT oldOffset = OFFSET;
 
 bool useGDI = false;
 
-size_t stop = 0;
-
 bool CheckOneInstance(const char* name)
 {
     HANDLE hStartEvent = CreateEventA(nullptr, TRUE, FALSE, name);
@@ -89,8 +86,6 @@ void readSettings()
     std::fstream file;
     file.open(filename);
 
-    std::cout << "File open: " << file.is_open() << std::endl;
-
     if(file.is_open())
     {
         std::string line;
@@ -104,13 +99,13 @@ void readSettings()
             lines[c++] = std::stoi(line);
         }
 
-        MIN_BRIGHTNESS = lines[0];
-        MAX_BRIGHTNESS = lines[1];
-        OFFSET         = lines[2];
-        SPEED          = lines[3];
-        TEMP           = lines[4];
-        THRESHOLD      = lines[5];
-        UPDATE_TIME_MS = lines[6];
+        MIN_BRIGHTNESS = UCHAR(lines[0]);
+        MAX_BRIGHTNESS = UCHAR(lines[1]);
+        OFFSET         = UCHAR(lines[2]);
+        SPEED          = UCHAR(lines[3]);
+        TEMP           = UCHAR(lines[4]);
+        THRESHOLD      = UCHAR(lines[5]);
+        UPDATE_TIME_MS = USHORT(lines[6]);
 
         file.close();
     }
@@ -151,11 +146,11 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 
     for (USHORT i = 0; i < 256; ++i)
     {
-        WORD gammaVal = (WORD)(i * brightness);
+        WORD gammaVal = WORD (i * brightness);
 
-        gammaArr[0][i] = (WORD)(gammaVal);
-        gammaArr[1][i] = (WORD)(gammaVal / gdiv);
-        gammaArr[2][i] = (WORD)(gammaVal / bdiv);
+        gammaArr[0][i] = WORD (gammaVal);
+        gammaArr[1][i] = WORD (gammaVal / gdiv);
+        gammaArr[2][i] = WORD (gammaVal / bdiv);
     }
 
     SetDeviceGammaRamp(screenDC, gammaArr);
@@ -169,8 +164,6 @@ D3D11_TEXTURE2D_DESC	tex_desc;
 
 //Buffer to store screen pixels
 LPBYTE buf;
-
-HWND hWnd;
 
 bool initDXGI() {
     #ifdef _db
@@ -216,7 +209,7 @@ bool initDXGI() {
 
         if (hr != S_OK)
         {
-            printf("Error: failed to get a description for the adapter: %lu\n", i);
+            printf("Error: failed to get a description for the adapter: %d\n", i);
             continue;
         }
 
@@ -236,7 +229,7 @@ bool initDXGI() {
         while (pAdapter->EnumOutputs(dx, &output) != DXGI_ERROR_NOT_FOUND)
         {
             #ifdef _db
-            printf("Found monitor %d on adapter %lu\n", dx, i);
+            printf("Found monitor %d on adapter %d\n", dx, i);
             #endif
             vOutputs.push_back(output);
             ++dx;
@@ -262,7 +255,7 @@ bool initDXGI() {
         hr = output->GetDesc(&desc);
 
         if (hr != S_OK) {
-            printf("Error: failed to retrieve a DXGI_OUTPUT_DESC for output %lu.\n", i);
+            printf("Error: failed to retrieve a DXGI_OUTPUT_DESC for output %llu.\n", i);
             continue;
         }
 
@@ -410,8 +403,8 @@ bool initDXGI() {
     output1->Release();
     d3d_device->Release();
 
-    for (UINT i = 0; i < vAdapters.size(); ++i) vAdapters[i]->Release();
-    for (UINT i = 0; i < vOutputs.size(); ++i) vOutputs[i]->Release();
+    for (auto adapter : vAdapters) adapter->Release();
+    for (auto output : vOutputs) output->Release();
 
     return true;
 }
@@ -466,7 +459,7 @@ bool getDXGISnapshot(LPBYTE &buf) {
     }
 
     ID3D11Texture2D* staging_tex;
-    hr = d3d_device->CreateTexture2D(&tex_desc, NULL, &staging_tex);
+    hr = d3d_device->CreateTexture2D(&tex_desc, nullptr, &staging_tex);
 
     #ifdef _db
     if (hr == E_INVALIDARG) {
@@ -478,7 +471,7 @@ bool getDXGISnapshot(LPBYTE &buf) {
     }
     else if (hr != S_OK) {
         #ifdef _db
-        printf("Failed to create the 2D texture, error: %d.\n", hr);
+        printf("Failed to create the 2D texture, error: %ld.\n", hr);
         #endif
         return false;
     }
@@ -599,20 +592,16 @@ void getGDISnapshot(LPBYTE &buf)
     DeleteDC(memoryDC);
 }
 
-struct params {
-    size_t t;
-} lp;
-
 void updateLabel() {
     //updateLabels(res, targetRes, lp.t, stop, sleeptime);
 }
 
-void adjustBrightness()
+void adjustBrightness(size_t threadCount)
 {
-    size_t t = stop;
+    size_t threadId = threadCount;
 
     #ifdef _db
-    printf("Thread %zd started...\n", t);
+    printf("Thread %zd started...\n", threadId);
     #endif
 
     sleeptime = (100 - delta / 4) / SPEED;
@@ -625,10 +614,9 @@ void adjustBrightness()
 
     if (res < targetRes) sleeptime /= 3;
 
-    lp.t = t;
     //CreateThread(0, 0, (LPTHREAD_START_ROUTINE)updateLabel, 0, 0, 0);
 
-    while (res != targetRes && stop == t)
+    while (res != targetRes && threadId == threadCount)
     {
         if (res < targetRes) ++res;
         else				 --res;
@@ -646,18 +634,20 @@ void adjustBrightness()
     }
 
     #ifdef _db
-    if (stop > t)
+    if (threadCount > threadId)
     {
-        printf("Thread %zd stopped!\n", t);
+        printf("Thread %zd stopped!\n", threadId);
         return;
     }
 
-    printf("Thread %zd finished.\n", t);
+    printf("Thread %zd finished.\n", threadId);
     #endif
 }
 
 [[noreturn]] void app()
 {
+    size_t threadCount = 0;
+
     #ifdef _db
     printf("Starting routine...\n");
     #endif
@@ -690,8 +680,7 @@ void adjustBrightness()
 
         if (delta > THRESHOLD || forceChange)
         {
-            ++stop;
-            CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)adjustBrightness, nullptr, 0, nullptr);
+            CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(adjustBrightness), LPVOID(threadCount++), 0, nullptr);
 
             forceChange = false;
         }
@@ -767,12 +756,6 @@ void checkGammaRange()
 
 int main(int argc, char *argv[])
 {
-    readSettings();
-
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
-
     #ifdef _db
     FILE *f1, *f2, *f3;
     AllocConsole();
@@ -781,11 +764,15 @@ int main(int argc, char *argv[])
     freopen_s(&f3, "CONOUT$", "w", stderr);
     #endif
 
-    #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-
     CheckOneInstance("Gammy");
-
+    readSettings();
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+
+    #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
     checkGammaRange();
 
@@ -796,10 +783,8 @@ int main(int argc, char *argv[])
         UPDATE_TIME_MAX = 5000;
     }
 
-
-
     //std::thread start(app);
-    CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)app, nullptr, 0, nullptr);
+    CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE (app), nullptr, 0, nullptr);
 
     return a.exec();
 }
