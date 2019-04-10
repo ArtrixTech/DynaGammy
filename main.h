@@ -3,9 +3,9 @@
 
 #endif // CORE_H
 
-#include <windows.h>
+#include <Windows.h>
 
-//#define _db
+#define _db
 
 constexpr unsigned char MIN_BRIGHTNESS_LIMIT = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char DEFAULT_BRIGHTNESS = 255;
