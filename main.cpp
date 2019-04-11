@@ -131,7 +131,7 @@ void readSettings()
             std::cout << "Parsing line: " << line << std::endl;
             #endif
             line = line.substr(line.find("=") + 1);
-            lines[c++] = std::stoi(line);
+            if(line != "") lines[c++] = std::stoi(line);
         }
 
         MIN_BRIGHTNESS = UCHAR(lines[0]);
