@@ -78,21 +78,27 @@ bool CheckOneInstance(const char* name)
 
 void readSettings()
 {
-#ifdef _db
+#ifdef _DB
     printf("Reading settings...\n");
 #endif
 
     std::string filename = "gammySettings.cfg";
 
-    std::fstream file;
-    file.open(filename, std::fstream::in | std::fstream::out | std::fstream::app);
-    //std::cout << "File is open:" << file.is_open() << std::endl;
+#ifdef _DB
+    printf("Opening filestream...\n");
+#endif
+    std::fstream file(filename, std::fstream::in | std::fstream::out | std::fstream::app);
 
     if(file.is_open())
     {
+        #ifdef _DB
+        printf("File opened successfully.\n");
+        #endif
         if(std::filesystem::file_size(filename) == 0)
         {
-            std::cout << "File is empty." << std::endl;
+            #ifdef _DB
+            printf("File is empty. Filling with defaults...\n");
+            #endif
 
             std::string newLines [] =
             {
@@ -115,10 +121,16 @@ void readSettings()
         int lines[settingsCount];
         USHORT c = 0;
 
+        #ifdef _DB
+        printf("Parsing settings file...\n");
+        #endif
+
         while (getline(file, line))
         {
+            #ifdef _DB
+            std::cout << "Parsing line: " << line << std::endl;
+            #endif
             line = line.substr(line.find("=") + 1);
-
             lines[c++] = std::stoi(line);
         }
 
@@ -189,7 +201,7 @@ D3D11_TEXTURE2D_DESC	tex_desc;
 LPBYTE buf;
 
 bool initDXGI() {
-    #ifdef _db
+    #ifdef _DB
     printf("Initializing DXGI...\n");
     #endif
 
@@ -201,7 +213,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: failed to retrieve the IDXGIFactory.\n");
         getchar();
         #endif
@@ -222,7 +234,7 @@ bool initDXGI() {
 
     pFactory->Release();
 
-#ifdef _db
+#ifdef _DB
     //Get GPU info
     for (UINT i = 0; i < vAdapters.size(); ++i)
     {
@@ -251,7 +263,7 @@ bool initDXGI() {
         pAdapter = vAdapters[i];
         while (pAdapter->EnumOutputs(dx, &output) != DXGI_ERROR_NOT_FOUND)
         {
-            #ifdef _db
+            #ifdef _DB
             printf("Found monitor %d on adapter %d\n", dx, i);
             #endif
             vOutputs.push_back(output);
@@ -261,7 +273,7 @@ bool initDXGI() {
 
     if (vOutputs.size() <= 0)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: no outputs found (%zu).\n", vOutputs.size());
         getchar();
         #endif
@@ -269,7 +281,7 @@ bool initDXGI() {
         return false;
     }
 
-#ifdef _db
+#ifdef _DB
     //Print monitor info.
     for (size_t i = 0; i < vOutputs.size(); ++i)
     {
@@ -294,7 +306,7 @@ bool initDXGI() {
 
     if (vAdapters.size() <= use_adapter)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Invalid adapter index: %d, we only have: %zu - 1\n", use_adapter, vAdapters.size());
         getchar();
         #endif
@@ -306,7 +318,7 @@ bool initDXGI() {
 
     if (!d3d_adapter)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: the stored adapter is NULL.\n");
         getchar();
         #endif
@@ -331,7 +343,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: failed to create the D3D11 Device.\n");
 
         if (hr == E_INVALIDARG)
@@ -350,7 +362,7 @@ bool initDXGI() {
 
     if (vOutputs.size() <= use_monitor)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Invalid monitor index: %d, we only have: %zu - 1\n", use_monitor, vOutputs.size());
         getchar();
         #endif
@@ -360,7 +372,7 @@ bool initDXGI() {
 
     if (!output)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("No valid output found. The output is NULL.\n");
         getchar();
         #endif
@@ -372,7 +384,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: failed to query the IDXGIOutput1 interface.\n");
         getchar();
         #endif
@@ -385,7 +397,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: failed to get output description.\n");
         getchar();
         #endif
@@ -409,7 +421,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: DuplicateOutput failed.\n");
         getchar();
         #endif
@@ -440,7 +452,7 @@ bool getDXGISnapshot(LPBYTE &buf) {
     IDXGIResource* desktop_resource;
 
     if (!duplication) {
-        #ifdef _db
+        #ifdef _DB
         printf("Duplication is a null pointer.\n");
         #endif
         return false;
@@ -456,26 +468,26 @@ bool getDXGISnapshot(LPBYTE &buf) {
         tex->Release();
 
         if (hr != S_OK) {
-            #ifdef _db
+            #ifdef _DB
             printf("Error: failed to query the ID3D11Texture2D interface on the IDXGIResource.\n");
             #endif
             return false;
         }
     }
     else if (hr == DXGI_ERROR_ACCESS_LOST) {
-        #ifdef _db
+        #ifdef _DB
         printf("Received a DXGI_ERROR_ACCESS_LOST.\n");
         #endif
         return false;
     }
     else if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
-        #ifdef _db
+        #ifdef _DB
         printf("Received a DXGI_ERROR_WAIT_TIMEOUT.\n");
         #endif
         return false;
     }
     else {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: failed to acquire frame.\n");
         #endif
         return false;
@@ -484,16 +496,16 @@ bool getDXGISnapshot(LPBYTE &buf) {
     ID3D11Texture2D* staging_tex;
     hr = d3d_device->CreateTexture2D(&tex_desc, nullptr, &staging_tex);
 
-    #ifdef _db
+    #ifdef _DB
     if (hr == E_INVALIDARG) {
-        #ifdef _db
+        #ifdef _DB
         printf("Error: received E_INVALIDARG when trying to create the texture.\n");
         #endif
 
         return false;
     }
     else if (hr != S_OK) {
-        #ifdef _db
+        #ifdef _DB
         printf("Failed to create the 2D texture, error: %ld.\n", hr);
         #endif
         return false;
@@ -549,7 +561,7 @@ void reInit() {
     do {
         hr = output1->DuplicateOutput(d3d_device, &duplication);
 
-        #ifdef _db
+        #ifdef _DB
         if (hr != S_OK) {
 
             printf("Unable to duplicate output. Reason: ");
@@ -623,7 +635,7 @@ void adjustBrightness(size_t threadCount)
 {
     size_t threadId = threadCount;
 
-    #ifdef _db
+    #ifdef _DB
     printf("Thread %zd started...\n", threadId);
     #endif
 
@@ -656,7 +668,7 @@ void adjustBrightness(size_t threadCount)
         Sleep(sleeptime);
     }
 
-    #ifdef _db
+    #ifdef _DB
     if (threadCount > threadId)
     {
         printf("Thread %zd stopped!\n", threadId);
@@ -671,7 +683,7 @@ void adjustBrightness(size_t threadCount)
 {
     size_t threadCount = 0;
 
-    #ifdef _db
+    #ifdef _DB
     printf("Starting routine...\n");
     #endif
 
@@ -685,7 +697,7 @@ void adjustBrightness(size_t threadCount)
         {
             while (!getDXGISnapshot(buf))
             {
-                #ifdef _db
+                #ifdef _DB
                 printf("Screenshot failed. Retrying... (5 sec.)\n");
                 #endif
 
@@ -728,13 +740,13 @@ void checkGammaRange()
 
     if (s == ERROR_SUCCESS)
     {
-#ifdef _db
+#ifdef _DB
         printf("Gamma registry key found.\n");
 #endif
         return;
     }
 
-#ifdef _db
+#ifdef _DB
         printf("Gamma registry key not found. Proceeding to add...\n");
 #endif
 
@@ -744,7 +756,7 @@ void checkGammaRange()
 
     if (s == ERROR_SUCCESS)
     {
-#ifdef _db
+#ifdef _DB
         printf("Gamma registry key created. \n");
 #endif
         DWORD val = 256;
@@ -754,15 +766,15 @@ void checkGammaRange()
         if (s == ERROR_SUCCESS)
         {
             MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
-#ifdef _db
+#ifdef _DB
             printf("Gamma registry value set.\n");
 #endif
         }
-#ifdef _db
+#ifdef _DB
         else printf("Error when setting Gamma registry value.\n");
 #endif
     }
-#ifdef _db
+#ifdef _DB
     else
     {
         printf("Error when creating/opening gamma RegKey:");
@@ -779,7 +791,7 @@ void checkGammaRange()
 
 int main(int argc, char *argv[])
 {
-    #ifdef _db
+    #ifdef _DB
     FILE *f1, *f2, *f3;
     AllocConsole();
     freopen_s(&f1, "CONIN$", "r", stdin);
@@ -796,7 +808,7 @@ int main(int argc, char *argv[])
     w.setWindowTitle("Gammy");
     w.show();
 
-    #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+    //#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
     checkGammaRange();
 
