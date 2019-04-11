@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
@@ -50,7 +55,7 @@ void MainWindow::updateLabels(USHORT labelValue, USHORT targetValue, size_t t, s
 
 void MainWindow::on_statusBtn_clicked()
 {
-    ui->statusLabel->setText(QStringLiteral("%1").arg(res));
+    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
@@ -78,7 +83,7 @@ void MainWindow::on_speedSlider_valueChanged(int val)
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
     TEMP = val;
-    setGDIBrightness(res, gdivs[TEMP-1], bdivs[TEMP-1]);
+    setGDIBrightness(scrBr, gdivs[TEMP-1], bdivs[TEMP-1]);
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)

@@ -24,8 +24,12 @@ extern unsigned char	THRESHOLD;
 extern unsigned short	UPDATE_TIME_MS;
 extern unsigned short	UPDATE_TIME_MIN, UPDATE_TIME_MAX;
 
-extern unsigned short res;
-extern unsigned short targetRes;
+extern int bufSize;
+extern HDC screenDC;
+
+extern unsigned short scrBr;
+extern unsigned short targetScrBr;
+extern bool useGDI;
 
 extern int w, h;
 

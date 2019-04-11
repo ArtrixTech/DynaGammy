@@ -27,37 +27,31 @@
 
 HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 
-int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
-int yy1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
-int x2 = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-int y2 = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-int w = x2 - x1;
-int h = y2 - yy1;
-const unsigned int len = w * 4 * h;
-
-unsigned char	MIN_BRIGHTNESS = 176;
-unsigned char	MAX_BRIGHTNESS = DEFAULT_BRIGHTNESS;
-unsigned short	OFFSET = 70;
-unsigned char	SPEED = 2;
-unsigned char	TEMP = 1;
-unsigned char	THRESHOLD = 32;
-unsigned short	UPDATE_TIME_MS = 100;
+unsigned char	MIN_BRIGHTNESS  = 176;
+unsigned char	MAX_BRIGHTNESS  = 255;
+unsigned short	OFFSET          = 70;
+unsigned char	SPEED           = 2;
+unsigned char	TEMP            = 1;
+unsigned char	THRESHOLD       = 32;
+unsigned short	UPDATE_TIME_MS  = 100;
 unsigned short	UPDATE_TIME_MIN = 10;
 unsigned short	UPDATE_TIME_MAX = 500;
 
-WORD brightness = DEFAULT_BRIGHTNESS; //Current image brightness
-WORD oldBrightness = DEFAULT_BRIGHTNESS;
+WORD imgBr       = DEFAULT_BRIGHTNESS;  //Brightness of a screenshot
+WORD scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
+WORD targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
 
-unsigned short res = DEFAULT_BRIGHTNESS;		//Current screen brightness
-unsigned short targetRes = DEFAULT_BRIGHTNESS;  //Difference between max and current image brightness
-
-short delta = 0; //Difference between old and current image brightness
-
+short imgDelta; //Difference between old and current screenshot brightness
 short sleeptime;
 
-UCHAR oldMin = MIN_BRIGHTNESS;
-UCHAR oldMax = MAX_BRIGHTNESS;
-USHORT oldOffset = OFFSET;
+int w, h, bufSize;
+void calcBufSize(int &w, int &h);
+
+ID3D11Device*			d3d_device;
+ID3D11DeviceContext*	d3d_context;
+IDXGIOutput1*			output1;
+IDXGIOutputDuplication* duplication;
+D3D11_TEXTURE2D_DESC	tex_desc;
 
 bool useGDI = false;
 
@@ -157,9 +151,9 @@ void getBrightness(LPBYTE const &buf)
     UCHAR g = buf[1];
     UCHAR b = buf[0];
 
-    UINT colorSum = 0;
+    int colorSum = 0;
 
-    for (UINT i = len; i > 0; i -= 4)
+    for (auto i = bufSize; i > 0; i -= 4)
     {
         r = buf[i + 2];
         g = buf[i + 1];
@@ -168,7 +162,7 @@ void getBrightness(LPBYTE const &buf)
         colorSum += (r + g + b) / 3;
     }
 
-    brightness = colorSum / (w * h); //Assigns a value between 0 and 255
+    imgBr = colorSum / (w * h); //Assigns a value between 0 and 255
 }
 
 void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
@@ -190,15 +184,6 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 
     SetDeviceGammaRamp(screenDC, gammaArr);
 }
-
-ID3D11Device*			d3d_device;
-ID3D11DeviceContext*	d3d_context;
-IDXGIOutput1*			output1;
-IDXGIOutputDuplication* duplication;
-D3D11_TEXTURE2D_DESC	tex_desc;
-
-//Buffer to store screen pixels
-LPBYTE buf;
 
 bool initDXGI() {
     #ifdef _DB
@@ -444,7 +429,37 @@ bool initDXGI() {
     return true;
 }
 
-bool getDXGISnapshot(LPBYTE &buf) {
+void restartDXGI()
+{
+
+    HRESULT hr;
+
+    do {
+        hr = output1->DuplicateOutput(d3d_device, &duplication);
+
+        #ifdef _DB
+        if (hr != S_OK) {
+
+            printf("Unable to duplicate output. Reason: ");
+
+            switch (hr) {
+            case E_INVALIDARG:	 printf("E_INVALIDARG\n"); break;
+            case E_ACCESSDENIED: printf("E_ACCESSDENIED\n"); break;
+            case DXGI_ERROR_UNSUPPORTED: printf("E_DXGI_ERROR_UNSUPPORTED\n"); break;
+            case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE: printf("DXGI_ERROR_NOT_CURRENTLY_AVAILABLE\n"); break;
+            case DXGI_ERROR_SESSION_DISCONNECTED: printf("DXGI_ERROR_SESSION_DISCONNECTED\n"); break;
+            }
+        }
+        #endif
+
+        Sleep(5000);
+    } while (hr != S_OK);
+
+    output1->Release();
+}
+
+bool getDXGISnapshot(LPBYTE &buf)
+{
     HRESULT hr;
 
     ID3D11Texture2D* tex;
@@ -554,41 +569,6 @@ bool getDXGISnapshot(LPBYTE &buf) {
     return true;
 }
 
-void reInit() {
-
-    HRESULT hr;
-
-    do {
-        hr = output1->DuplicateOutput(d3d_device, &duplication);
-
-        #ifdef _DB
-        if (hr != S_OK) {
-
-            printf("Unable to duplicate output. Reason: ");
-
-            switch (hr) {
-            case E_INVALIDARG:	 printf("E_INVALIDARG\n"); break;
-            case E_ACCESSDENIED: printf("E_ACCESSDENIED\n"); break;
-            case DXGI_ERROR_UNSUPPORTED: printf("E_DXGI_ERROR_UNSUPPORTED\n"); break;
-            case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE: printf("DXGI_ERROR_NOT_CURRENTLY_AVAILABLE\n"); break;
-            case DXGI_ERROR_SESSION_DISCONNECTED: printf("DXGI_ERROR_SESSION_DISCONNECTED\n"); break;
-            }
-        }
-        #endif
-
-        Sleep(5000);
-    } while (hr != S_OK);
-
-    output1->Release();
-}
-
-void ReleaseDXResources() {
-    duplication->ReleaseFrame();
-    output1->Release();
-    d3d_context->Release();
-    d3d_device->Release();
-}
-
 void getGDISnapshot(LPBYTE &buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
@@ -608,7 +588,7 @@ void getGDISnapshot(LPBYTE &buf)
     bminfoheader.biPlanes = 1;
     bminfoheader.biBitCount = 32;
     bminfoheader.biCompression = BI_RGB;
-    bminfoheader.biSizeImage = len;
+    bminfoheader.biSizeImage = bufSize;
     bminfoheader.biClrUsed = 0;
     bminfoheader.biClrImportant = 0;
 
@@ -633,35 +613,35 @@ void updateLabel() {
 
 void adjustBrightness(size_t threadCount)
 {
+#ifdef _DB
+printf("Thread %zd started...\n", threadId);
+#endif
+
     size_t threadId = threadCount;
 
-    #ifdef _DB
-    printf("Thread %zd started...\n", threadId);
-    #endif
+    sleeptime = (100 - imgDelta / 4) / SPEED;
+    imgDelta = 0;
 
-    sleeptime = (100 - delta / 4) / SPEED;
-    delta = 0;
+    targetScrBr = DEFAULT_BRIGHTNESS - imgBr + OFFSET;
 
-    targetRes = DEFAULT_BRIGHTNESS - brightness + OFFSET;
+    if		(targetScrBr > MAX_BRIGHTNESS) targetScrBr = MAX_BRIGHTNESS;
+    else if (targetScrBr < MIN_BRIGHTNESS) targetScrBr = MIN_BRIGHTNESS;
 
-    if		(targetRes > MAX_BRIGHTNESS) targetRes = MAX_BRIGHTNESS;
-    else if (targetRes < MIN_BRIGHTNESS) targetRes = MIN_BRIGHTNESS;
+    if (scrBr < targetScrBr) sleeptime /= 3;
 
-    if (res < targetRes) sleeptime /= 3;
-
-    //CreateThread(0, 0, (LPTHREAD_START_ROUTINE)updateLabel, 0, 0, 0);
-
-    while (res != targetRes && threadId == threadCount)
+    while (scrBr != targetScrBr && threadId == threadCount)
     {
-        if (res < targetRes) ++res;
-        else				 --res;
-
-        setGDIBrightness(res, gdivs[TEMP-1], bdivs[TEMP-1]);
-        //setWndBrightness(res);
-
-        if (res == MIN_BRIGHTNESS || res == MAX_BRIGHTNESS)
+        if (scrBr < targetScrBr)
         {
-            targetRes = res;
+            ++scrBr;
+        }
+        else --scrBr;
+
+        setGDIBrightness(scrBr, gdivs[TEMP-1], bdivs[TEMP-1]);
+
+        if (scrBr == MIN_BRIGHTNESS || scrBr == MAX_BRIGHTNESS)
+        {
+            targetScrBr = scrBr;
             break;
         }
 
@@ -681,15 +661,23 @@ void adjustBrightness(size_t threadCount)
 
 [[noreturn]] void app()
 {
-    size_t threadCount = 0;
-
     #ifdef _DB
     printf("Starting routine...\n");
     #endif
 
-    bool forceChange = true;
+    size_t threadCount = 0;
 
-    buf = new BYTE[len];
+    UCHAR  oldMin     = MIN_BRIGHTNESS;
+    UCHAR  oldMax     = MAX_BRIGHTNESS;
+    USHORT oldOffset  = OFFSET;
+    USHORT oldImgBr   = DEFAULT_BRIGHTNESS;
+
+    //Buffer to store screen pixels
+    LPBYTE buf;
+    calcBufSize(w, h);
+    buf = new BYTE[bufSize];
+
+    bool forceChange = true;
 
     while (true)
     {
@@ -702,7 +690,7 @@ void adjustBrightness(size_t threadCount)
                 #endif
 
                 Sleep(5000);
-                reInit();
+                restartDXGI();
             }
         }
         else
@@ -711,9 +699,9 @@ void adjustBrightness(size_t threadCount)
             Sleep(UPDATE_TIME_MS);
         }
 
-        delta += abs(oldBrightness - brightness);
+        imgDelta += abs(oldImgBr - imgBr);
 
-        if (delta > THRESHOLD || forceChange)
+        if (imgDelta > THRESHOLD || forceChange)
         {
             CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(adjustBrightness), LPVOID(threadCount++), 0, nullptr);
 
@@ -724,7 +712,7 @@ void adjustBrightness(size_t threadCount)
             forceChange = true;
         }
 
-        oldBrightness = brightness;
+        oldImgBr = imgBr;
         oldMin = MIN_BRIGHTNESS;
         oldMax = MAX_BRIGHTNESS;
         oldOffset = OFFSET;
@@ -823,4 +811,23 @@ int main(int argc, char *argv[])
     CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE (app), nullptr, 0, nullptr);
 
     return a.exec();
+}
+
+void calcBufSize(int &w, int &h)
+{
+    int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    int y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    int x2 = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int y2 = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    w = x2 - x1;
+    h = y2 - y1;
+    bufSize = w * 4 * h;
+}
+
+void ReleaseDXResources() {
+    duplication->ReleaseFrame();
+    output1->Release();
+    d3d_context->Release();
+    d3d_device->Release();
 }
