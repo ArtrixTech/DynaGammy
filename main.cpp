@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <filesystem>
 //#include <thread>
 //#include <dxgitype.h>
 //#include <ntddvdeo.h>
@@ -84,10 +85,32 @@ void readSettings()
     std::string filename = "gammySettings.cfg";
 
     std::fstream file;
-    file.open(filename);
+    file.open(filename, std::fstream::in | std::fstream::out | std::fstream::app);
+    //std::cout << "File is open:" << file.is_open() << std::endl;
 
     if(file.is_open())
     {
+        if(std::filesystem::file_size(filename) == 0)
+        {
+            std::cout << "File is empty." << std::endl;
+
+            std::string newLines [] =
+            {
+                "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
+                "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
+                "offset=" + std::to_string(OFFSET),
+                "speed=" + std::to_string(SPEED),
+                "temp=" + std::to_string(TEMP),
+                "threshold=" + std::to_string(THRESHOLD),
+                "updateRate=" + std::to_string(UPDATE_TIME_MS)
+            };
+
+            for(auto s : newLines) file << s << std::endl;
+
+            file.close();
+            return;
+        }
+
         std::string line;
         int lines[settingsCount];
         USHORT c = 0;
@@ -770,6 +793,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     MainWindow w;
+    w.setWindowTitle("Gammy");
     w.show();
 
     #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
