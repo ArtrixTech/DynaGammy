@@ -41,9 +41,6 @@ WORD imgBr       = DEFAULT_BRIGHTNESS;  //Brightness of a screenshot
 WORD scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
 WORD targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
 
-short imgDelta; //Difference between old and current screenshot brightness
-short sleeptime;
-
 int w, h, bufSize;
 void calcBufSize(int &w, int &h);
 
@@ -611,25 +608,34 @@ void updateLabel() {
     //updateLabels(res, targetRes, lp.t, stop, sleeptime);
 }
 
-void adjustBrightness(size_t threadCount)
+//Arguments to be passed to the AdjustBrightness thread
+struct Args {
+    short imgDelta;  //Difference between old and current screenshot brightness
+    short sleeptime;
+    size_t threadCount;
+};
+
+void adjustBrightness(LPVOID args_)
 {
-#ifdef _DB
-printf("Thread %zd started...\n", threadId);
-#endif
+    Args *args = static_cast<Args*>(args_);
 
-    size_t threadId = threadCount;
+    size_t threadId = ++args->threadCount; //@TODO: Less horrendous way of stopping threads
 
-    sleeptime = (100 - imgDelta / 4) / SPEED;
-    imgDelta = 0;
+    #ifdef _DB
+        printf("Thread %zd started...\n", threadId);
+    #endif
+
+    args->sleeptime = (100 - args->imgDelta / 4) / SPEED;
+    args->imgDelta = 0;
 
     targetScrBr = DEFAULT_BRIGHTNESS - imgBr + OFFSET;
 
     if		(targetScrBr > MAX_BRIGHTNESS) targetScrBr = MAX_BRIGHTNESS;
     else if (targetScrBr < MIN_BRIGHTNESS) targetScrBr = MIN_BRIGHTNESS;
 
-    if (scrBr < targetScrBr) sleeptime /= 3;
+    if (scrBr < targetScrBr) args->sleeptime /= 3;
 
-    while (scrBr != targetScrBr && threadId == threadCount)
+    while (scrBr != targetScrBr && threadId == args->threadCount)
     {
         if (scrBr < targetScrBr)
         {
@@ -645,11 +651,11 @@ printf("Thread %zd started...\n", threadId);
             break;
         }
 
-        Sleep(sleeptime);
+        Sleep(args->sleeptime);
     }
 
     #ifdef _DB
-    if (threadCount > threadId)
+    if (args->threadCount > threadId)
     {
         printf("Thread %zd stopped!\n", threadId);
         return;
@@ -665,8 +671,6 @@ printf("Thread %zd started...\n", threadId);
     printf("Starting routine...\n");
     #endif
 
-    size_t threadCount = 0;
-
     UCHAR  oldMin     = MIN_BRIGHTNESS;
     UCHAR  oldMax     = MAX_BRIGHTNESS;
     USHORT oldOffset  = OFFSET;
@@ -678,6 +682,9 @@ printf("Thread %zd started...\n", threadId);
     buf = new BYTE[bufSize];
 
     bool forceChange = true;
+
+    Args args;
+    args.threadCount = 0;
 
     while (true)
     {
@@ -699,11 +706,11 @@ printf("Thread %zd started...\n", threadId);
             Sleep(UPDATE_TIME_MS);
         }
 
-        imgDelta += abs(oldImgBr - imgBr);
+        args.imgDelta += abs(oldImgBr - imgBr);
 
-        if (imgDelta > THRESHOLD || forceChange)
+        if (args.imgDelta > THRESHOLD || forceChange)
         {
-            CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(adjustBrightness), LPVOID(threadCount++), 0, nullptr);
+            CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(adjustBrightness), &args, 0, nullptr);
 
             forceChange = false;
         }
