@@ -610,9 +610,9 @@ void updateLabel() {
 
 //Arguments to be passed to the AdjustBrightness thread
 struct Args {
-    short imgDelta;  //Difference between old and current screenshot brightness
-    short sleeptime;
-    size_t threadCount;
+    short imgDelta = 0;  //Difference between old and current screenshot brightness
+    short sleeptime = 0;
+    size_t threadCount = 0;
 };
 
 void adjustBrightness(LPVOID args_)
@@ -684,7 +684,6 @@ void adjustBrightness(LPVOID args_)
     bool forceChange = true;
 
     Args args;
-    args.threadCount = 0;
 
     while (true)
     {
