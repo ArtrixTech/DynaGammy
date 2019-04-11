@@ -26,6 +26,14 @@ private slots:
     void on_tempSlider_valueChanged(int val);
     void on_thresholdSlider_valueChanged(int val);
     void on_pollingSlider_valueChanged(int val);
+
+    void on_minBrSlider_sliderReleased();
+    void on_maxBrSlider_sliderReleased();
+    void on_offsetSlider_sliderReleased();
+    void on_speedSlider_sliderReleased();
+    void on_tempSlider_sliderReleased();
+    void on_thresholdSlider_sliderReleased();
+    void on_pollingSlider_sliderReleased();
 private:
     Ui::MainWindow *ui;
 };

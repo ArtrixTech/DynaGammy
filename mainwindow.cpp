@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
+#include <iostream>
+#include <fstream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -87,4 +89,74 @@ void MainWindow::on_thresholdSlider_valueChanged(int val)
 void MainWindow::on_pollingSlider_valueChanged(int val)
 {
     UPDATE_TIME_MS = val;
+}
+
+/////////////////////////////////////////////////////////
+
+void updateFile(std::string &subStr, int val)
+{
+    std::fstream file("gammySettings.cfg");
+
+    if(file.is_open())
+    {
+        std::string str = subStr + "=" + std::to_string(val);
+        auto offset = 0;
+
+        std::string line;
+
+        while (getline(file, line))
+        {
+            if(line.find(subStr) == 0)
+            {
+                file.seekp(offset);
+                file << str << std::endl;
+                file.close();
+                return;
+            }
+
+            offset += line.length() + 2;
+        }
+    }
+}
+
+void MainWindow::on_minBrSlider_sliderReleased()
+{
+    std::string str("minBrightness");
+    updateFile(str, MIN_BRIGHTNESS);
+}
+
+void MainWindow::on_maxBrSlider_sliderReleased()
+{
+    std::string str("maxBrightness");
+    updateFile(str, MAX_BRIGHTNESS);
+}
+
+void MainWindow::on_offsetSlider_sliderReleased()
+{
+    std::string str("offset");
+    updateFile(str, OFFSET);
+}
+
+void MainWindow::on_speedSlider_sliderReleased()
+{
+    std::string str("speed");
+    updateFile(str, SPEED);
+}
+
+void MainWindow::on_tempSlider_sliderReleased()
+{
+    std::string str("temp");
+    updateFile(str, TEMP);
+}
+
+void MainWindow::on_thresholdSlider_sliderReleased()
+{
+    std::string str("threshold");
+    updateFile(str, THRESHOLD);
+}
+
+void MainWindow::on_pollingSlider_sliderReleased()
+{
+    std::string str("updateRate");
+    updateFile(str, UPDATE_TIME_MS);
 }
