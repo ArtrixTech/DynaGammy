@@ -640,7 +640,7 @@ void adjustBrightness(Args &args)
 
         setGDIBrightness(scrBr, gdivs[TEMP-1], bdivs[TEMP-1]);
 
-        args.w->updateBrLabel();
+        if(args.w->isVisible()) args.w->updateBrLabel();
 
         if (scrBr == MIN_BRIGHTNESS || scrBr == MAX_BRIGHTNESS)
         {
