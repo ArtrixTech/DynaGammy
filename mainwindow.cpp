@@ -6,12 +6,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
+#include <QSystemTrayIcon>
+#include <QAction>
+#include <QMenu>
 #include <iostream>
 #include <fstream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    trayIcon(new QSystemTrayIcon(this))
 {
     ui->setupUi(this);
 
@@ -22,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tempLabel->setText(QStringLiteral("%1").arg(TEMP));
     ui->thresholdLabel->setText(QStringLiteral("%1").arg(THRESHOLD));
     ui->pollingLabel->setText(QStringLiteral("%1").arg(UPDATE_TIME_MS));
-     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 
     ui->minBrSlider->setValue(MIN_BRIGHTNESS);
     ui->maxBrSlider->setValue(MAX_BRIGHTNESS);
@@ -32,7 +36,29 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->thresholdSlider->setValue(THRESHOLD);
     ui->pollingSlider->setValue(UPDATE_TIME_MS);
 
-    this->setWindowFlags(Qt::WindowStaysOnTopHint);
+    this->setWindowFlags(Qt::WindowStaysOnTopHint /*| Qt::FramelessWindowHint*/);
+
+    auto menu = this->createMenu();
+    this->trayIcon->setContextMenu(menu);
+
+    auto appIcon = QIcon(":res/icons/32x32ball.ico");
+    this->trayIcon->setIcon(appIcon);
+    this->setWindowIcon(appIcon);
+    this->trayIcon->show();
+}
+
+QMenu* MainWindow::createMenu()
+{
+  auto runAtStartupAction = new QAction("Run at startup", this);
+  auto quitAction = new QAction("Quit Gammy", this);
+
+  connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+
+  auto menu = new QMenu(this);
+  menu->addAction(runAtStartupAction);
+  menu->addAction(quitAction);
+
+  return menu;
 }
 
 MainWindow::~MainWindow()
@@ -59,11 +85,6 @@ void MainWindow::updateBrLabel(USHORT labelValue, USHORT targetValue, size_t thr
             Sleep(sleeptime);
         }*/
 
-}
-
-void MainWindow::on_statusBtn_clicked()
-{
-   ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
