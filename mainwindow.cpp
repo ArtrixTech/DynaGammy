@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tempSlider->setValue(TEMP);
     ui->thresholdSlider->setValue(THRESHOLD);
     ui->pollingSlider->setValue(UPDATE_TIME_MS);
+
+    this->setWindowFlags(Qt::WindowStaysOnTopHint);
 }
 
 MainWindow::~MainWindow()
@@ -37,25 +39,24 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::updateLabels(USHORT labelValue, USHORT targetValue, size_t t, size_t const &stop, short sleeptime) {
-            //if (/*visibile*/)
-            //{
-                while (labelValue != targetValue && stop == t)
-                {
-                    if (labelValue < targetValue) ++labelValue;
-                    else --labelValue;
+void MainWindow::updateBrLabel(USHORT labelValue, USHORT targetValue, size_t threadId, size_t const &threadCount, short sleeptime)
+{
+        while (labelValue != targetValue && threadId == threadCount)
+        {
+            if (labelValue < targetValue) ++labelValue;
+            else --labelValue;
 
-                    ui->statusLabel->setText(QStringLiteral("%1").arg(labelValue));
+            ui->statusLabel->setText(QStringLiteral("%1").arg(labelValue));
 
-                    if (labelValue == MIN_BRIGHTNESS || labelValue == MAX_BRIGHTNESS) return;
-                    Sleep(sleeptime);
-                }
-           //}
+            if (labelValue == MIN_BRIGHTNESS || labelValue == MAX_BRIGHTNESS) return;
+            Sleep(sleeptime);
         }
+
+}
 
 void MainWindow::on_statusBtn_clicked()
 {
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+    //ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
