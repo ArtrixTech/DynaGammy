@@ -17,7 +17,6 @@ public:
     ~MainWindow();
 
     void updateBrLabel();
-    void updateBrLabel(unsigned short labelValue, unsigned short targetValue, size_t t, size_t const &stop, short sleeptime);
 
 private slots:
     void on_minBrSlider_valueChanged(int val);

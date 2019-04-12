@@ -132,23 +132,6 @@ void MainWindow::updateBrLabel() {
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
-void MainWindow::updateBrLabel(USHORT labelValue, USHORT targetValue, size_t threadId, size_t const &threadCount, short sleeptime)
-{
-
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
-    /*while (labelValue != targetValue && threadId == threadCount)
-        {
-            if (labelValue < targetValue) ++labelValue;
-            else --labelValue;
-
-            ui->statusLabel->setText(QStringLiteral("%1").arg(labelValue));
-
-            if (labelValue == MIN_BRIGHTNESS || labelValue == MAX_BRIGHTNESS) return;
-            Sleep(sleeptime);
-        }*/
-
-}
-
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
     if(val > MAX_BRIGHTNESS) val = MAX_BRIGHTNESS;
