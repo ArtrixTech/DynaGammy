@@ -6,6 +6,7 @@
 #include "mainwindow.h"
 #include "main.h"
 #include <QApplication>
+#include <QLabel>
 #include <Windows.h>
 #include <vector>
 #include <dxgi.h>
@@ -607,17 +608,11 @@ void getGDISnapshot(LPBYTE &buf)
 //Arguments to be passed to the AdjustBrightness thread
 struct Args {
     short imgDelta = 0;  //Difference between old and current screenshot brightness
-    short sleeptime = 0;
     size_t threadCount = 0;
+    MainWindow* w;
 };
 
-/*
-void updateLabel(LPVOID args_) {
-    Args *args = static_cast<Args*>(args_);
-    args->wnd.updateBrLabel(scrBr, targetScrBr, args->threadId, args->threadCount, args->sleeptime);
-}*/
-
-void adjustBrightness(Args args)
+void adjustBrightness(Args &args)
 {
     size_t threadId = ++args.threadCount; //@TODO: Less horrendous way of stopping threads
 
@@ -625,7 +620,7 @@ void adjustBrightness(Args args)
         printf("Thread %zd started...\n", threadId);
     #endif
 
-    args.sleeptime = (100 - args.imgDelta / 4) / SPEED;
+    short sleeptime = (100 - args.imgDelta / 4) / SPEED;
     args.imgDelta = 0;
 
     targetScrBr = DEFAULT_BRIGHTNESS - imgBr + OFFSET;
@@ -633,9 +628,7 @@ void adjustBrightness(Args args)
     if		(targetScrBr > MAX_BRIGHTNESS) targetScrBr = MAX_BRIGHTNESS;
     else if (targetScrBr < MIN_BRIGHTNESS) targetScrBr = MIN_BRIGHTNESS;
 
-    if (scrBr < targetScrBr) args.sleeptime /= 3;
-
-    //CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(updateLabel), &args, 0, nullptr);
+    if (scrBr < targetScrBr) sleeptime /= 3;
 
     while (scrBr != targetScrBr && threadId == args.threadCount)
     {
@@ -647,13 +640,15 @@ void adjustBrightness(Args args)
 
         setGDIBrightness(scrBr, gdivs[TEMP-1], bdivs[TEMP-1]);
 
+        args.w->updateBrLabel();
+
         if (scrBr == MIN_BRIGHTNESS || scrBr == MAX_BRIGHTNESS)
         {
             targetScrBr = scrBr;
             break;
         }
 
-        Sleep(args.sleeptime);
+        Sleep(sleeptime);
     }
 
     #ifdef _DB
@@ -667,7 +662,7 @@ void adjustBrightness(Args args)
     #endif
 }
 
-[[noreturn]] void app()
+[[noreturn]] void app(MainWindow wnd)
 {
     #ifdef _DB
     printf("Starting routine...\n");
@@ -686,6 +681,7 @@ void adjustBrightness(Args args)
     bool forceChange = true;
 
     Args args;
+    args.w = &wnd;
 
     while (true)
     {
@@ -815,7 +811,7 @@ int main(int argc, char *argv[])
         UPDATE_TIME_MAX = 5000;
     }
 
-    CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE (app), nullptr, 0, nullptr);
+    CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE (app), &wnd, 0, nullptr);
 
     return a.exec();
 }
