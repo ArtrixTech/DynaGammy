@@ -604,10 +604,6 @@ void getGDISnapshot(LPBYTE &buf)
     DeleteDC(memoryDC);
 }
 
-void updateLabel() {
-    //updateLabels(res, targetRes, lp.t, stop, sleeptime);
-}
-
 //Arguments to be passed to the AdjustBrightness thread
 struct Args {
     short imgDelta = 0;  //Difference between old and current screenshot brightness
@@ -615,27 +611,33 @@ struct Args {
     size_t threadCount = 0;
 };
 
-void adjustBrightness(LPVOID args_)
-{
+/*
+void updateLabel(LPVOID args_) {
     Args *args = static_cast<Args*>(args_);
+    args->wnd.updateBrLabel(scrBr, targetScrBr, args->threadId, args->threadCount, args->sleeptime);
+}*/
 
-    size_t threadId = ++args->threadCount; //@TODO: Less horrendous way of stopping threads
+void adjustBrightness(Args args)
+{
+    size_t threadId = ++args.threadCount; //@TODO: Less horrendous way of stopping threads
 
     #ifdef _DB
         printf("Thread %zd started...\n", threadId);
     #endif
 
-    args->sleeptime = (100 - args->imgDelta / 4) / SPEED;
-    args->imgDelta = 0;
+    args.sleeptime = (100 - args.imgDelta / 4) / SPEED;
+    args.imgDelta = 0;
 
     targetScrBr = DEFAULT_BRIGHTNESS - imgBr + OFFSET;
 
     if		(targetScrBr > MAX_BRIGHTNESS) targetScrBr = MAX_BRIGHTNESS;
     else if (targetScrBr < MIN_BRIGHTNESS) targetScrBr = MIN_BRIGHTNESS;
 
-    if (scrBr < targetScrBr) args->sleeptime /= 3;
+    if (scrBr < targetScrBr) args.sleeptime /= 3;
 
-    while (scrBr != targetScrBr && threadId == args->threadCount)
+    //CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(updateLabel), &args, 0, nullptr);
+
+    while (scrBr != targetScrBr && threadId == args.threadCount)
     {
         if (scrBr < targetScrBr)
         {
@@ -651,11 +653,11 @@ void adjustBrightness(LPVOID args_)
             break;
         }
 
-        Sleep(args->sleeptime);
+        Sleep(args.sleeptime);
     }
 
     #ifdef _DB
-    if (args->threadCount > threadId)
+    if (args.threadCount > threadId)
     {
         printf("Thread %zd stopped!\n", threadId);
         return;
@@ -793,16 +795,16 @@ int main(int argc, char *argv[])
     freopen_s(&f3, "CONOUT$", "w", stderr);
     #endif
 
+    //#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+
     CheckOneInstance("Gammy");
     readSettings();
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
     QApplication a(argc, argv);
-    MainWindow w;
-    w.setWindowTitle("Gammy");
-    w.show();
-
-    //#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+    MainWindow wnd;
+    wnd.setWindowTitle("Gammy");
+    wnd.show();
 
     checkGammaRange();
 
@@ -813,7 +815,6 @@ int main(int argc, char *argv[])
         UPDATE_TIME_MAX = 5000;
     }
 
-    //std::thread start(app);
     CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE (app), nullptr, 0, nullptr);
 
     return a.exec();
