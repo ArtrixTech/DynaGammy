@@ -31,7 +31,9 @@ SOURCES += \
 
 HEADERS += \
         mainwindow.h \
-    main.h
+    main.h \
+    winres.h \
+    winres.rc
 
 FORMS += \
         mainwindow.ui
@@ -40,3 +42,11 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32 {
+   RC_FILE = winres.rc
+}
+RESOURCES += \
+    res.qrc
+
+DISTFILES +=
