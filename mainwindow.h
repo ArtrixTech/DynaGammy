@@ -15,7 +15,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-     void updateLabels(unsigned short labelValue, unsigned short targetValue, size_t t, size_t const &stop, short sleeptime);
+    void updateBrLabel();
+    void updateBrLabel(unsigned short labelValue, unsigned short targetValue, size_t t, size_t const &stop, short sleeptime);
 
 private slots:
     void on_statusBtn_clicked();
