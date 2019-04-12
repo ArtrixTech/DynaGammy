@@ -1,10 +1,9 @@
-#ifndef CORE_H
-#define CORE_H
+#ifndef MAIN_H
+#define MAIN_H
 
-#endif // CORE_H
+#endif // MAIN_H
 
 #include <Windows.h>
-
 //#define _DB
 
 constexpr unsigned char MIN_BRIGHTNESS_LIMIT = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
