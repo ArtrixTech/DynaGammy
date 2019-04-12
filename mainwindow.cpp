@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowFlags(Qt::WindowStaysOnTopHint /*| Qt::FramelessWindowHint*/);
 
     auto menu = this->createMenu();
+
     this->trayIcon->setContextMenu(menu);
 
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
@@ -47,18 +48,79 @@ MainWindow::MainWindow(QWidget *parent) :
     this->trayIcon->show();
 }
 
+void toggleRegkey(QAction* &startupAction)
+{
+    LSTATUS s;
+    HKEY hKey;
+    LPCWSTR subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+    if (startupAction->isChecked())
+    {
+        WCHAR path[MAX_PATH + 3], tmpPath[MAX_PATH + 3];
+        GetModuleFileName(nullptr, tmpPath, MAX_PATH + 1);
+        wsprintfW(path, L"\"%s\"", tmpPath);
+
+        s = RegCreateKeyExW(HKEY_CURRENT_USER, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | KEY_WOW64_64KEY, nullptr, &hKey, nullptr);
+
+        if (s == ERROR_SUCCESS)
+        {
+            #ifdef _DB
+            printf("RegKey opened. \n");
+            #endif
+
+            s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, (BYTE*)path, int((wcslen(path) * sizeof(WCHAR))));
+
+            #ifdef _DB
+                if (s == ERROR_SUCCESS) {
+                    printf("RegValue set.\n");
+                }
+                else {
+                    printf("Error when setting RegValue.\n");
+                }
+            #endif
+        }
+        #ifdef _DB
+        else {
+            printf("Error when opening RegKey.\n");
+        }
+        #endif
+    }
+    else {
+        s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
+
+        #ifdef _DB
+            if (s == ERROR_SUCCESS)
+                printf("RegValue deleted.\n");
+            else
+                printf("RegValue deletion failed.\n");
+        #endif
+    }
+
+    if(hKey) RegCloseKey(hKey);
+}
+
 QMenu* MainWindow::createMenu()
 {
-  auto runAtStartupAction = new QAction("Run at startup", this);
-  auto quitAction = new QAction("Quit Gammy", this);
+    QAction* startupAction = new QAction("&Run at startup", this);
+    startupAction->setCheckable(true);
+    connect(startupAction, &QAction::triggered, this, std::bind(toggleRegkey, startupAction));
 
-  connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+    LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
-  auto menu = new QMenu(this);
-  menu->addAction(runAtStartupAction);
-  menu->addAction(quitAction);
+    if (s == ERROR_SUCCESS)
+    {
+      startupAction->setChecked(true);
+    }
+    else startupAction->setChecked(false);
 
-  return menu;
+    QAction* quitAction = new QAction("&Quit Gammy", this);
+    connect(quitAction, &QAction::triggered, this, &QCoreApplication::quit);
+
+    auto menu = new QMenu(this);
+    menu->addAction(startupAction);
+    menu->addAction(quitAction);
+
+    return menu;
 }
 
 MainWindow::~MainWindow()
@@ -194,3 +256,7 @@ void MainWindow::on_pollingSlider_sliderReleased()
     std::string str("updateRate");
     updateFile(str, UPDATE_TIME_MS);
 }
+
+/////////////////////////////////////////////////////////
+
+
