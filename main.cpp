@@ -53,21 +53,6 @@ D3D11_TEXTURE2D_DESC	tex_desc;
 
 bool useGDI = false;
 
-bool CheckOneInstance(const char* name)
-{
-    HANDLE hStartEvent = CreateEventA(nullptr, TRUE, FALSE, name);
-
-    if (GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-        CloseHandle(hStartEvent);
-        hStartEvent = nullptr;
-        ///MessageBoxW(0, L"Gammy is already running.", L"Gammy", 0);
-        exit(0);
-    }
-
-    return true;
-}
-
 void readSettings()
 {
 #ifdef dbg
@@ -171,7 +156,7 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 
     WORD gammaArr[3][256];
 
-    for (auto i = 0; i < 256; ++i)
+    for (WORD i = 0; i < 256; ++i)
     {
         WORD gammaVal = i * brightness;
 
@@ -429,15 +414,14 @@ bool initDXGI() {
 
 void restartDXGI()
 {
-
     HRESULT hr;
 
     do {
         hr = output1->DuplicateOutput(d3d_device, &duplication);
 
         #ifdef dbg
-        if (hr != S_OK) {
-
+        if (hr != S_OK)
+        {
             printf("Unable to duplicate output. Reason: ");
 
             switch (hr) {
@@ -447,11 +431,17 @@ void restartDXGI()
             case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE: printf("DXGI_ERROR_NOT_CURRENTLY_AVAILABLE\n"); break;
             case DXGI_ERROR_SESSION_DISCONNECTED: printf("DXGI_ERROR_SESSION_DISCONNECTED\n"); break;
             }
+
+            printf("Retrying... (5 sec)\n");
         }
         #endif
 
         Sleep(5000);
     } while (hr != S_OK);
+
+#ifdef dbg
+    printf("Output duplication restarted successfully.\n");
+#endif
 
     output1->Release();
 }
@@ -550,7 +540,7 @@ bool getDXGISnapshot(unsigned char* buf)
     return true;
 }
 
-void getGDISnapshot(unsigned char* &buf)
+void getGDISnapshot(unsigned char* buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
     HDC memoryDC = CreateCompatibleDC(screenDC); //Memory DC for GDI screenshot
@@ -573,7 +563,7 @@ void getGDISnapshot(unsigned char* &buf)
     bminfoheader.biClrUsed = 0;
     bminfoheader.biClrImportant = 0;
 
-    GetDIBits(memoryDC, hBitmap, 0, h, buf, (BITMAPINFO*)&bminfoheader, DIB_RGB_COLORS);
+    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
 
     getBrightness(buf);
 
@@ -667,11 +657,6 @@ void adjustBrightness(Args &args)
         {
             while (!getDXGISnapshot(buf))
             {
-                #ifdef dbg
-                printf("Screenshot failed. Retrying... (5 sec.)\n");
-                #endif
-
-                Sleep(5000);
                 restartDXGI();
             }
         }
@@ -701,6 +686,7 @@ void adjustBrightness(Args &args)
     }
 }
 
+bool checkOneInstance(const char* name);
 void checkGammaRange();
 
 int main(int argc, char *argv[])
@@ -715,7 +701,7 @@ int main(int argc, char *argv[])
 
     //#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
-    CheckOneInstance("Gammy");
+    checkOneInstance("Gammy");
     readSettings();
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
@@ -811,4 +797,19 @@ void ReleaseDXResources() {
     output1->Release();
     d3d_context->Release();
     d3d_device->Release();
+}
+
+bool checkOneInstance(const char* name)
+{
+    HANDLE hStartEvent = CreateEventA(nullptr, TRUE, FALSE, name);
+
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        CloseHandle(hStartEvent);
+        hStartEvent = nullptr;
+        ///MessageBoxW(0, L"Gammy is already running.", L"Gammy", 0);
+        exit(0);
+    }
+
+    return true;
 }
