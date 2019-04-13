@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
 void toggleRegkey(QAction* &startupAction)
 {
     LSTATUS s;
-    HKEY hKey;
+    HKEY hKey = nullptr;
     LPCWSTR subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
     if (startupAction->isChecked())
@@ -73,7 +73,7 @@ void toggleRegkey(QAction* &startupAction)
             printf("RegKey opened. \n");
             #endif
 
-            s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, (BYTE*)path, int((wcslen(path) * sizeof(WCHAR))));
+            s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
 
             #ifdef dbg
                 if (s == ERROR_SUCCESS) {
@@ -114,7 +114,7 @@ QMenu* MainWindow::createMenu()
 
     if (s == ERROR_SUCCESS)
     {
-      startupAction->setChecked(true);
+        startupAction->setChecked(true);
     }
     else startupAction->setChecked(false);
 
