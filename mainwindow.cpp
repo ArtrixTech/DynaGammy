@@ -49,8 +49,10 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowIcon(appIcon);
     this->trayIcon->show();
 
-    this->show();
-    //this->hide();
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+
+    //this->show();
+    this->hide();
 }
 
 void toggleRegkey(QAction* &startupAction)
@@ -102,6 +104,13 @@ void toggleRegkey(QAction* &startupAction)
     }
 
     if(hKey) RegCloseKey(hKey);
+}
+
+void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    switch (reason) {
+        case QSystemTrayIcon::Trigger: MainWindow::show();
+    }
 }
 
 QMenu* MainWindow::createMenu()

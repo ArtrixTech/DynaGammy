@@ -19,6 +19,8 @@ public:
     void updateBrLabel();
 
 private slots:
+    void iconActivated(QSystemTrayIcon::ActivationReason reason);
+
     void on_minBrSlider_valueChanged(int val);
     void on_maxBrSlider_valueChanged(int val);
     void on_offsetSlider_valueChanged(int val);
