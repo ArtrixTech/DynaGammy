@@ -8,6 +8,8 @@
 #include "main.h"
 #include <Windows.h>
 #include <QSystemTrayIcon>
+#include <QToolTip>
+#include <QHelpEvent>
 #include <QAction>
 #include <QMenu>
 #include <iostream>
@@ -38,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->pollingSlider->setValue(UPDATE_TIME_MS);
 
     this->setWindowTitle("Gammy");
-    this->setWindowFlags(Qt::WindowStaysOnTopHint /*| Qt::FramelessWindowHint*/);
+    this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
 
     auto menu = this->createMenu();
 
@@ -47,12 +49,12 @@ MainWindow::MainWindow(QWidget *parent) :
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
     this->trayIcon->setIcon(appIcon);
     this->setWindowIcon(appIcon);
+    this->trayIcon->setToolTip(QString("Gammy"));
     this->trayIcon->show();
 
     connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
 
     //this->show();
-    this->hide();
 }
 
 void toggleRegkey(QAction* &startupAction)
@@ -186,72 +188,61 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 
 /////////////////////////////////////////////////////////
 
-void updateFile(std::string &subStr, int val)
+void updateFile()
 {
-    std::fstream file("gammySettings.cfg");
+    std::ofstream file("gammySettings.cfg", std::ofstream::out | std::ofstream::trunc);
 
     if(file.is_open())
     {
-        std::string str = subStr + "=" + std::to_string(val);
-        auto offset = 0;
-
-        std::string line;
-
-        while (getline(file, line))
+        std::string newLines [] =
         {
-            if(line.find(subStr) == 0)
-            {
-                file.seekp(offset);
-                file << str << std::endl;
-                file.close();
-                return;
-            }
+            "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
+            "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
+            "offset=" + std::to_string(OFFSET),
+            "speed=" + std::to_string(SPEED),
+            "temp=" + std::to_string(TEMP),
+            "threshold=" + std::to_string(THRESHOLD),
+            "updateRate=" + std::to_string(UPDATE_TIME_MS)
+        };
 
-            offset += line.length() + 2;
-        }
+        for(auto s : newLines) file << s << std::endl;
+        file.close();
     }
 }
 
 void MainWindow::on_minBrSlider_sliderReleased()
 {
-    std::string str("minBrightness");
-    updateFile(str, MIN_BRIGHTNESS);
+    updateFile();
 }
 
 void MainWindow::on_maxBrSlider_sliderReleased()
 {
-    std::string str("maxBrightness");
-    updateFile(str, MAX_BRIGHTNESS);
+    updateFile();
 }
 
 void MainWindow::on_offsetSlider_sliderReleased()
 {
-    std::string str("offset");
-    updateFile(str, OFFSET);
+    updateFile();
 }
 
 void MainWindow::on_speedSlider_sliderReleased()
 {
-    std::string str("speed");
-    updateFile(str, SPEED);
+    updateFile();
 }
 
 void MainWindow::on_tempSlider_sliderReleased()
 {
-    std::string str("temp");
-    updateFile(str, TEMP);
+    updateFile();
 }
 
 void MainWindow::on_thresholdSlider_sliderReleased()
 {
-    std::string str("threshold");
-    updateFile(str, THRESHOLD);
+    updateFile();
 }
 
 void MainWindow::on_pollingSlider_sliderReleased()
 {
-    std::string str("updateRate");
-    updateFile(str, UPDATE_TIME_MS);
+    updateFile();
 }
 
 /////////////////////////////////////////////////////////
