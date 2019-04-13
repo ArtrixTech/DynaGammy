@@ -6,6 +6,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
+#include <Windows.h>
 #include <QSystemTrayIcon>
 #include <QAction>
 #include <QMenu>
@@ -36,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->thresholdSlider->setValue(THRESHOLD);
     ui->pollingSlider->setValue(UPDATE_TIME_MS);
 
+    this->setWindowTitle("Gammy");
     this->setWindowFlags(Qt::WindowStaysOnTopHint /*| Qt::FramelessWindowHint*/);
 
     auto menu = this->createMenu();
@@ -46,6 +48,9 @@ MainWindow::MainWindow(QWidget *parent) :
     this->trayIcon->setIcon(appIcon);
     this->setWindowIcon(appIcon);
     this->trayIcon->show();
+
+    this->show();
+    //this->hide();
 }
 
 void toggleRegkey(QAction* &startupAction)
@@ -64,13 +69,13 @@ void toggleRegkey(QAction* &startupAction)
 
         if (s == ERROR_SUCCESS)
         {
-            #ifdef _DB
+            #ifdef dbg
             printf("RegKey opened. \n");
             #endif
 
             s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, (BYTE*)path, int((wcslen(path) * sizeof(WCHAR))));
 
-            #ifdef _DB
+            #ifdef dbg
                 if (s == ERROR_SUCCESS) {
                     printf("RegValue set.\n");
                 }
@@ -79,7 +84,7 @@ void toggleRegkey(QAction* &startupAction)
                 }
             #endif
         }
-        #ifdef _DB
+        #ifdef dbg
         else {
             printf("Error when opening RegKey.\n");
         }
@@ -88,7 +93,7 @@ void toggleRegkey(QAction* &startupAction)
     else {
         s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
 
-        #ifdef _DB
+        #ifdef dbg
             if (s == ERROR_SUCCESS)
                 printf("RegValue deleted.\n");
             else
