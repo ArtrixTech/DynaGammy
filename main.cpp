@@ -38,12 +38,12 @@ unsigned short	UPDATE_TIME_MS  = 100;
 unsigned short	UPDATE_TIME_MIN = 10;
 unsigned short	UPDATE_TIME_MAX = 500;
 
-WORD imgBr       = DEFAULT_BRIGHTNESS;  //Brightness of a screenshot
-WORD scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
-WORD targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
+unsigned short imgBr       = DEFAULT_BRIGHTNESS;  //Brightness of a screenshot
+unsigned short scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
+unsigned short targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
 
-int w, h, bufSize;
-void calcBufSize(int &w, int &h);
+int w, h, bufLen;
+void calcBufLen(int &w, int &h);
 
 ID3D11Device*			d3d_device;
 ID3D11DeviceContext*	d3d_context;
@@ -70,25 +70,25 @@ bool CheckOneInstance(const char* name)
 
 void readSettings()
 {
-#ifdef _DB
+#ifdef dbg
     printf("Reading settings...\n");
 #endif
 
     std::string filename = "gammySettings.cfg";
 
-#ifdef _DB
+#ifdef dbg
     printf("Opening filestream...\n");
 #endif
     std::fstream file(filename, std::fstream::in | std::fstream::out | std::fstream::app);
 
     if(file.is_open())
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("File opened successfully.\n");
         #endif
         if(std::filesystem::file_size(filename) == 0)
         {
-            #ifdef _DB
+            #ifdef dbg
             printf("File is empty. Filling with defaults...\n");
             #endif
 
@@ -113,13 +113,13 @@ void readSettings()
         int lines[settingsCount];
         USHORT c = 0;
 
-        #ifdef _DB
+        #ifdef dbg
         printf("Parsing settings file...\n");
         #endif
 
         while (getline(file, line))
         {
-            #ifdef _DB
+            #ifdef dbg
             std::cout << "Parsing line: " << line << std::endl;
             #endif
             line = line.substr(line.find("=") + 1);
@@ -143,7 +143,7 @@ void readSettings()
     }
 }
 
-void getBrightness(LPBYTE const &buf)
+void getBrightness(unsigned char* buf)
 {
     UCHAR r = buf[2];
     UCHAR g = buf[1];
@@ -151,7 +151,7 @@ void getBrightness(LPBYTE const &buf)
 
     int colorSum = 0;
 
-    for (auto i = bufSize; i > 0; i -= 4)
+    for (auto i = bufLen; i > 0; i -= 4)
     {
         r = buf[i + 2];
         g = buf[i + 1];
@@ -171,9 +171,9 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 
     WORD gammaArr[3][256];
 
-    for (USHORT i = 0; i < 256; ++i)
+    for (auto i = 0; i < 256; ++i)
     {
-        WORD gammaVal = WORD (i * brightness);
+        WORD gammaVal = i * brightness;
 
         gammaArr[0][i] = WORD (gammaVal);
         gammaArr[1][i] = WORD (gammaVal / gdiv);
@@ -184,7 +184,7 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 }
 
 bool initDXGI() {
-    #ifdef _DB
+    #ifdef dbg
     printf("Initializing DXGI...\n");
     #endif
 
@@ -196,7 +196,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: failed to retrieve the IDXGIFactory.\n");
         getchar();
         #endif
@@ -217,7 +217,7 @@ bool initDXGI() {
 
     pFactory->Release();
 
-#ifdef _DB
+#ifdef dbg
     //Get GPU info
     for (UINT i = 0; i < vAdapters.size(); ++i)
     {
@@ -246,7 +246,7 @@ bool initDXGI() {
         pAdapter = vAdapters[i];
         while (pAdapter->EnumOutputs(dx, &output) != DXGI_ERROR_NOT_FOUND)
         {
-            #ifdef _DB
+            #ifdef dbg
             printf("Found monitor %d on adapter %d\n", dx, i);
             #endif
             vOutputs.push_back(output);
@@ -256,7 +256,7 @@ bool initDXGI() {
 
     if (vOutputs.size() <= 0)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: no outputs found (%zu).\n", vOutputs.size());
         getchar();
         #endif
@@ -264,7 +264,7 @@ bool initDXGI() {
         return false;
     }
 
-#ifdef _DB
+#ifdef dbg
     //Print monitor info.
     for (size_t i = 0; i < vOutputs.size(); ++i)
     {
@@ -289,7 +289,7 @@ bool initDXGI() {
 
     if (vAdapters.size() <= use_adapter)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Invalid adapter index: %d, we only have: %zu - 1\n", use_adapter, vAdapters.size());
         getchar();
         #endif
@@ -301,7 +301,7 @@ bool initDXGI() {
 
     if (!d3d_adapter)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: the stored adapter is NULL.\n");
         getchar();
         #endif
@@ -326,7 +326,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: failed to create the D3D11 Device.\n");
 
         if (hr == E_INVALIDARG)
@@ -345,7 +345,7 @@ bool initDXGI() {
 
     if (vOutputs.size() <= use_monitor)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Invalid monitor index: %d, we only have: %zu - 1\n", use_monitor, vOutputs.size());
         getchar();
         #endif
@@ -355,7 +355,7 @@ bool initDXGI() {
 
     if (!output)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("No valid output found. The output is NULL.\n");
         getchar();
         #endif
@@ -367,7 +367,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: failed to query the IDXGIOutput1 interface.\n");
         getchar();
         #endif
@@ -380,7 +380,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: failed to get output description.\n");
         getchar();
         #endif
@@ -404,7 +404,7 @@ bool initDXGI() {
 
     if (hr != S_OK)
     {
-        #ifdef _DB
+        #ifdef dbg
         printf("Error: DuplicateOutput failed.\n");
         getchar();
         #endif
@@ -435,7 +435,7 @@ void restartDXGI()
     do {
         hr = output1->DuplicateOutput(d3d_device, &duplication);
 
-        #ifdef _DB
+        #ifdef dbg
         if (hr != S_OK) {
 
             printf("Unable to duplicate output. Reason: ");
@@ -456,7 +456,7 @@ void restartDXGI()
     output1->Release();
 }
 
-bool getDXGISnapshot(LPBYTE &buf)
+bool getDXGISnapshot(unsigned char* buf)
 {
     HRESULT hr;
 
@@ -465,7 +465,7 @@ bool getDXGISnapshot(LPBYTE &buf)
     IDXGIResource* desktop_resource;
 
     if (!duplication) {
-        #ifdef _DB
+        #ifdef dbg
         printf("Duplication is a null pointer.\n");
         #endif
         return false;
@@ -473,101 +473,84 @@ bool getDXGISnapshot(LPBYTE &buf)
 
     hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_resource);
 
-    if (hr == S_OK)
+    switch(hr)
     {
-        hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&tex); //Get the texture interface
+        case S_OK:
+        {
+            //Get the texture interface
+            hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&tex);
 
-        desktop_resource->Release();
-        tex->Release();
+            desktop_resource->Release();
+            tex->Release();
 
-        if (hr != S_OK) {
-            #ifdef _DB
-            printf("Error: failed to query the ID3D11Texture2D interface on the IDXGIResource.\n");
+            if (hr != S_OK)
+            {
+                #ifdef dbg
+                printf("Error: failed to query the ID3D11Texture2D interface on the IDXGIResource.\n");
+                #endif
+                return false;
+            }
+
+            break;
+        }
+        case DXGI_ERROR_ACCESS_LOST:
+        {
+            #ifdef dbg
+            printf("Received a DXGI_ERROR_ACCESS_LOST.\n");
             #endif
             return false;
         }
-    }
-    else if (hr == DXGI_ERROR_ACCESS_LOST) {
-        #ifdef _DB
-        printf("Received a DXGI_ERROR_ACCESS_LOST.\n");
-        #endif
-        return false;
-    }
-    else if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
-        #ifdef _DB
-        printf("Received a DXGI_ERROR_WAIT_TIMEOUT.\n");
-        #endif
-        return false;
-    }
-    else {
-        #ifdef _DB
-        printf("Error: failed to acquire frame.\n");
-        #endif
-        return false;
-    }
+        case DXGI_ERROR_WAIT_TIMEOUT:
+        {
+            #ifdef dbg
+            printf("Received a DXGI_ERROR_WAIT_TIMEOUT.\n");
+            #endif
+            return false;
+        }
+        default:
+        {
+            #ifdef dbg
+            printf("Error: failed to acquire frame.\n");
+            #endif
+            return false;
+        }
+     };
 
     ID3D11Texture2D* staging_tex;
     hr = d3d_device->CreateTexture2D(&tex_desc, nullptr, &staging_tex);
 
-    #ifdef _DB
-    if (hr == E_INVALIDARG) {
-        #ifdef _DB
-        printf("Error: received E_INVALIDARG when trying to create the texture.\n");
-        #endif
-
-        return false;
-    }
-    else if (hr != S_OK) {
-        #ifdef _DB
+    if (hr != S_OK)
+    {
+        #ifdef dbg
         printf("Failed to create the 2D texture, error: %ld.\n", hr);
         #endif
         return false;
     }
-    #endif
-
-    //Map the desktop surface (not supported on all PCs, mapping staging texture instead)
-    /*DXGI_MAPPED_RECT mapped_rect;
-    hr = duplication->MapDesktopSurface(&mapped_rect);
-    if (hr == S_OK) {
-        hr = duplication->UnMapDesktopSurface();
-    }
-    else if (hr == DXGI_ERROR_UNSUPPORTED) {
-        printf("MapDesktopSurface unsupported. Map staging texture instead\n");
-    }*/
 
     d3d_context->CopyResource(staging_tex, tex);
-
     duplication->ReleaseFrame();
 
     D3D11_MAPPED_SUBRESOURCE map;
 
-    //UINT c = 0;
-
-    do
-    {
-        Sleep(UPDATE_TIME_MS);
-
-        hr = d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map);
-
-    } while (hr == DXGI_ERROR_WAS_STILL_DRAWING);
+    while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING) Sleep(UPDATE_TIME_MS);
 
     d3d_context->Unmap(staging_tex, 0);
-
     staging_tex->Release();
     d3d_context->Release();
 
-    if (map.DepthPitch > 0)
-    {
-        //We could access map.pData directly to save some RAM, but it causes a crash on some systems.
-        memcpy(buf, map.pData, map.DepthPitch);
+#ifdef dbg
+        //std::cout << "rowPitch = " << map.RowPitch << " depthPitch = " << map.DepthPitch << " bufLen = " << bufLen << std::endl;
+#endif
 
-        getBrightness(buf);
-    }
+    buf = reinterpret_cast<unsigned char*>(map.pData);
+    //memcpy(buf, map.pData, map.DepthPitch);
+
+    getBrightness(buf);
 
     return true;
 }
 
-void getGDISnapshot(LPBYTE &buf)
+void getGDISnapshot(unsigned char* &buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
     HDC memoryDC = CreateCompatibleDC(screenDC); //Memory DC for GDI screenshot
@@ -586,18 +569,13 @@ void getGDISnapshot(LPBYTE &buf)
     bminfoheader.biPlanes = 1;
     bminfoheader.biBitCount = 32;
     bminfoheader.biCompression = BI_RGB;
-    bminfoheader.biSizeImage = bufSize;
+    bminfoheader.biSizeImage = bufLen;
     bminfoheader.biClrUsed = 0;
     bminfoheader.biClrImportant = 0;
-
-    /*We can create the buffer here and delete[] it afterwards to make it look like we use less RAM, but that's shitty */
-    //unsigned char* buf = new unsigned char[len];
 
     GetDIBits(memoryDC, hBitmap, 0, h, buf, (BITMAPINFO*)&bminfoheader, DIB_RGB_COLORS);
 
     getBrightness(buf);
-
-    //delete[] buf;
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);
@@ -616,7 +594,7 @@ void adjustBrightness(Args &args)
 {
     size_t threadId = ++args.threadCount; //@TODO: Less horrendous way of stopping threads
 
-    #ifdef _DB
+    #ifdef dbg
         printf("Thread %zd started...\n", threadId);
     #endif
 
@@ -651,7 +629,7 @@ void adjustBrightness(Args &args)
         Sleep(sleeptime);
     }
 
-    #ifdef _DB
+    #ifdef dbg
     if (args.threadCount > threadId)
     {
         printf("Thread %zd stopped!\n", threadId);
@@ -664,7 +642,7 @@ void adjustBrightness(Args &args)
 
 [[noreturn]] void app(MainWindow wnd)
 {
-    #ifdef _DB
+    #ifdef dbg
     printf("Starting routine...\n");
     #endif
 
@@ -674,9 +652,9 @@ void adjustBrightness(Args &args)
     USHORT oldImgBr   = DEFAULT_BRIGHTNESS;
 
     //Buffer to store screen pixels
-    LPBYTE buf;
-    calcBufSize(w, h);
-    buf = new BYTE[bufSize];
+    unsigned char* buf = nullptr;
+    calcBufLen(w, h);
+    //buf = new unsigned char[bufLen];
 
     bool forceChange = true;
 
@@ -689,7 +667,7 @@ void adjustBrightness(Args &args)
         {
             while (!getDXGISnapshot(buf))
             {
-                #ifdef _DB
+                #ifdef dbg
                 printf("Screenshot failed. Retrying... (5 sec.)\n");
                 #endif
 
@@ -723,67 +701,11 @@ void adjustBrightness(Args &args)
     }
 }
 
-void checkGammaRange()
-{
-    LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ICM";
-    LSTATUS s;
-
-    s = RegGetValueW(HKEY_LOCAL_MACHINE, subKey, L"GdiICMGammaRange", RRF_RT_REG_DWORD, nullptr, nullptr, nullptr);
-
-    if (s == ERROR_SUCCESS)
-    {
-#ifdef _DB
-        printf("Gamma registry key found.\n");
-#endif
-        return;
-    }
-
-#ifdef _DB
-        printf("Gamma registry key not found. Proceeding to add...\n");
-#endif
-
-    HKEY hKey;
-
-    s = RegCreateKeyExW(HKEY_LOCAL_MACHINE, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &hKey, nullptr);
-
-    if (s == ERROR_SUCCESS)
-    {
-#ifdef _DB
-        printf("Gamma registry key created. \n");
-#endif
-        DWORD val = 256;
-
-        s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
-
-        if (s == ERROR_SUCCESS)
-        {
-            MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
-#ifdef _DB
-            printf("Gamma registry value set.\n");
-#endif
-        }
-#ifdef _DB
-        else printf("Error when setting Gamma registry value.\n");
-#endif
-    }
-#ifdef _DB
-    else
-    {
-        printf("Error when creating/opening gamma RegKey:");
-
-        if (s == ERROR_ACCESS_DENIED)
-        {
-            printf(" Access denied.\n");
-        }
-    }
-#endif
-
-    if (hKey) RegCloseKey(hKey);
-}
+void checkGammaRange();
 
 int main(int argc, char *argv[])
 {
-    #ifdef _DB
+    #ifdef dbg
     FILE *f1, *f2, *f3;
     AllocConsole();
     freopen_s(&f1, "CONIN$", "r", stdin);
@@ -799,8 +721,6 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     MainWindow wnd;
-    wnd.setWindowTitle("Gammy");
-    wnd.show();
 
     checkGammaRange();
 
@@ -816,7 +736,65 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
-void calcBufSize(int &w, int &h)
+void checkGammaRange()
+{
+    LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ICM";
+    LSTATUS s;
+
+    s = RegGetValueW(HKEY_LOCAL_MACHINE, subKey, L"GdiICMGammaRange", RRF_RT_REG_DWORD, nullptr, nullptr, nullptr);
+
+    if (s == ERROR_SUCCESS)
+    {
+#ifdef dbg
+        printf("Gamma registry key found.\n");
+#endif
+        return;
+    }
+
+#ifdef dbg
+        printf("Gamma registry key not found. Proceeding to add...\n");
+#endif
+
+    HKEY hKey;
+
+    s = RegCreateKeyExW(HKEY_LOCAL_MACHINE, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &hKey, nullptr);
+
+    if (s == ERROR_SUCCESS)
+    {
+#ifdef dbg
+        printf("Gamma registry key created. \n");
+#endif
+        DWORD val = 256;
+
+        s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
+
+        if (s == ERROR_SUCCESS)
+        {
+            MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
+#ifdef dbg
+            printf("Gamma registry value set.\n");
+#endif
+        }
+#ifdef dbg
+        else printf("Error when setting Gamma registry value.\n");
+#endif
+    }
+#ifdef dbg
+    else
+    {
+        printf("Error when creating/opening gamma RegKey:");
+
+        if (s == ERROR_ACCESS_DENIED)
+        {
+            printf(" Access denied.\n");
+        }
+    }
+#endif
+
+    if (hKey) RegCloseKey(hKey);
+}
+
+void calcBufLen(int &w, int &h)
 {
     int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
     int y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
@@ -825,7 +803,7 @@ void calcBufSize(int &w, int &h)
 
     w = x2 - x1;
     h = y2 - y1;
-    bufSize = w * 4 * h;
+    bufLen = w * 4 * h;
 }
 
 void ReleaseDXResources() {
