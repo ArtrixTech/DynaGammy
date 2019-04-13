@@ -3,8 +3,7 @@
 
 #endif // MAIN_H
 
-#include <Windows.h>
-//#define _DB
+//#define dbg
 
 constexpr unsigned char MIN_BRIGHTNESS_LIMIT = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char DEFAULT_BRIGHTNESS = 255;
@@ -23,13 +22,10 @@ extern unsigned char	THRESHOLD;
 extern unsigned short	UPDATE_TIME_MS;
 extern unsigned short	UPDATE_TIME_MIN, UPDATE_TIME_MAX;
 
-extern int bufSize;
-extern HDC screenDC;
-
 extern unsigned short scrBr;
 extern unsigned short targetScrBr;
 extern bool useGDI;
 
 extern int w, h;
 
-void setGDIBrightness(WORD brightness, float gdiv, float bdiv);
+void setGDIBrightness(unsigned short brightness, float gdiv, float bdiv);
