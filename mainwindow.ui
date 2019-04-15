@@ -475,7 +475,7 @@
     <family>Segoe UI</family>
     <weight>50</weight>
     <bold>false</bold>
-    <kerning>false</kerning>
+    <kerning>true</kerning>
    </font>
   </property>
   <property name="windowTitle">
@@ -493,15 +493,17 @@
 color:white;
 }
 
-QSlider::groove:horizontal {
+QSlider::groove:horizontal 
+{
     height:6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
    /* background-color:rgb(30, 48, 73);*/
-	background-color:rgb(40, 62, 70);
-    margin: 54px 0;
+	background-color:rgb(65, 87, 95);
+    margin:  0px;
+	border-radius:2px;
 }
 
-QSlider::handle:horizontal {
-   
+QSlider::handle:horizontal
+{
 	background-color: QLinearGradient(x1: 0, y2: 1, stop: 0 white,  stop: 1 rgb(192, 192, 192));
     width: 18px;
     margin: -4px 0px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
@@ -870,8 +872,8 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
-     <y>62</y>
+     <x>375</x>
+     <y>63</y>
     </hint>
     <hint type="destinationlabel">
      <x>125</x>
@@ -886,7 +888,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>180</y>
     </hint>
     <hint type="destinationlabel">
@@ -902,7 +904,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>96</y>
     </hint>
     <hint type="destinationlabel">
@@ -918,7 +920,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>201</y>
     </hint>
     <hint type="destinationlabel">
@@ -934,7 +936,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>159</y>
     </hint>
     <hint type="destinationlabel">
@@ -950,7 +952,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>159</y>
     </hint>
     <hint type="destinationlabel">
@@ -966,7 +968,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>117</y>
     </hint>
     <hint type="destinationlabel">
@@ -982,7 +984,7 @@ QSlider::handle:horizontal {
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>405</x>
+     <x>375</x>
      <y>138</y>
     </hint>
     <hint type="destinationlabel">
