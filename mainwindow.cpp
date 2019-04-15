@@ -124,8 +124,10 @@ void toggleRegkey(QAction* &startupAction)
 
 void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-    switch (reason) {
-        case QSystemTrayIcon::Trigger: MainWindow::show();
+    if (reason == QSystemTrayIcon::Trigger)
+    {
+        MainWindow::updateBrLabel();
+        MainWindow::show();
     }
 }
 
