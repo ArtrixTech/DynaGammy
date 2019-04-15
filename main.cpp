@@ -16,7 +16,8 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
-//#include <thread>
+#include <thread>
+#include <functional>
 //#include <dxgitype.h>
 //#include <ntddvdeo.h>
 
@@ -589,10 +590,10 @@ struct Args {
 
 void adjustBrightness(Args &args)
 {
-    size_t threadId = ++args.threadCount; //@TODO: Less horrendous way of stopping threads
+    size_t threadId = ++args.threadCount;
 
     #ifdef dbg
-        //printf("Thread %zd started...\n", threadId);
+        printf("Thread %zd started...\n", threadId);
     #endif
 
     short sleeptime = (100 - args.imgDelta / 4) / SPEED;
@@ -627,13 +628,7 @@ void adjustBrightness(Args &args)
     }
 
     #ifdef dbg
-    if (args.threadCount > threadId)
-    {
-        //printf("Thread %zd stopped!\n", threadId);
-        return;
-    }
-
-    //printf("Thread %zd finished.\n", threadId);
+    printf("Thread %zd finished. Stopped: %d\n", threadId, threadId < args.threadCount);
     #endif
 }
 
@@ -677,7 +672,8 @@ void app(MainWindow* wnd)
 
         if (args.imgDelta > THRESHOLD || forceChange)
         {
-            CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE(adjustBrightness), &args, 0, nullptr);
+            std::thread t(adjustBrightness, std::ref(args));
+            t.detach();
 
             forceChange = false;
         }
@@ -728,8 +724,8 @@ int main(int argc, char *argv[])
         UPDATE_TIME_MAX = 5000;
     }
 
-    CreateThread(nullptr, 0, LPTHREAD_START_ROUTINE (app), &wnd, 0, nullptr);
-
+    std::thread t(app, &wnd);
+    t.detach();
     return a.exec();
 }
 
