@@ -496,8 +496,7 @@ color:white;
 QSlider::groove:horizontal {
     height:6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
    /* background-color:rgb(30, 48, 73);*/
-	background-color:rgb(35, 57, 65);
-background-color: QLinearGradient(x1: 0, y2: 1, stop: 0 rgb(25, 47, 55),  stop: 1 rgb(35, 57, 65));
+	background-color:rgb(40, 62, 70);
     margin: 54px 0;
 }
 
@@ -529,12 +528,92 @@ QSlider::handle:horizontal {
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMaximumSize</enum>
+     </property>
      <property name="leftMargin">
       <number>25</number>
      </property>
      <property name="rightMargin">
       <number>25</number>
      </property>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Max brightness</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLabel" name="speedLabel">
+       <property name="text">
+        <string>4</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="QSlider" name="thresholdSlider">
+       <property name="maximum">
+        <number>255</number>
+       </property>
+       <property name="value">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLabel" name="tempLabel">
+       <property name="text">
+        <string>4</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QSlider" name="maxBrSlider">
+       <property name="minimum">
+        <number>64</number>
+       </property>
+       <property name="maximum">
+        <number>255</number>
+       </property>
+       <property name="value">
+        <number>255</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="thresholdLabel">
+       <property name="text">
+        <string>255</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Threshold</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QSlider" name="offsetSlider">
+       <property name="maximum">
+        <number>255</number>
+       </property>
+       <property name="value">
+        <number>255</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="2">
       <widget class="QSlider" name="minBrSlider">
        <property name="cursor">
@@ -563,31 +642,16 @@ QSlider::handle:horizontal {
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Speed</string>
+     <item row="3" column="2">
+      <widget class="QSlider" name="speedSlider">
+       <property name="minimum">
+        <number>1</number>
        </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="maxBrLabel">
-       <property name="text">
-        <string>255</string>
+       <property name="maximum">
+        <number>4</number>
        </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="label_7">
-       <property name="text">
-        <string>Polling rate (ms)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLabel" name="tempLabel">
-       <property name="text">
-        <string>4</string>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
@@ -611,10 +675,24 @@ QSlider::handle:horizontal {
        </property>
       </widget>
      </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="label_6">
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_7">
        <property name="text">
-        <string>Threshold</string>
+        <string>Polling rate (ms)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Speed</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="minBrLabel">
+       <property name="text">
+        <string>255</string>
        </property>
       </widget>
      </item>
@@ -643,15 +721,8 @@ QSlider::handle:horizontal {
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Offset</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLabel" name="thresholdLabel">
+     <item row="1" column="1">
+      <widget class="QLabel" name="maxBrLabel">
        <property name="text">
         <string>255</string>
        </property>
@@ -671,46 +742,10 @@ QSlider::handle:horizontal {
        </property>
       </widget>
      </item>
-     <item row="5" column="2">
-      <widget class="QSlider" name="thresholdSlider">
-       <property name="maximum">
-        <number>255</number>
-       </property>
-       <property name="value">
-        <number>1</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="minBrLabel">
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>255</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QSlider" name="maxBrSlider">
-       <property name="minimum">
-        <number>64</number>
-       </property>
-       <property name="maximum">
-        <number>255</number>
-       </property>
-       <property name="value">
-        <number>255</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Max brightness</string>
+        <string>Offset</string>
        </property>
       </widget>
      </item>
@@ -718,39 +753,6 @@ QSlider::handle:horizontal {
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Min brightness</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QSlider" name="speedSlider">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>4</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLabel" name="speedLabel">
-       <property name="text">
-        <string>4</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QSlider" name="offsetSlider">
-       <property name="maximum">
-        <number>255</number>
-       </property>
-       <property name="value">
-        <number>255</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
@@ -878,18 +880,18 @@ QSlider::handle:horizontal {
    </hints>
   </connection>
   <connection>
-   <sender>tempSlider</sender>
+   <sender>thresholdSlider</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>tempLabel</receiver>
+   <receiver>thresholdLabel</receiver>
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>405</x>
-     <y>159</y>
+     <y>180</y>
     </hint>
     <hint type="destinationlabel">
      <x>125</x>
-     <y>159</y>
+     <y>180</y>
     </hint>
    </hints>
   </connection>
@@ -906,6 +908,54 @@ QSlider::handle:horizontal {
     <hint type="destinationlabel">
      <x>125</x>
      <y>96</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pollingSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>pollingLabel</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>405</x>
+     <y>201</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>125</x>
+     <y>201</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tempSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>tempLabel</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>405</x>
+     <y>159</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>125</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tempSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>tempLabel</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>405</x>
+     <y>159</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>125</x>
+     <y>159</y>
     </hint>
    </hints>
   </connection>
@@ -938,54 +988,6 @@ QSlider::handle:horizontal {
     <hint type="destinationlabel">
      <x>125</x>
      <y>138</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>thresholdSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>thresholdLabel</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>405</x>
-     <y>180</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>125</x>
-     <y>180</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>tempSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>tempLabel</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>405</x>
-     <y>159</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>125</x>
-     <y>159</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pollingSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>pollingLabel</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>405</x>
-     <y>201</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>125</x>
-     <y>201</y>
     </hint>
    </hints>
   </connection>
