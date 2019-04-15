@@ -7,6 +7,7 @@
 #include "ui_mainwindow.h"
 #include "main.h"
 #include <Windows.h>
+#include <QScreen>
 #include <QSystemTrayIcon>
 #include <QToolTip>
 #include <QHelpEvent>
@@ -53,7 +54,12 @@ MainWindow::MainWindow(QWidget *parent) :
     this->trayIcon->show();
     connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
 
-    //this->show();
+    /*Move window to bottom right */
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect screenGeometry = screen->availableGeometry();
+    int h = screenGeometry.height();
+    int w = screenGeometry.width();
+    this->move(w - this->width(), h - this->height());
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event) {
