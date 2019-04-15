@@ -494,24 +494,19 @@ color:white;
 }
 
 QSlider::groove:horizontal {
-    height: 5px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-    background-color:rgb(22, 40, 65);
-    margin: 2px 0;
+    height:6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
+   /* background-color:rgb(30, 48, 73);*/
+	background-color:rgb(35, 57, 65);
+background-color: QLinearGradient(x1: 0, y2: 1, stop: 0 rgb(25, 47, 55),  stop: 1 rgb(35, 57, 65));
+    margin: 54px 0;
 }
 
 QSlider::handle:horizontal {
-    background-color:white;
-    border: 1px solid #5c5c5c;
+   
+	background-color: QLinearGradient(x1: 0, y2: 1, stop: 0 white,  stop: 1 rgb(192, 192, 192));
     width: 18px;
-    margin: -2px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-    border-radius: 3px;
-color:blue;
-}
-
-QSlider::groove:vertical {
-    background: red;
-    position: absolute; /* absolutely position 4px from the left and right of the widget. setting margins on the widget should work too... */
-    left: 4px; right: 4px;
+    margin: -4px 0px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+    border-radius: 5px;
 }</string>
   </property>
   <property name="documentMode">
@@ -797,8 +792,8 @@ QSlider::groove:vertical {
    <widget class="QPushButton" name="closeButton">
     <property name="geometry">
      <rect>
-      <x>360</x>
-      <y>10</y>
+      <x>355</x>
+      <y>16</y>
       <width>26</width>
       <height>16</height>
      </rect>
@@ -829,8 +824,8 @@ QSlider::groove:vertical {
    <widget class="QPushButton" name="hideButton">
     <property name="geometry">
      <rect>
-      <x>335</x>
-      <y>14</y>
+      <x>330</x>
+      <y>20</y>
       <width>27</width>
       <height>16</height>
      </rect>
