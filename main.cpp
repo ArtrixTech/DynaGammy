@@ -95,8 +95,8 @@ void readSettings()
         }
 
         std::string line;
-        int lines[settingsCount];
-        USHORT c = 0;
+        int values[settingsCount];
+        int c = 0;
 
         #ifdef dbg
         printf("Parsing settings file...\n");
@@ -107,17 +107,17 @@ void readSettings()
             #ifdef dbg
             std::cout << "Parsing line: " << line << std::endl;
             #endif
-            line = line.substr(line.find("=") + 1);
-            if(line != "") lines[c++] = std::stoi(line);
+
+            if(line != "") values[c++] = std::stoi(line.substr(line.find("=") + 1));
         }
 
-        MIN_BRIGHTNESS = UCHAR(lines[0]);
-        MAX_BRIGHTNESS = UCHAR(lines[1]);
-        OFFSET         = UCHAR(lines[2]);
-        SPEED          = UCHAR(lines[3]);
-        TEMP           = UCHAR(lines[4]);
-        THRESHOLD      = UCHAR(lines[5]);
-        UPDATE_TIME_MS = USHORT(lines[6]);
+        MIN_BRIGHTNESS = UCHAR(values[0]);
+        MAX_BRIGHTNESS = UCHAR(values[1]);
+        OFFSET         = USHORT(values[2]);
+        SPEED          = UCHAR(values[3]);
+        TEMP           = UCHAR(values[4]);
+        THRESHOLD      = UCHAR(values[5]);
+        UPDATE_TIME_MS = USHORT(values[6]);
 
         file.close();
     }
@@ -573,6 +573,13 @@ void getGDISnapshot(unsigned char* buf)
     DeleteDC(memoryDC);
 }
 
+void ReleaseDXResources() {
+    duplication->ReleaseFrame();
+    output1->Release();
+    d3d_context->Release();
+    d3d_device->Release();
+}
+
 //Arguments to be passed to the AdjustBrightness thread
 struct Args {
     short imgDelta = 0;  //Difference between old and current screenshot brightness
@@ -585,7 +592,7 @@ void adjustBrightness(Args &args)
     size_t threadId = ++args.threadCount; //@TODO: Less horrendous way of stopping threads
 
     #ifdef dbg
-        printf("Thread %zd started...\n", threadId);
+        //printf("Thread %zd started...\n", threadId);
     #endif
 
     short sleeptime = (100 - args.imgDelta / 4) / SPEED;
@@ -622,15 +629,17 @@ void adjustBrightness(Args &args)
     #ifdef dbg
     if (args.threadCount > threadId)
     {
-        printf("Thread %zd stopped!\n", threadId);
+        //printf("Thread %zd stopped!\n", threadId);
         return;
     }
 
-    printf("Thread %zd finished.\n", threadId);
+    //printf("Thread %zd finished.\n", threadId);
     #endif
 }
 
-[[noreturn]] void app(MainWindow wnd)
+bool quit = false;
+
+void app(MainWindow* wnd)
 {
     #ifdef dbg
     printf("Starting routine...\n");
@@ -649,9 +658,9 @@ void adjustBrightness(Args &args)
     bool forceChange = true;
 
     Args args;
-    args.w = &wnd;
+    args.w = wnd;
 
-    while (true)
+    while (!wnd->quitClicked)
     {
         if (!useGDI)
         {
@@ -684,6 +693,10 @@ void adjustBrightness(Args &args)
         oldMax = MAX_BRIGHTNESS;
         oldOffset = OFFSET;
     }
+
+    setGDIBrightness(DEFAULT_BRIGHTNESS, 1, 1);
+    ReleaseDXResources();
+    QApplication::quit();
 }
 
 bool checkOneInstance(const char* name);
@@ -752,7 +765,7 @@ void checkGammaRange()
 #endif
         DWORD val = 256;
 
-        s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
+        s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, LPBYTE(&val), sizeof(val));
 
         if (s == ERROR_SUCCESS)
         {
@@ -790,13 +803,6 @@ void calcBufLen(int &w, int &h)
     w = x2 - x1;
     h = y2 - y1;
     bufLen = w * 4 * h;
-}
-
-void ReleaseDXResources() {
-    duplication->ReleaseFrame();
-    output1->Release();
-    d3d_context->Release();
-    d3d_device->Release();
 }
 
 bool checkOneInstance(const char* name)

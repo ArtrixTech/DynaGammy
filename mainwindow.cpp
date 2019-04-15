@@ -263,7 +263,7 @@ void MainWindow::on_pollingSlider_sliderReleased()
 
 void MainWindow::on_closeButton_clicked()
 {
-    QApplication::quit();
+    MainWindow::quitClicked = true;
 }
 
 void MainWindow::on_hideButton_clicked()

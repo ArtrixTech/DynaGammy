@@ -16,6 +16,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    bool quitClicked = false;
+
     void updateBrLabel();
 
 private slots:
