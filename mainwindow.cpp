@@ -146,7 +146,7 @@ QMenu* MainWindow::createMenu()
     else startupAction->setChecked(false);
 
     QAction* quitAction = new QAction("&Quit Gammy", this);
-    connect(quitAction, &QAction::triggered, this, &QCoreApplication::quit);
+    connect(quitAction, &QAction::triggered, this, [&]{on_closeButton_clicked();});
 
     auto menu = new QMenu(this);
     menu->addAction(startupAction);
