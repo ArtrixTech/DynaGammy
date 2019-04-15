@@ -36,12 +36,21 @@ private slots:
     void on_tempSlider_sliderReleased();
     void on_thresholdSlider_sliderReleased();
     void on_pollingSlider_sliderReleased();
+
+    void on_closeButton_clicked();
+    void on_hideButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;
     QMenu* trayIconMenu;
-
     QMenu* createMenu();
+
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+    void on_close_clicked();
+    int mouseClickXCoord;
+    int mouseClickYCoord;
 };
 
 #endif // MAINWINDOW_H

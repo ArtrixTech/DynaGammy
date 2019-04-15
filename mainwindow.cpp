@@ -42,19 +42,27 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowTitle("Gammy");
     this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
 
-    auto menu = this->createMenu();
-
-    this->trayIcon->setContextMenu(menu);
-
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
-    this->trayIcon->setIcon(appIcon);
     this->setWindowIcon(appIcon);
+
+    /*Tray icon */
+    auto menu = this->createMenu();
+    this->trayIcon->setContextMenu(menu);
+    this->trayIcon->setIcon(appIcon);
     this->trayIcon->setToolTip(QString("Gammy"));
     this->trayIcon->show();
-
     connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
 
     //this->show();
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event) {
+    mouseClickXCoord = event->x();
+    mouseClickYCoord = event->y();
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event) {
+    move(event->globalX()-mouseClickXCoord,event->globalY()-mouseClickYCoord);
 }
 
 void toggleRegkey(QAction* &startupAction)
@@ -247,4 +255,12 @@ void MainWindow::on_pollingSlider_sliderReleased()
 
 /////////////////////////////////////////////////////////
 
+void MainWindow::on_closeButton_clicked()
+{
+    QApplication::quit();
+}
 
+void MainWindow::on_hideButton_clicked()
+{
+    this->hide();
+}
