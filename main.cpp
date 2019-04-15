@@ -637,8 +637,6 @@ void adjustBrightness(Args &args)
     #endif
 }
 
-bool quit = false;
-
 void app(MainWindow* wnd)
 {
     #ifdef dbg
