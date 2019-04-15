@@ -16,6 +16,8 @@
 #include <iostream>
 #include <fstream>
 
+void updateFile();
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -29,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->speedLabel->setText(QStringLiteral("%1").arg(SPEED));
     ui->tempLabel->setText(QStringLiteral("%1").arg(TEMP));
     ui->thresholdLabel->setText(QStringLiteral("%1").arg(THRESHOLD));
-    ui->pollingLabel->setText(QStringLiteral("%1").arg(UPDATE_TIME_MS));
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 
     ui->minBrSlider->setValue(MIN_BRIGHTNESS);
@@ -38,11 +39,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->speedSlider->setValue(SPEED);
     ui->tempSlider->setValue(TEMP);
     ui->thresholdSlider->setValue(THRESHOLD);
-    ui->pollingSlider->setValue(UPDATE_TIME_MS);
+
+    const auto temp = UPDATE_TIME_MS;
+    //After setRange, UPDATE_TIME_MS changes to 1000 for reasons unknown when using GDI.
+    ui->pollingSlider->setRange(UPDATE_TIME_MIN, UPDATE_TIME_MAX);
+    ui->pollingLabel->setText(QString::number(temp));
+    ui->pollingSlider->setValue(temp);
+    //////////////////////////////////////////////////////////////////////
 
     this->setWindowTitle("Gammy");
     this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
-
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
     this->setWindowIcon(appIcon);
 
@@ -266,6 +272,8 @@ void MainWindow::on_pollingSlider_sliderReleased()
 void MainWindow::on_closeButton_clicked()
 {
     MainWindow::quitClicked = true;
+    MainWindow::hide();
+    trayIcon->hide();
 }
 
 void MainWindow::on_hideButton_clicked()

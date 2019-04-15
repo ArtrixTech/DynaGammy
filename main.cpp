@@ -35,9 +35,9 @@ unsigned short	OFFSET          = 70;
 unsigned char	SPEED           = 2;
 unsigned char	TEMP            = 1;
 unsigned char	THRESHOLD       = 32;
-unsigned short	UPDATE_TIME_MS  = 100;
-unsigned short	UPDATE_TIME_MIN = 10;
-unsigned short	UPDATE_TIME_MAX = 500;
+unsigned short	UPDATE_TIME_MS  = 50;
+unsigned short	UPDATE_TIME_MIN;
+unsigned short	UPDATE_TIME_MAX;
 
 unsigned short imgBr       = DEFAULT_BRIGHTNESS;  //Brightness of a screenshot
 unsigned short scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
@@ -51,83 +51,6 @@ ID3D11DeviceContext*	d3d_context;
 IDXGIOutput1*			output1;
 IDXGIOutputDuplication* duplication;
 D3D11_TEXTURE2D_DESC	tex_desc;
-
-bool useGDI = false;
-
-void readSettings()
-{
-#ifdef dbg
-    printf("Reading settings...\n");
-#endif
-
-    std::string filename = "gammySettings.cfg";
-
-#ifdef dbg
-    printf("Opening filestream...\n");
-#endif
-    std::fstream file(filename, std::fstream::in | std::fstream::out | std::fstream::app);
-
-    if(file.is_open())
-    {
-        #ifdef dbg
-        printf("File opened successfully.\n");
-        #endif
-        if(std::filesystem::file_size(filename) == 0)
-        {
-            #ifdef dbg
-            printf("File is empty. Filling with defaults...\n");
-            #endif
-
-            std::string newLines [] =
-            {
-                "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
-                "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
-                "offset=" + std::to_string(OFFSET),
-                "speed=" + std::to_string(SPEED),
-                "temp=" + std::to_string(TEMP),
-                "threshold=" + std::to_string(THRESHOLD),
-                "updateRate=" + std::to_string(UPDATE_TIME_MS)
-            };
-
-            for(auto s : newLines) file << s << std::endl;
-
-            file.close();
-            return;
-        }
-
-        std::string line;
-        int values[settingsCount];
-        int c = 0;
-
-        #ifdef dbg
-        printf("Parsing settings file...\n");
-        #endif
-
-        while (getline(file, line))
-        {
-            #ifdef dbg
-            std::cout << "Parsing line: " << line << std::endl;
-            #endif
-
-            if(line != "") values[c++] = std::stoi(line.substr(line.find("=") + 1));
-        }
-
-        MIN_BRIGHTNESS = UCHAR(values[0]);
-        MAX_BRIGHTNESS = UCHAR(values[1]);
-        OFFSET         = USHORT(values[2]);
-        SPEED          = UCHAR(values[3]);
-        TEMP           = UCHAR(values[4]);
-        THRESHOLD      = UCHAR(values[5]);
-        UPDATE_TIME_MS = USHORT(values[6]);
-
-        file.close();
-    }
-
-    if (useGDI)
-    {
-        if(UPDATE_TIME_MS < UPDATE_TIME_MIN) UPDATE_TIME_MS = UPDATE_TIME_MIN;
-    }
-}
 
 void getBrightness(unsigned char* buf)
 {
@@ -169,7 +92,8 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
     SetDeviceGammaRamp(screenDC, gammaArr);
 }
 
-bool initDXGI() {
+bool initDXGI()
+{
     #ifdef dbg
     printf("Initializing DXGI...\n");
     #endif
@@ -203,7 +127,7 @@ bool initDXGI() {
 
     pFactory->Release();
 
-#ifdef dbg
+    #ifdef dbg
     //Get GPU info
     for (UINT i = 0; i < vAdapters.size(); ++i)
     {
@@ -219,7 +143,7 @@ bool initDXGI() {
 
         wprintf(L"Adapter %i: %lS\n", i, desc.Description);
     }
-#endif
+    #endif
 
     //Get the monitors attached to the GPUs. We don't use IDXGIOutput1 because it lacks EnumOuputs.
     IDXGIOutput* output;
@@ -250,7 +174,7 @@ bool initDXGI() {
         return false;
     }
 
-#ifdef dbg
+    #ifdef dbg
     //Print monitor info.
     for (size_t i = 0; i < vOutputs.size(); ++i)
     {
@@ -265,7 +189,7 @@ bool initDXGI() {
 
         wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
     }
-#endif
+    #endif
 
     //Create a Direct3D device to access the OutputDuplication interface
     IDXGIAdapter1* d3d_adapter;
@@ -397,12 +321,6 @@ bool initDXGI() {
 
         return false;
     }
-
-    //Get output duplication description.
-    //DXGI_OUTDUPL_DESC duplication_desc;
-    //duplication->GetDesc(&duplication_desc);
-    //If duplication_desc.DesktopImageInSystemMemory is true you can use MapDesktopSurface/UnMapDesktopSurface to retrieve the pixels.
-    //Otherwise you need to use a surface.
 
     output1->Release();
     d3d_device->Release();
@@ -632,7 +550,7 @@ void adjustBrightness(Args &args)
     #endif
 }
 
-void app(MainWindow* wnd)
+void app(MainWindow* wnd, bool useGDI)
 {
     #ifdef dbg
     printf("Starting routine...\n");
@@ -646,7 +564,7 @@ void app(MainWindow* wnd)
     //Buffer to store screen pixels
     unsigned char* buf = nullptr;
     calcBufLen(w, h);
-    //buf = new unsigned char[bufLen];
+    if(useGDI) buf = new unsigned char[bufLen];
 
     bool forceChange = true;
 
@@ -689,12 +607,15 @@ void app(MainWindow* wnd)
     }
 
     setGDIBrightness(DEFAULT_BRIGHTNESS, 1, 1);
-    ReleaseDXResources();
+    if(useGDI) delete[] buf;
+    else ReleaseDXResources();
     QApplication::quit();
 }
 
 bool checkOneInstance(const char* name);
 void checkGammaRange();
+void readSettings();
+void setPollingRange(unsigned short min, unsigned short max);
 
 int main(int argc, char *argv[])
 {
@@ -709,24 +630,101 @@ int main(int argc, char *argv[])
     //#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
     checkOneInstance("Gammy");
+
+    bool useGDI = false;
+
+    if (!initDXGI() || useGDI)
+    {
+        useGDI = true;
+        setPollingRange(1000, 5000);
+    }
+    else setPollingRange(10, 500);
+
     readSettings();
-    SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
     QApplication a(argc, argv);
     MainWindow wnd;
 
     checkGammaRange();
 
-    if (!initDXGI() || useGDI)
-    {
-        useGDI = true;
-        UPDATE_TIME_MIN = 1000;
-        UPDATE_TIME_MAX = 5000;
-    }
-
-    std::thread t(app, &wnd);
+    std::thread t(app, &wnd, useGDI);
     t.detach();
     return a.exec();
+}
+
+//////////////////////////////////////////////
+
+void readSettings()
+{
+#ifdef dbg
+    printf("Reading settings...\n");
+#endif
+
+    std::string filename = "gammySettings.cfg";
+
+#ifdef dbg
+    printf("Opening filestream...\n");
+#endif
+    std::fstream file(filename, std::fstream::in | std::fstream::out | std::fstream::app);
+
+    if(file.is_open())
+    {
+        #ifdef dbg
+        printf("File opened successfully.\n");
+        #endif
+        if(std::filesystem::file_size(filename) == 0)
+        {
+            #ifdef dbg
+            printf("File is empty. Filling with defaults...\n");
+            #endif
+
+            std::string newLines [] =
+            {
+                "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
+                "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
+                "offset=" + std::to_string(OFFSET),
+                "speed=" + std::to_string(SPEED),
+                "temp=" + std::to_string(TEMP),
+                "threshold=" + std::to_string(THRESHOLD),
+                "updateRate=" + std::to_string(UPDATE_TIME_MS)
+            };
+
+            for(auto s : newLines) file << s << std::endl;
+
+            file.close();
+            return;
+        }
+
+        std::string line;
+        int values[settingsCount];
+        int c = 0;
+
+        #ifdef dbg
+        printf("Parsing settings file...\n");
+        #endif
+
+        while (getline(file, line))
+        {
+            #ifdef dbg
+            std::cout << "Parsing line: " << line << std::endl;
+            #endif
+
+            if(line != "") values[c++] = std::stoi(line.substr(line.find("=") + 1));
+        }
+
+        MIN_BRIGHTNESS = UCHAR(values[0]);
+        MAX_BRIGHTNESS = UCHAR(values[1]);
+        OFFSET         = USHORT(values[2]);
+        SPEED          = UCHAR(values[3]);
+        TEMP           = UCHAR(values[4]);
+        THRESHOLD      = UCHAR(values[5]);
+        UPDATE_TIME_MS = USHORT(values[6]);
+
+        if(UPDATE_TIME_MS < UPDATE_TIME_MIN) UPDATE_TIME_MS = UPDATE_TIME_MIN;
+        if(UPDATE_TIME_MS > UPDATE_TIME_MAX) UPDATE_TIME_MS = UPDATE_TIME_MAX;
+
+        file.close();
+    }
 }
 
 void checkGammaRange()
@@ -812,4 +810,9 @@ bool checkOneInstance(const char* name)
     }
 
     return true;
+}
+
+void setPollingRange(unsigned short min, unsigned short max) {
+    UPDATE_TIME_MIN = min;
+    UPDATE_TIME_MAX = max;
 }
