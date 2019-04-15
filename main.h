@@ -24,7 +24,6 @@ extern unsigned short	UPDATE_TIME_MIN, UPDATE_TIME_MAX;
 
 extern unsigned short scrBr;
 extern unsigned short targetScrBr;
-extern bool useGDI;
 
 extern int w, h;
 
