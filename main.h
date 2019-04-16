@@ -2,7 +2,6 @@
 #define MAIN_H
 
 #endif // MAIN_H
-
 //#define dbg
 
 constexpr unsigned char MIN_BRIGHTNESS_LIMIT = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
@@ -24,7 +23,5 @@ extern unsigned short	UPDATE_TIME_MIN, UPDATE_TIME_MAX;
 
 extern unsigned short scrBr;
 extern unsigned short targetScrBr;
-
-extern int w, h;
 
 void setGDIBrightness(unsigned short brightness, float gdiv, float bdiv);
