@@ -38,30 +38,8 @@ unsigned short	UPDATE_TIME_MAX;
 unsigned short scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
 unsigned short targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
 
-HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
-
 int w, h, bufLen;
 int calcBufLen(int &w, int &h);
-
-unsigned short getBrightness(unsigned char* buf)
-{
-    UCHAR r = buf[2];
-    UCHAR g = buf[1];
-    UCHAR b = buf[0];
-
-    int colorSum = 0;
-
-    for (auto i = bufLen; i > 0; i -= 4)
-    {
-        r = buf[i + 2];
-        g = buf[i + 1];
-        b = buf[i];
-
-        colorSum += (r + g + b) / 3;
-    }
-
-    return colorSum / (w * h); //Assigns a value between 0 and 255
-}
 
 struct DXGIDupl
 {
@@ -445,6 +423,16 @@ struct DXGIDupl
     }
 };
 
+struct Args {
+    //Arguments to be passed to the AdjustBrightness thread
+    short imgDelta = 0;
+    size_t threadCount = 0;
+    MainWindow* w;
+    unsigned short imgBr;
+};
+
+HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
+
 void getGDISnapshot(unsigned char* buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
@@ -477,6 +465,26 @@ void getGDISnapshot(unsigned char* buf)
     DeleteDC(memoryDC);
 }
 
+unsigned short getBrightness(unsigned char* buf)
+{
+    UCHAR r = buf[2];
+    UCHAR g = buf[1];
+    UCHAR b = buf[0];
+
+    int colorSum = 0;
+
+    for (auto i = bufLen; i > 0; i -= 4)
+    {
+        r = buf[i + 2];
+        g = buf[i + 1];
+        b = buf[i];
+
+        colorSum += (r + g + b) / 3;
+    }
+
+    return colorSum / (w * h); //Assigns a value between 0 and 255
+}
+
 void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 {
     if (brightness > DEFAULT_BRIGHTNESS) {
@@ -496,14 +504,6 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 
     SetDeviceGammaRamp(screenDC, gammaArr);
 }
-
-//Arguments to be passed to the AdjustBrightness thread
-struct Args {
-    short imgDelta = 0;
-    size_t threadCount = 0;
-    MainWindow* w;
-    unsigned short imgBr;
-};
 
 void adjustBrightness(Args &args)
 {
