@@ -310,7 +310,7 @@ struct DXGIDupl
         return true;
     }
 
-    bool getDXGISnapshot(unsigned char* buf, unsigned short &imgBr)
+    bool getDXGISnapshot(unsigned char* &buf)
     {
         HRESULT hr;
 
@@ -399,8 +399,6 @@ struct DXGIDupl
         buf = reinterpret_cast<unsigned char*>(map.pData);
         //memcpy(buf, map.pData, map.DepthPitch);
 
-        imgBr = getBrightness(buf);
-
         return true;
     }
 
@@ -447,7 +445,7 @@ struct DXGIDupl
     }
 };
 
-void getGDISnapshot(unsigned char* buf, unsigned short &imgBr)
+void getGDISnapshot(unsigned char* buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
     HDC memoryDC = CreateCompatibleDC(screenDC); //Memory DC for GDI screenshot
@@ -471,8 +469,7 @@ void getGDISnapshot(unsigned char* buf, unsigned short &imgBr)
     bminfoheader.biClrImportant = 0;
 
     GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
-
-    imgBr = getBrightness(buf);
+    Sleep(UPDATE_TIME_MS);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);
@@ -505,7 +502,7 @@ struct Args {
     short imgDelta = 0;
     size_t threadCount = 0;
     MainWindow* w;
-    unsigned short* imgBr;
+    unsigned short imgBr;
 };
 
 void adjustBrightness(Args &args)
@@ -519,7 +516,7 @@ void adjustBrightness(Args &args)
     short sleeptime = (100 - args.imgDelta / 4) / SPEED;
     args.imgDelta = 0;
 
-    targetScrBr = DEFAULT_BRIGHTNESS - *args.imgBr + OFFSET;
+    targetScrBr = DEFAULT_BRIGHTNESS - args.imgBr + OFFSET;
 
     if		(targetScrBr > MAX_BRIGHTNESS) targetScrBr = MAX_BRIGHTNESS;
     else if (targetScrBr < MIN_BRIGHTNESS) targetScrBr = MIN_BRIGHTNESS;
@@ -578,18 +575,19 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
     {
         if (!useGDI)
         {
-            while (!dx.getDXGISnapshot(buf, imgBr))
+            while (!dx.getDXGISnapshot(buf))
             {
                 dx.restartDXGI();
             }
         }
         else
         {
-            getGDISnapshot(buf, imgBr);
-            Sleep(UPDATE_TIME_MS);
+            getGDISnapshot(buf);
         }
 
-        args.imgBr = &imgBr;
+        imgBr = getBrightness(buf);
+
+        args.imgBr = imgBr;
         args.imgDelta += abs(oldImgBr - imgBr);
 
         if (args.imgDelta > THRESHOLD || forceChange)
@@ -629,7 +627,7 @@ int main(int argc, char *argv[])
     freopen_s(&f2, "CONOUT$", "w", stdout);
     freopen_s(&f3, "CONOUT$", "w", stderr);
     #endif
-
+    SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
     checkInstance();
 
     DXGIDupl dx;
