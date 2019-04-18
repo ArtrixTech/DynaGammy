@@ -121,7 +121,7 @@ struct DXGIDupl
             }
         }
 
-        if (vOutputs.size() <= 0)
+        if (vOutputs.empty())
         {
             #ifdef dbg
             std::printf("Error: no outputs found (%zu).\n", vOutputs.size());
@@ -427,8 +427,8 @@ struct Args {
     //Arguments to be passed to the AdjustBrightness thread
     short imgDelta = 0;
     size_t threadCount = 0;
-    MainWindow* w;
-    unsigned short imgBr;
+    MainWindow* w = nullptr;
+    unsigned short imgBr = 0;
 };
 
 HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
@@ -465,7 +465,7 @@ void getGDISnapshot(unsigned char* buf)
     DeleteDC(memoryDC);
 }
 
-unsigned short getBrightness(unsigned char* buf)
+unsigned short getBrightness(const unsigned char* buf)
 {
     UCHAR r = buf[2];
     UCHAR g = buf[1];
@@ -502,7 +502,7 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
         gammaArr[2][i] = WORD (gammaVal / bdiv);
     }
 
-    SetDeviceGammaRamp(screenDC, gammaArr);
+    SetDeviceGammaRamp(screenDC, LPVOID(gammaArr));
 }
 
 void adjustBrightness(Args &args)
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
     checkInstance();
 
-    DXGIDupl dx;
+    DXGIDupl dx {};
     bool useGDI = false;
 
     if (!dx.initDXGI() || useGDI)
@@ -760,7 +760,7 @@ void readSettings()
                 "updateRate=" + std::to_string(UPDATE_TIME_MS)
             };
 
-            for(auto s : newLines) file << s << std::endl;
+            for(const auto &s : newLines) file << s << std::endl;
 
             file.close();
             return;
@@ -780,7 +780,7 @@ void readSettings()
             std::cout << "Parsing line: " << line << std::endl;
             #endif
 
-            if(line != "") values[c++] = std::stoi(line.substr(line.find("=") + 1));
+            if(!line.empty()) values[c++] = std::stoi(line.substr(line.find('=') + 1));
         }
 
         MIN_BRIGHTNESS = UCHAR(values[0]);

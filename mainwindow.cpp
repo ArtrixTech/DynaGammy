@@ -77,13 +77,13 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
     move(event->globalX()-mouseClickXCoord,event->globalY()-mouseClickYCoord);
 }
 
-void toggleRegkey(QAction* &startupAction)
+void toggleRegkey(bool isChecked)
 {
     LSTATUS s;
     HKEY hKey = nullptr;
     LPCWSTR subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
-    if (startupAction->isChecked())
+    if (isChecked)
     {
         WCHAR path[MAX_PATH + 3], tmpPath[MAX_PATH + 3];
         GetModuleFileName(nullptr, tmpPath, MAX_PATH + 1);
@@ -141,7 +141,8 @@ QMenu* MainWindow::createMenu()
 {
     QAction* startupAction = new QAction("&Run at startup", this);
     startupAction->setCheckable(true);
-    connect(startupAction, &QAction::triggered, this, std::bind(toggleRegkey, startupAction));
+
+    connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
@@ -152,7 +153,7 @@ QMenu* MainWindow::createMenu()
     else startupAction->setChecked(false);
 
     QAction* quitAction = new QAction("&Quit Gammy", this);
-    connect(quitAction, &QAction::triggered, this, [&]{on_closeButton_clicked();});
+    connect(quitAction, &QAction::triggered, this, [=]{on_closeButton_clicked();});
 
     auto menu = new QMenu(this);
     menu->addAction(startupAction);
@@ -227,7 +228,7 @@ void updateFile()
             "updateRate=" + std::to_string(UPDATE_TIME_MS)
         };
 
-        for(auto s : newLines) file << s << std::endl;
+        for(const auto &s : newLines) file << s << std::endl;
         file.close();
     }
 }

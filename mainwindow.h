@@ -45,14 +45,14 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;
-    QMenu* trayIconMenu;
+    QMenu* trayIconMenu {};
     QMenu* createMenu();
 
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void on_close_clicked();
-    int mouseClickXCoord;
-    int mouseClickYCoord;
+    int mouseClickXCoord {};
+    int mouseClickYCoord {};
 };
 
 #endif // MAINWINDOW_H
