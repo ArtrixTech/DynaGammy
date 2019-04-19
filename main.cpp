@@ -11,6 +11,7 @@
 #include <dxgi.h>
 #include <dxgi1_2.h>
 #include <d3d11.h>
+#include <array>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -38,8 +39,8 @@ unsigned short	UPDATE_TIME_MAX;
 unsigned short scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
 unsigned short targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
 
-int w, h, bufLen;
-int calcBufLen(int &w, int &h);
+static HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
+static int w, h, screenRes, bufLen;
 
 struct DXGIDupl
 {
@@ -57,230 +58,247 @@ struct DXGIDupl
         std::cout << "Initializing DXGI..." << std::endl;
         #endif
 
+        IDXGIOutput* output;
+        IDXGIAdapter1* pAdapter;
+        std::vector<IDXGIOutput*> vOutputs; //Monitors vector
+        std::vector<IDXGIAdapter1*> vAdapters; //GPUs vector
+
         HRESULT hr;
-        IDXGIFactory1* pFactory;
 
         //Retrieve a IDXGIFactory to enumerate the adapters
-        hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
-
-        if (hr != S_OK)
         {
-            #ifdef dbg
-            std::cout << "Error: failed to retrieve the IDXGIFactory.\n" << std::endl;
-            getchar();
-            #endif
-            return false;
-        }
+            IDXGIFactory1* pFactory;
 
-        IDXGIAdapter1* pAdapter;
-        std::vector<IDXGIAdapter1*> vAdapters; //GPUs vector
-        std::vector<IDXGIOutput*>   vOutputs; //Monitors vector
-
-        UINT i = 0;
-
-        while (pFactory->EnumAdapters1(i++, &pAdapter) != DXGI_ERROR_NOT_FOUND)
-        {
-            vAdapters.push_back(pAdapter);
-        }
-
-        pFactory->Release();
-
-        #ifdef dbg
-        //Get GPU info
-        for (UINT i = 0; i < vAdapters.size(); ++i)
-        {
-            DXGI_ADAPTER_DESC1 desc;
-            pAdapter = vAdapters[i];
-            hr = pAdapter->GetDesc1(&desc);
+            hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
 
             if (hr != S_OK)
             {
-                std::cout << "Error: failed to get a description for the adapter: " << i << std::endl;
-                continue;
+                #ifdef dbg
+                std::cout << "Error: failed to retrieve the IDXGIFactory.\n" << std::endl;
+                getchar();
+                #endif
+                return false;
             }
 
-            std::wprintf(L"Adapter %i: %lS\n", i, desc.Description);
+            UINT i = 0;
+
+            while (pFactory->EnumAdapters1(i++, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+            {
+                vAdapters.push_back(pAdapter);
+            }
+
+            pFactory->Release();
+
+            #ifdef dbg
+            //Get GPU info
+            DXGI_ADAPTER_DESC1 desc;
+
+            for (UINT i = 0; i < vAdapters.size(); ++i)
+            {
+                pAdapter = vAdapters[i];
+                hr = pAdapter->GetDesc1(&desc);
+
+                if (hr != S_OK)
+                {
+                    std::cout << "Error: failed to get a description for the adapter: " << i << std::endl;
+                    continue;
+                }
+
+                std::wprintf(L"Adapter %i: %lS\n", i, desc.Description);
+            }
+            #endif
         }
-        #endif
 
-        //Get the monitors attached to the GPUs. We don't use IDXGIOutput1 because it lacks EnumOuputs.
-        IDXGIOutput* output;
-
-        UINT j;
-
-        for (UINT i = 0; i < vAdapters.size(); ++i)
+        //Get the monitors attached to the GPUs
         {
-            j = 0;
-            pAdapter = vAdapters[i];
-            while (pAdapter->EnumOutputs(j++, &output) != DXGI_ERROR_NOT_FOUND)
+            UINT j;
+
+            for (UINT i = 0; i < vAdapters.size(); ++i)
+            {
+                j = 0;
+                pAdapter = vAdapters[i];
+                while (pAdapter->EnumOutputs(j++, &output) != DXGI_ERROR_NOT_FOUND)
+                {
+                    #ifdef dbg
+                    std::printf("Found monitor %d on adapter %d\n", j, i);
+                    #endif
+                    vOutputs.push_back(output);
+                }
+            }
+
+            if (vOutputs.empty())
             {
                 #ifdef dbg
-                std::printf("Found monitor %d on adapter %d\n", j, i);
+                std::printf("Error: no outputs found (%zu).\n", vOutputs.size());
+                getchar();
                 #endif
-                vOutputs.push_back(output);
-            }
-        }
 
-        if (vOutputs.empty())
-        {
+                return false;
+            }
+
             #ifdef dbg
-            std::printf("Error: no outputs found (%zu).\n", vOutputs.size());
-            getchar();
+                //Print monitor info.
+                DXGI_OUTPUT_DESC desc;
+
+                for (size_t i = 0; i < vOutputs.size(); ++i)
+                {
+                    output = vOutputs[i];
+                    hr = output->GetDesc(&desc);
+
+                    if (hr != S_OK)
+                    {
+                        printf("Error: failed to retrieve a DXGI_OUTPUT_DESC for output %llu.\n", i);
+                        continue;
+                    }
+
+                    std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
+                }
             #endif
-
-            return false;
         }
-
-        #ifdef dbg
-        //Print monitor info.
-        for (size_t i = 0; i < vOutputs.size(); ++i)
-        {
-            DXGI_OUTPUT_DESC desc;
-            output = vOutputs[i];
-            hr = output->GetDesc(&desc);
-
-            if (hr != S_OK) {
-                printf("Error: failed to retrieve a DXGI_OUTPUT_DESC for output %llu.\n", i);
-                continue;
-            }
-
-            std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
-        }
-        #endif
 
         //Create a Direct3D device to access the OutputDuplication interface
-        IDXGIAdapter1* d3d_adapter;
-        D3D_FEATURE_LEVEL d3d_feature_level;
-
-        UINT use_adapter = 0;
-
-        if (vAdapters.size() <= use_adapter)
         {
-            #ifdef dbg
-            std::printf("Invalid adapter index: %d, we only have: %zu - 1\n", use_adapter, vAdapters.size());
-            getchar();
-            #endif
+            D3D_FEATURE_LEVEL d3d_feature_level;
+            IDXGIAdapter1* d3d_adapter;
+            UINT use_adapter = 0;
 
-            return false;
-        }
-
-        d3d_adapter = vAdapters[use_adapter];
-
-        if (!d3d_adapter)
-        {
-            #ifdef dbg
-            std::cout << "Error: the stored adapter is nullptr." << std::endl;
-            getchar();
-            #endif
-
-            return false;
-        }
-
-        hr = D3D11CreateDevice(
-            d3d_adapter,			  // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
-            D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
-            nullptr,                  // Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicable.
-            NULL,                     // Flags: maybe we need to use D3D11_CREATE_DEVICE_BGRA_SUPPORT because desktop duplication is using this.
-            nullptr,                  // Feature Levels:  what version to use.
-            0,                        // Number of feature levels.
-            D3D11_SDK_VERSION,        // The SDK version, use D3D11_SDK_VERSION
-            &d3d_device,              // OUT: the ID3D11Device object.
-            &d3d_feature_level,       // OUT: the selected feature level.
-            &d3d_context);            // OUT: the ID3D11DeviceContext that represents the above features.
-
-        d3d_context->Release();
-        d3d_adapter->Release();
-
-        if (hr != S_OK)
-        {
-            #ifdef dbg
-            std::cout << "Error: failed to create the D3D11 Device." << std::endl;
-
-            if (hr == E_INVALIDARG)
+            if (vAdapters.size() <= use_adapter)
             {
-                std::cout << "Got INVALID arg passed into D3D11CreateDevice. Did you pass a adapter + a driver which is not the UNKNOWN driver?" << std::endl;
+                #ifdef dbg
+                std::printf("Invalid adapter index: %d, we only have: %zu - 1\n", use_adapter, vAdapters.size());
+                getchar();
+                #endif
+
+                return false;
             }
 
-            getchar();
-            #endif
+            d3d_adapter = vAdapters[use_adapter];
 
-            return false;
+            if (!d3d_adapter)
+            {
+                #ifdef dbg
+                std::cout << "Error: the stored adapter is nullptr." << std::endl;
+                getchar();
+                #endif
+
+                return false;
+            }
+
+            hr = D3D11CreateDevice(
+                d3d_adapter,			  // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
+                D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
+                nullptr,                  // Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicable.
+                NULL,                     // Flags: maybe we need to use D3D11_CREATE_DEVICE_BGRA_SUPPORT because desktop duplication is using this.
+                nullptr,                  // Feature Levels:  what version to use.
+                0,                        // Number of feature levels.
+                D3D11_SDK_VERSION,        // The SDK version, use D3D11_SDK_VERSION
+                &d3d_device,              // OUT: the ID3D11Device object.
+                &d3d_feature_level,       // OUT: the selected feature level.
+                &d3d_context);            // OUT: the ID3D11DeviceContext that represents the above features.
+
+            d3d_context->Release();
+            d3d_adapter->Release();
+
+            if (hr != S_OK)
+            {
+                #ifdef dbg
+                std::cout << "Error: failed to create the D3D11 Device." << std::endl;
+
+                if (hr == E_INVALIDARG)
+                {
+                    std::cout << "Got INVALID arg passed into D3D11CreateDevice. Did you pass a adapter + a driver which is not the UNKNOWN driver?" << std::endl;
+                }
+
+                getchar();
+                #endif
+
+                return false;
+            }
         }
 
-        UINT use_monitor = 0;
-        output = vOutputs[use_monitor];
-
-        if (vOutputs.size() <= use_monitor)
+        //Choose what monitor to use
         {
-            #ifdef dbg
-            std::printf("Invalid monitor index: %d, we only have: %zu - 1\n", use_monitor, vOutputs.size());
-            getchar();
-            #endif
+            UINT use_monitor = 0;
+            output = vOutputs[use_monitor];
 
-            return false;
+            if (vOutputs.size() <= use_monitor)
+            {
+                #ifdef dbg
+                std::printf("Invalid monitor index: %d, we only have: %zu - 1\n", use_monitor, vOutputs.size());
+                getchar();
+                #endif
+
+                return false;
+            }
+
+            if (!output)
+            {
+                #ifdef dbg
+                std::cout << "No valid output found. The output is nullptr." << std::endl;
+                getchar();
+                #endif
+
+                return false;
+            }
         }
 
-        if (!output)
+        //Set texture properties
         {
-            #ifdef dbg
-            std::cout << "No valid output found. The output is nullptr." << std::endl;
-            getchar();
-            #endif
+            DXGI_OUTPUT_DESC output_desc;
+            hr = output->GetDesc(&output_desc);
 
-            return false;
+            if (hr != S_OK)
+            {
+                #ifdef dbg
+                std::cout << "Error: failed to get output description." << std::endl;
+                getchar();
+                #endif
+
+                return false;
+            }
+
+            tex_desc.Width = output_desc.DesktopCoordinates.right;
+            tex_desc.Height = output_desc.DesktopCoordinates.bottom;
+            tex_desc.MipLevels = 1;
+            tex_desc.ArraySize = 1;
+            tex_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            tex_desc.SampleDesc.Count = 1;
+            tex_desc.SampleDesc.Quality = 0;
+            tex_desc.Usage = D3D11_USAGE_STAGING;
+            tex_desc.BindFlags = 0;
+            tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            tex_desc.MiscFlags = 0;
         }
 
-        hr = output->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
-
-        if (hr != S_OK)
+        //Initialize output duplication
         {
-            #ifdef dbg
-            std::cout << "Error: failed to query the IDXGIOutput1 interface." << std::endl;
-            getchar();
-            #endif
+            hr = output->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
 
-            return false;
+            if (hr != S_OK)
+            {
+                #ifdef dbg
+                std::cout << "Error: failed to query the IDXGIOutput1 interface." << std::endl;
+                getchar();
+                #endif
+
+                return false;
+            }
+
+            hr = output1->DuplicateOutput(d3d_device, &duplication);
+
+            if (hr != S_OK)
+            {
+                #ifdef dbg
+                std::cout << "Error: DuplicateOutput failed." << std::endl;
+                getchar();
+                #endif
+
+                return false;
+            }
+
+            output1->Release();
+            d3d_device->Release();
         }
-
-        DXGI_OUTPUT_DESC output_desc;
-        hr = output->GetDesc(&output_desc);
-
-        if (hr != S_OK)
-        {
-            #ifdef dbg
-            std::cout << "Error: failed to get output description." << std::endl;
-            getchar();
-            #endif
-
-            return false;
-        }
-
-        tex_desc.Width = output_desc.DesktopCoordinates.right;
-        tex_desc.Height = output_desc.DesktopCoordinates.bottom;
-        tex_desc.MipLevels = 1;
-        tex_desc.ArraySize = 1;
-        tex_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        tex_desc.SampleDesc.Count = 1;
-        tex_desc.SampleDesc.Quality = 0;
-        tex_desc.Usage = D3D11_USAGE_STAGING;
-        tex_desc.BindFlags = 0;
-        tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        tex_desc.MiscFlags = 0;
-
-        hr = output1->DuplicateOutput(d3d_device, &duplication);
-
-        if (hr != S_OK)
-        {
-            #ifdef dbg
-            std::cout << "Error: DuplicateOutput failed." << std::endl;
-            getchar();
-            #endif
-
-            return false;
-        }
-
-        output1->Release();
-        d3d_device->Release();
 
         for (auto adapter : vAdapters) adapter->Release();
         for (auto output : vOutputs) output->Release();
@@ -423,16 +441,6 @@ struct DXGIDupl
     }
 };
 
-struct Args {
-    //Arguments to be passed to the AdjustBrightness thread
-    short imgDelta = 0;
-    size_t threadCount = 0;
-    MainWindow* w = nullptr;
-    unsigned short imgBr = 0;
-};
-
-HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
-
 void getGDISnapshot(unsigned char* buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
@@ -465,13 +473,13 @@ void getGDISnapshot(unsigned char* buf)
     DeleteDC(memoryDC);
 }
 
-unsigned short getBrightness(const unsigned char* buf)
+int getBrightness(const unsigned char* buf)
 {
     UCHAR r = buf[2];
     UCHAR g = buf[1];
     UCHAR b = buf[0];
 
-    int colorSum = 0;
+    unsigned int colorSum = 0;
 
     for (auto i = bufLen; i > 0; i -= 4)
     {
@@ -479,10 +487,12 @@ unsigned short getBrightness(const unsigned char* buf)
         g = buf[i + 1];
         b = buf[i];
 
-        colorSum += (r + g + b) / 3;
+        colorSum += (r + g + b);
     }
 
-    return colorSum / (w * h); //Assigns a value between 0 and 255
+    colorSum /= 3;
+
+    return colorSum / screenRes; //Assigns a value between 0 and 255
 }
 
 void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
@@ -505,6 +515,14 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
     SetDeviceGammaRamp(screenDC, LPVOID(gammaArr));
 }
 
+struct Args {
+    //Arguments to be passed to the AdjustBrightness thread
+    short imgDelta = 0;
+    unsigned short imgBr = 0;
+    size_t threadCount = 0;
+    MainWindow* w = nullptr;
+};
+
 void adjustBrightness(Args &args)
 {
     size_t threadId = ++args.threadCount;
@@ -514,7 +532,7 @@ void adjustBrightness(Args &args)
     #endif
 
     short sleeptime = (100 - args.imgDelta / 4) / SPEED;
-    args.imgDelta = 0;
+    //args.imgDelta = 0;
 
     targetScrBr = DEFAULT_BRIGHTNESS - args.imgBr + OFFSET;
 
@@ -541,7 +559,8 @@ void adjustBrightness(Args &args)
             break;
         }
 
-        Sleep(sleeptime);
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
+        //Sleep(sleeptime);
     }
 
     #ifdef dbg
@@ -555,21 +574,33 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
     std::cout << "Starting routine..." << std::endl;
     #endif
 
-    USHORT imgBr      = DEFAULT_BRIGHTNESS;
-    USHORT oldImgBr   = DEFAULT_BRIGHTNESS;
-    UCHAR  oldMin     = MIN_BRIGHTNESS;
-    UCHAR  oldMax     = MAX_BRIGHTNESS;
-    USHORT oldOffset  = OFFSET;
+    auto imgBr      = DEFAULT_BRIGHTNESS;
+    auto oldImgBr   = DEFAULT_BRIGHTNESS;
+    auto oldMin     = MIN_BRIGHTNESS;
+    auto oldMax     = MAX_BRIGHTNESS;
+    auto oldOffset  = OFFSET;
 
     //Buffer to store screen pixels
     unsigned char* buf = nullptr;
-    bufLen = calcBufLen(w, h);
+
+    int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    int y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    int x2 = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int y2 = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    w = x2 - x1;
+    h = y2 - y1;
+    screenRes = w * h;
+    bufLen = screenRes * 4;
+
     if(useGDI) buf = new unsigned char[bufLen];
 
     Args args;
     args.w = wnd;
 
     bool forceChange = true;
+
+    short imgDelta = 0;
 
     while (!wnd->quitClicked)
     {
@@ -586,12 +617,14 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
         }
 
         imgBr = getBrightness(buf);
+        imgDelta += abs(oldImgBr - imgBr);
 
-        args.imgBr = imgBr;
-        args.imgDelta += abs(oldImgBr - imgBr);
+        if (imgDelta > THRESHOLD || forceChange)
+        { 
+            args.imgBr = imgBr;
+            args.imgDelta = imgDelta;
+            imgDelta = 0;
 
-        if (args.imgDelta > THRESHOLD || forceChange)
-        {
             std::thread t(adjustBrightness, std::ref(args));
             t.detach();
 
@@ -613,10 +646,6 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
     else dx.ReleaseDXResources();
     QApplication::quit();
 }
-
-void checkInstance();
-void checkGammaRange();
-void readSettings();
 
 int main(int argc, char *argv[])
 {
@@ -749,8 +778,7 @@ void readSettings()
             std::cout << "File is empty. Filling with defaults..." << std::endl;
             #endif
 
-            std::string newLines [] =
-            {
+            std::array<std::string, settingsCount> lines = {
                 "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
                 "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
                 "offset=" + std::to_string(OFFSET),
@@ -760,7 +788,7 @@ void readSettings()
                 "updateRate=" + std::to_string(UPDATE_TIME_MS)
             };
 
-            for(const auto &s : newLines) file << s << std::endl;
+            for(const auto &s : lines) file << s << std::endl;
 
             file.close();
             return;
@@ -796,16 +824,4 @@ void readSettings()
 
         file.close();
     }
-}
-
-int calcBufLen(int &w, int &h)
-{
-    int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    int y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    int x2 = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    int y2 = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-    w = x2 - x1;
-    h = y2 - y1;
-    return w * 4 * h;
 }
