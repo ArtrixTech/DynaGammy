@@ -25,3 +25,7 @@ extern unsigned short scrBr;
 extern unsigned short targetScrBr;
 
 void setGDIBrightness(unsigned short brightness, float gdiv, float bdiv);
+
+void checkInstance();
+void checkGammaRange();
+void readSettings();
