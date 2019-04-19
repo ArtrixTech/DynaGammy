@@ -7,6 +7,7 @@
 #include "ui_mainwindow.h"
 #include "main.h"
 #include <Windows.h>
+#include <array>
 #include <QScreen>
 #include <QSystemTrayIcon>
 #include <QToolTip>
@@ -217,8 +218,7 @@ void updateFile()
 
     if(file.is_open())
     {
-        std::string newLines [] =
-        {
+        std::array<std::string, settingsCount> lines = {
             "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
             "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
             "offset=" + std::to_string(OFFSET),
@@ -228,7 +228,7 @@ void updateFile()
             "updateRate=" + std::to_string(UPDATE_TIME_MS)
         };
 
-        for(const auto &s : newLines) file << s << std::endl;
+        for(const auto &s : lines) file << s << std::endl;
         file.close();
     }
 }
