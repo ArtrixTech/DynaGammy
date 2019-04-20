@@ -710,7 +710,7 @@ QSlider::handle:horizontal
         <number>500</number>
        </property>
        <property name="singleStep">
-        <number>10</number>
+        <number>1</number>
        </property>
        <property name="value">
         <number>10</number>
