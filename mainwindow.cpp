@@ -17,67 +17,6 @@
 #include <iostream>
 #include <fstream>
 
-void updateFile();
-
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    trayIcon(new QSystemTrayIcon(this))
-{
-    ui->setupUi(this);
-
-    ui->minBrLabel->setText(QStringLiteral("%1").arg(MIN_BRIGHTNESS));
-    ui->maxBrLabel->setText(QStringLiteral("%1").arg(MAX_BRIGHTNESS));
-    ui->offsetLabel->setText(QStringLiteral("%1").arg(OFFSET));
-    ui->speedLabel->setText(QStringLiteral("%1").arg(SPEED));
-    ui->tempLabel->setText(QStringLiteral("%1").arg(TEMP));
-    ui->thresholdLabel->setText(QStringLiteral("%1").arg(THRESHOLD));
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
-
-    ui->minBrSlider->setValue(MIN_BRIGHTNESS);
-    ui->maxBrSlider->setValue(MAX_BRIGHTNESS);
-    ui->offsetSlider->setValue(OFFSET);
-    ui->speedSlider->setValue(SPEED);
-    ui->tempSlider->setValue(TEMP);
-    ui->thresholdSlider->setValue(THRESHOLD);
-
-    const auto temp = UPDATE_TIME_MS;
-    //After setRange, UPDATE_TIME_MS changes to 1000 for reasons unknown when using GDI.
-    ui->pollingSlider->setRange(UPDATE_TIME_MIN, UPDATE_TIME_MAX);
-    ui->pollingLabel->setText(QString::number(temp));
-    ui->pollingSlider->setValue(temp);
-    //////////////////////////////////////////////////////////////////////
-
-    this->setWindowTitle("Gammy");
-    this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
-    auto appIcon = QIcon(":res/icons/32x32ball.ico");
-    this->setWindowIcon(appIcon);
-
-    /*Tray icon */
-    auto menu = this->createMenu();
-    this->trayIcon->setContextMenu(menu);
-    this->trayIcon->setIcon(appIcon);
-    this->trayIcon->setToolTip(QString("Gammy"));
-    this->trayIcon->show();
-    connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
-
-    /*Move window to bottom right */
-    QScreen *screen = QGuiApplication::primaryScreen();
-    QRect screenGeometry = screen->availableGeometry();
-    int h = screenGeometry.height();
-    int w = screenGeometry.width();
-    this->move(w - this->width(), h - this->height());
-}
-
-void MainWindow::mousePressEvent(QMouseEvent *event) {
-    mouseClickXCoord = event->x();
-    mouseClickYCoord = event->y();
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent *event) {
-    move(event->globalX()-mouseClickXCoord,event->globalY()-mouseClickYCoord);
-}
-
 void toggleRegkey(bool isChecked)
 {
     LSTATUS s;
@@ -129,12 +68,97 @@ void toggleRegkey(bool isChecked)
     if(hKey) RegCloseKey(hKey);
 }
 
-void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
+void updateFile()
 {
-    if (reason == QSystemTrayIcon::Trigger)
+    std::ofstream file("gammySettings.cfg", std::ofstream::out | std::ofstream::trunc);
+
+    if(file.is_open())
     {
-        MainWindow::updateBrLabel();
-        MainWindow::show();
+        std::array<std::string, settingsCount> lines = {
+            "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
+            "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
+            "offset=" + std::to_string(OFFSET),
+            "speed=" + std::to_string(SPEED),
+            "temp=" + std::to_string(TEMP),
+            "threshold=" + std::to_string(THRESHOLD),
+            "updateRate=" + std::to_string(UPDATE_TIME_MS)
+        };
+
+        for(const auto &s : lines) file << s << std::endl;
+        file.close();
+    }
+}
+
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+{
+    ui->setupUi(this);
+
+    auto appIcon = QIcon(":res/icons/32x32ball.ico");
+
+    /*Set window properties */
+    {
+        this->setWindowTitle("Gammy");
+        this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+        this->setWindowIcon(appIcon);
+    }
+
+    /*Move window to bottom right */
+    {
+        QScreen *screen = QGuiApplication::primaryScreen();
+        QRect screenGeometry = screen->availableGeometry();
+        int h = screenGeometry.height();
+        int w = screenGeometry.width();
+        this->move(w - this->width(), h - this->height());
+    }
+
+    /*Create tray icon */
+    {
+        auto menu = this->createMenu();
+        this->trayIcon->setContextMenu(menu);
+        this->trayIcon->setIcon(appIcon);
+        this->trayIcon->setToolTip(QString("Gammy"));
+        this->trayIcon->show();
+        connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+    }
+
+    /*Set slider properties*/
+    {
+        ui->minBrLabel->setText(QStringLiteral("%1").arg(MIN_BRIGHTNESS));
+        ui->maxBrLabel->setText(QStringLiteral("%1").arg(MAX_BRIGHTNESS));
+        ui->offsetLabel->setText(QStringLiteral("%1").arg(OFFSET));
+        ui->speedLabel->setText(QStringLiteral("%1").arg(SPEED));
+        ui->tempLabel->setText(QStringLiteral("%1").arg(TEMP));
+        ui->thresholdLabel->setText(QStringLiteral("%1").arg(THRESHOLD));
+        ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+
+        ui->minBrSlider->setValue(MIN_BRIGHTNESS);
+        ui->maxBrSlider->setValue(MAX_BRIGHTNESS);
+        ui->offsetSlider->setValue(OFFSET);
+        ui->speedSlider->setValue(SPEED);
+        ui->tempSlider->setValue(TEMP);
+        ui->thresholdSlider->setValue(THRESHOLD);
+
+        /*Set pollingSlider properties*/
+        {
+            const auto temp = UPDATE_TIME_MS; //After setRange, UPDATE_TIME_MS changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
+            ui->pollingSlider->setRange(UPDATE_TIME_MIN, UPDATE_TIME_MAX);
+            ui->pollingLabel->setText(QString::number(temp));
+            ui->pollingSlider->setValue(temp);
+        }
+    }
+
+    /*Make sliders update settings file*/
+    {
+        auto signal = &QAbstractSlider::sliderReleased;
+        auto slot = [=]{updateFile();};
+
+        connect(ui->minBrSlider, signal, slot);
+        connect(ui->maxBrSlider, signal, slot);
+        connect(ui->offsetSlider, signal, slot);
+        connect(ui->speedSlider, signal, slot);
+        connect(ui->tempSlider, signal, slot);
+        connect(ui->thresholdSlider, signal, slot);
+        connect(ui->pollingSlider, signal, slot);
     }
 }
 
@@ -163,14 +187,20 @@ QMenu* MainWindow::createMenu()
     return menu;
 }
 
-MainWindow::~MainWindow()
+void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-    delete ui;
+    if (reason == QSystemTrayIcon::Trigger)
+    {
+        MainWindow::updateBrLabel();
+        MainWindow::show();
+    }
 }
 
 void MainWindow::updateBrLabel() {
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
+
+/////////////////////////////////////////////////////////
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
@@ -212,63 +242,14 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 
 /////////////////////////////////////////////////////////
 
-void updateFile()
-{
-    std::ofstream file("gammySettings.cfg", std::ofstream::out | std::ofstream::trunc);
-
-    if(file.is_open())
-    {
-        std::array<std::string, settingsCount> lines = {
-            "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
-            "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
-            "offset=" + std::to_string(OFFSET),
-            "speed=" + std::to_string(SPEED),
-            "temp=" + std::to_string(TEMP),
-            "threshold=" + std::to_string(THRESHOLD),
-            "updateRate=" + std::to_string(UPDATE_TIME_MS)
-        };
-
-        for(const auto &s : lines) file << s << std::endl;
-        file.close();
-    }
+void MainWindow::mousePressEvent(QMouseEvent *event) {
+    mouseClickXCoord = event->x();
+    mouseClickYCoord = event->y();
 }
 
-void MainWindow::on_minBrSlider_sliderReleased()
-{
-    updateFile();
+void MainWindow::mouseMoveEvent(QMouseEvent *event) {
+    move(event->globalX()-mouseClickXCoord,event->globalY()-mouseClickYCoord);
 }
-
-void MainWindow::on_maxBrSlider_sliderReleased()
-{
-    updateFile();
-}
-
-void MainWindow::on_offsetSlider_sliderReleased()
-{
-    updateFile();
-}
-
-void MainWindow::on_speedSlider_sliderReleased()
-{
-    updateFile();
-}
-
-void MainWindow::on_tempSlider_sliderReleased()
-{
-    updateFile();
-}
-
-void MainWindow::on_thresholdSlider_sliderReleased()
-{
-    updateFile();
-}
-
-void MainWindow::on_pollingSlider_sliderReleased()
-{
-    updateFile();
-}
-
-/////////////////////////////////////////////////////////
 
 void MainWindow::on_closeButton_clicked()
 {
@@ -280,4 +261,9 @@ void MainWindow::on_closeButton_clicked()
 void MainWindow::on_hideButton_clicked()
 {
     this->hide();
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
 }
