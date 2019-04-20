@@ -42,9 +42,8 @@ unsigned short targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and c
 static HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 static int w, h, screenRes, bufLen;
 
-struct DXGIDupl
+class DXGIDupl
 {
-    private:
     ID3D11Device*			d3d_device;
     ID3D11DeviceContext*	d3d_context;
     IDXGIOutput1*			output1;
@@ -306,7 +305,7 @@ struct DXGIDupl
         return true;
     }
 
-    bool getDXGISnapshot(unsigned char* &buf)
+    bool getDXGISnapshot(unsigned char* &buf) noexcept
     {
         HRESULT hr;
 
@@ -432,7 +431,7 @@ struct DXGIDupl
         output1->Release();
     }
 
-    void ReleaseDXResources()
+    ~DXGIDupl()
     {
         duplication->ReleaseFrame();
         output1->Release();
@@ -580,9 +579,6 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
     auto oldMax     = MAX_BRIGHTNESS;
     auto oldOffset  = OFFSET;
 
-    //Buffer to store screen pixels
-    unsigned char* buf = nullptr;
-
     int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
     int y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
     int x2 = GetSystemMetrics(SM_CXVIRTUALSCREEN);
@@ -593,13 +589,14 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
     screenRes = w * h;
     bufLen = screenRes * 4;
 
+    //Buffer to store screen pixels
+    unsigned char* buf = nullptr;
     if(useGDI) buf = new unsigned char[bufLen];
 
     Args args;
     args.w = wnd;
 
     bool forceChange = true;
-
     short imgDelta = 0;
 
     while (!wnd->quitClicked)
@@ -643,7 +640,6 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
 
     setGDIBrightness(DEFAULT_BRIGHTNESS, 1, 1);
     if(useGDI) delete[] buf;
-    else dx.ReleaseDXResources();
     QApplication::quit();
 }
 
@@ -660,6 +656,7 @@ int main(int argc, char *argv[])
     checkInstance();
 
     DXGIDupl dx {};
+
     bool useGDI = false;
 
     if (!dx.initDXGI() || useGDI)
