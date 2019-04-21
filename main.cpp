@@ -58,7 +58,7 @@ class DXGIDupl
     bool initDXGI()
     {
         #ifdef dbg
-        std::cout << "Initializing DXGI..." << std::endl;
+        std::cout << "Initializing DXGI...\n";
         #endif
 
         IDXGIOutput* output;
@@ -77,7 +77,7 @@ class DXGIDupl
             if (hr != S_OK)
             {
                 #ifdef dbg
-                std::cout << "Error: failed to retrieve the IDXGIFactory.\n" << std::endl;
+                std::cout << "Error: failed to retrieve the IDXGIFactory.\n";
                 getchar();
                 #endif
                 return false;
@@ -103,7 +103,7 @@ class DXGIDupl
 
                 if (hr != S_OK)
                 {
-                    std::cout << "Error: failed to get a description for the adapter: " << i << std::endl;
+                    std::cout << "Error: failed to get a description for the adapter: " << i << '\n';
                     continue;
                 }
 
@@ -180,7 +180,7 @@ class DXGIDupl
             if (!d3d_adapter)
             {
                 #ifdef dbg
-                std::cout << "Error: the stored adapter is nullptr." << std::endl;
+                std::cout << "Error: the stored adapter is nullptr.\n";
                 getchar();
                 #endif
 
@@ -205,11 +205,11 @@ class DXGIDupl
             if (hr != S_OK)
             {
                 #ifdef dbg
-                std::cout << "Error: failed to create the D3D11 Device." << std::endl;
+                std::cout << "Error: failed to create the D3D11 Device.\n";
 
                 if (hr == E_INVALIDARG)
                 {
-                    std::cout << "Got INVALID arg passed into D3D11CreateDevice. Did you pass a adapter + a driver which is not the UNKNOWN driver?" << std::endl;
+                    std::cout << "Got INVALID arg passed into D3D11CreateDevice. Did you pass a adapter + a driver which is not the UNKNOWN driver?\n";
                 }
 
                 getchar();
@@ -237,7 +237,7 @@ class DXGIDupl
             if (!output)
             {
                 #ifdef dbg
-                std::cout << "No valid output found. The output is nullptr." << std::endl;
+                std::cout << "No valid output found. The output is nullptr.\n";
                 getchar();
                 #endif
 
@@ -253,7 +253,7 @@ class DXGIDupl
             if (hr != S_OK)
             {
                 #ifdef dbg
-                std::cout << "Error: failed to get output description." << std::endl;
+                std::cout << "Error: failed to get output description.\n";
                 getchar();
                 #endif
 
@@ -280,7 +280,7 @@ class DXGIDupl
             if (hr != S_OK)
             {
                 #ifdef dbg
-                std::cout << "Error: failed to query the IDXGIOutput1 interface." << std::endl;
+                std::cout << "Error: failed to query the IDXGIOutput1 interface.\n";
                 getchar();
                 #endif
 
@@ -292,7 +292,7 @@ class DXGIDupl
             if (hr != S_OK)
             {
                 #ifdef dbg
-                std::cout << "Error: DuplicateOutput failed." << std::endl;
+                std::cout << "Error: DuplicateOutput failed.\n";
                 getchar();
                 #endif
 
@@ -319,7 +319,7 @@ class DXGIDupl
 
         if (!duplication) {
             #ifdef dbg
-            std::cout << "Duplication is nullptr." <<std::endl;
+            std::cout << "Duplication is nullptr.\n";
             #endif
             return false;
         }
@@ -339,7 +339,7 @@ class DXGIDupl
                 if (hr != S_OK)
                 {
                     #ifdef dbg
-                    std::cout << "Error: failed to query the ID3D11Texture2D interface on the IDXGIResource." << std::endl;
+                    std::cout << "Error: failed to query the ID3D11Texture2D interface on the IDXGIResource.\n";
                     #endif
                     return false;
                 }
@@ -349,21 +349,21 @@ class DXGIDupl
             case DXGI_ERROR_ACCESS_LOST:
             {
                 #ifdef dbg
-                std::cout << "Received a DXGI_ERROR_ACCESS_LOST." << std::endl;
+                std::cout << "Received a DXGI_ERROR_ACCESS_LOST.\n";
                 #endif
                 return false;
             }
             case DXGI_ERROR_WAIT_TIMEOUT:
             {
                 #ifdef dbg
-                std::cout << "Received a DXGI_ERROR_WAIT_TIMEOUT." << std::endl;
+                std::cout << "Received a DXGI_ERROR_WAIT_TIMEOUT.\n";
                 #endif
                 return false;
             }
             default:
             {
                 #ifdef dbg
-                std::cout << "Error: failed to acquire frame.\n" << std::endl;
+                std::cout << "Error: failed to acquire frame.\n";
                 #endif
                 return false;
             }
@@ -392,7 +392,7 @@ class DXGIDupl
         d3d_context->Release();
 
     #ifdef dbg
-            //std::cout << "rowPitch = " << map.RowPitch << " depthPitch = " << map.DepthPitch << " bufLen = " << bufLen << std::endl;
+            //std::cout << "rowPitch = " << map.RowPitch << " depthPitch = " << map.DepthPitch << " bufLen = " << bufLen << '\n';
     #endif
 
         buf = reinterpret_cast<unsigned char*>(map.pData);
@@ -421,7 +421,7 @@ class DXGIDupl
                 case DXGI_ERROR_SESSION_DISCONNECTED: printf("DXGI_ERROR_SESSION_DISCONNECTED\n"); break;
                 }
 
-                std::cout << "Retrying... (5 sec)" << std::endl;
+                std::cout << "Retrying... (5 sec)\n";
             }
             #endif
 
@@ -429,7 +429,7 @@ class DXGIDupl
         } while (hr != S_OK);
 
     #ifdef dbg
-        std::cout << "Output duplication restarted successfully." << std::endl;
+        std::cout << "Output duplication restarted successfully.\n";
     #endif
 
         output1->Release();
@@ -531,7 +531,7 @@ void adjustBrightness(Args &args)
     size_t threadId = ++args.threadCount;
 
     #ifdef dbg
-        std::cout << "Thread " << threadId << " started..." << std::endl;
+        std::cout << "Thread " << threadId << " started...\n";
     #endif
 
     short sleeptime = (100 - args.imgDelta / 4) / SPEED;
@@ -563,7 +563,6 @@ void adjustBrightness(Args &args)
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
-        //Sleep(sleeptime);
     }
 
     #ifdef dbg
@@ -574,7 +573,7 @@ void adjustBrightness(Args &args)
 void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
 {
     #ifdef dbg
-    std::cout << "Starting routine..." << std::endl;
+    std::cout << "Starting routine...\n";
     #endif
 
     auto imgBr      = DEFAULT_BRIGHTNESS;
@@ -701,13 +700,13 @@ void checkGammaRange()
     if (s == ERROR_SUCCESS)
     {
 #ifdef dbg
-        std::cout << "Gamma registry key found." << std::endl;
+        std::cout << "Gamma registry key found.\n";
 #endif
         return;
     }
 
 #ifdef dbg
-        std::cout << "Gamma registry key not found. Proceeding to add..." << std::endl;
+        std::cout << "Gamma registry key not found. Creating one...\n";
 #endif
 
     HKEY hKey;
@@ -717,7 +716,7 @@ void checkGammaRange()
     if (s == ERROR_SUCCESS)
     {
 #ifdef dbg
-        std::cout << "Gamma registry key created." << std::endl;
+        std::cout << "Gamma registry key created.\n";
 #endif
         DWORD val = 256;
 
@@ -727,21 +726,21 @@ void checkGammaRange()
         {
             MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
 #ifdef dbg
-            std::cout << "Gamma registry value set." << std::endl;
+            std::cout << "Gamma registry value set.\n";
 #endif
         }
 #ifdef dbg
-        else std::cout << "Error when setting Gamma registry value." << std::endl;
+        else std::cout << "Error when setting Gamma registry value.\n";
 #endif
     }
 #ifdef dbg
     else
     {
-        std::cout << "Error when creating/opening gamma RegKey." << std::endl;
+        std::cout << "Error when creating/opening gamma RegKey.\n";
 
         if (s == ERROR_ACCESS_DENIED)
         {
-            std::cout << "Access denied." << std::endl;
+            std::cout << "Access denied.\n";
         }
     }
 #endif
@@ -754,19 +753,19 @@ void readSettings()
     std::string filename = "gammySettings.cfg";
 
 #ifdef dbg
-    std::cout << "Opening settings file..." << std::endl;
+    std::cout << "Opening settings file...\n";
 #endif
     std::fstream file(filename, std::fstream::in | std::fstream::out | std::fstream::app);
 
     if(file.is_open())
     {
         #ifdef dbg
-        std::cout << "File opened successfully." << std::endl;
+        std::cout << "File opened successfully.\n";
         #endif
         if(std::filesystem::file_size(filename) == 0)
         {
             #ifdef dbg
-            std::cout << "File is empty. Filling with defaults..." << std::endl;
+            std::cout << "File is empty. Filling with defaults...\n";
             #endif
 
             std::array<std::string, settingsCount> lines = {
@@ -779,7 +778,7 @@ void readSettings()
                 "updateRate=" + std::to_string(UPDATE_TIME_MS)
             };
 
-            for(const auto &s : lines) file << s << std::endl;
+            for(const auto &s : lines) file << s << '\n';
 
             file.close();
             return;
@@ -790,13 +789,13 @@ void readSettings()
         int c = 0;
 
         #ifdef dbg
-        std::cout << "Parsing settings file..." << std::endl;
+        std::cout << "Parsing settings file...\n";
         #endif
 
         while (getline(file, line))
         {
             #ifdef dbg
-            std::cout << "Parsing line: " << line << std::endl;
+            std::cout << "Parsing line: " << line << '\n';
             #endif
 
             if(!line.empty()) values[c++] = std::stoi(line.substr(line.find('=') + 1));

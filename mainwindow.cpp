@@ -34,23 +34,23 @@ void toggleRegkey(bool isChecked)
         if (s == ERROR_SUCCESS)
         {
             #ifdef dbg
-            printf("RegKey opened. \n");
+            std::cout << "RegKey opened.\n";
             #endif
 
             s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
 
             #ifdef dbg
                 if (s == ERROR_SUCCESS) {
-                    printf("RegValue set.\n");
+                    std::cout << "RegValue set.\n";
                 }
                 else {
-                    printf("Error when setting RegValue.\n");
+                    std::cout << "Error when setting RegValue.\n";
                 }
             #endif
         }
         #ifdef dbg
         else {
-            printf("Error when opening RegKey.\n");
+            std::cout << "Error when opening RegKey.\n";
         }
         #endif
     }
@@ -59,9 +59,9 @@ void toggleRegkey(bool isChecked)
 
         #ifdef dbg
             if (s == ERROR_SUCCESS)
-                printf("RegValue deleted.\n");
+                std::cout << "RegValue deleted.\n";
             else
-                printf("RegValue deletion failed.\n");
+                std::cout << "RegValue deletion failed.\n";
         #endif
     }
 
@@ -84,7 +84,7 @@ void updateFile()
             "updateRate=" + std::to_string(UPDATE_TIME_MS)
         };
 
-        for(const auto &s : lines) file << s << std::endl;
+        for(const auto &s : lines) file << s << '\n';
         file.close();
     }
 }
