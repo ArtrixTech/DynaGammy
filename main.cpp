@@ -39,8 +39,12 @@ unsigned short	UPDATE_TIME_MAX;
 unsigned short scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
 unsigned short targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
 
-static HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
-static int w, h, screenRes, bufLen;
+const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
+
+const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
+const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
+const int screenRes = w * h;
+const int bufLen = screenRes * 4;
 
 class DXGIDupl
 {
@@ -578,16 +582,6 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
     auto oldMin     = MIN_BRIGHTNESS;
     auto oldMax     = MAX_BRIGHTNESS;
     auto oldOffset  = OFFSET;
-
-    int x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    int y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    int x2 = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    int y2 = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-    w = x2 - x1;
-    h = y2 - y1;
-    screenRes = w * h;
-    bufLen = screenRes * 4;
 
     //Buffer to store screen pixels
     unsigned char* buf = nullptr;
