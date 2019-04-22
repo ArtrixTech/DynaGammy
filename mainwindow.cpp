@@ -14,6 +14,7 @@
 #include <QHelpEvent>
 #include <QAction>
 #include <QMenu>
+//#include <QGraphicsOpacityEffect>
 #include <iostream>
 #include <fstream>
 
@@ -98,8 +99,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     /*Set window properties */
     {
         this->setWindowTitle("Gammy");
-        this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
         this->setWindowIcon(appIcon);
+        this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+        this->setWindowOpacity(0.95);
     }
 
     /*Move window to bottom right */
@@ -160,6 +162,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(ui->thresholdSlider, signal, slot);
         connect(ui->pollingSlider, signal, slot);
     }
+
 }
 
 QMenu* MainWindow::createMenu()

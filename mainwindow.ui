@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>335</width>
-    <height>308</height>
+    <height>343</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
   <property name="maximumSize">
    <size>
     <width>335</width>
-    <height>400</height>
+    <height>447</height>
    </size>
   </property>
   <property name="palette">
@@ -43,9 +43,9 @@
      <colorrole role="Button">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
@@ -115,18 +115,18 @@
      <colorrole role="Base">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>0</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Window">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
@@ -189,9 +189,9 @@
      <colorrole role="Button">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
@@ -261,18 +261,18 @@
      <colorrole role="Base">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>0</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Window">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
@@ -335,9 +335,9 @@
      <colorrole role="Button">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
@@ -407,18 +407,18 @@
      <colorrole role="Base">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Window">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>15</red>
-        <green>34</green>
-        <blue>43</blue>
+        <red>20</red>
+        <green>22</green>
+        <blue>35</blue>
        </color>
       </brush>
      </colorrole>
@@ -486,14 +486,13 @@
     <normaloff>:/res/icons/16x16ball.ico</normaloff>:/res/icons/16x16ball.ico</iconset>
   </property>
   <property name="windowOpacity">
-   <double>100.000000000000000</double>
+   <double>50.000000000000000</double>
   </property>
   <property name="styleSheet">
-   <string notr="true">
-QLabel {
-font-family:&quot;Segoe UI&quot;;
-font-size: 12px;
-color:white;
+   <string notr="true">QWidget
+{
+	background-color:rgb(17, 35, 40);
+	background-color:rgb(20, 22, 35);
 }
 
 QLabel#statusLabel {
@@ -502,21 +501,32 @@ font-size: 17px;
 
 QSlider::groove:horizontal 
 {
-    height:6px;
-   /* background-color:rgb(30, 48, 73);*/
-	background-color:rgb(70, 92, 100);
-background-color: QLinearGradient(x1: 0.38, y2: 2.1, stop: 0 rgb(70, 92, 100),  stop: 1 rgb(30, 48, 73));
+    height:4px;
+   	background-color:rgb(30, 48, 73);
+	background-color: QLinearGradient(x1: 0.38, y2: 2.1, stop: 0 rgb(70, 92, 100),  stop: 1 rgb(30, 48, 73));
+	background-color: rgb(35, 112, 145);
 	margin-bottom: 4px;
 	border-radius:2px;
 }
-
 QSlider::handle:horizontal
 {
 	background-color: QLinearGradient(x1: 0.5, y2: 2.1, stop: 0 white,  stop: 1 rgb(30, 48, 73));
-    width:  24px;
-    margin: -2px 0px; 
-    border-radius: 4px;
-}</string>
+    width:  16px;
+    margin: -6px 0px; 
+    border-radius: 8px;
+}
+QLabel {
+font-family:&quot;Segoe UI&quot;;
+font-size: 12px;
+color:white;
+}
+QStatusBar{
+color:white;
+}
+
+
+
+</string>
   </property>
   <property name="documentMode">
    <bool>false</bool>
@@ -528,7 +538,7 @@ QSlider::handle:horizontal
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -597,13 +607,13 @@ QSlider::handle:horizontal
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>240</x>
       <y>10</y>
       <width>80</width>
-      <height>32</height>
+      <height>34</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -661,13 +671,13 @@ QSlider::handle:horizontal
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>0</x>
       <y>60</y>
       <width>341</width>
-      <height>317</height>
+      <height>366</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,0,0,0,0,0,0">
@@ -678,10 +688,10 @@ QSlider::handle:horizontal
       <enum>QLayout::SetMaximumSize</enum>
      </property>
      <property name="leftMargin">
-      <number>30</number>
+      <number>26</number>
      </property>
      <property name="rightMargin">
-      <number>30</number>
+      <number>26</number>
      </property>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
