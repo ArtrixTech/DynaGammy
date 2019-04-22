@@ -492,7 +492,12 @@
    <string notr="true">
 QLabel {
 font-family:&quot;Segoe UI&quot;;
+font-size: 12px;
 color:white;
+}
+
+QLabel#statusLabel {
+font-size: 17px;
 }
 
 QSlider::groove:horizontal 
@@ -551,7 +556,7 @@ QSlider::handle:horizontal
        <property name="font">
         <font>
          <family>Segoe UI</family>
-         <pointsize>9</pointsize>
+         <pointsize>-1</pointsize>
         </font>
        </property>
        <property name="text">
@@ -567,7 +572,7 @@ QSlider::handle:horizontal
        <property name="font">
         <font>
          <family>Segoe UI</family>
-         <pointsize>13</pointsize>
+         <pointsize>-1</pointsize>
          <weight>50</weight>
          <bold>false</bold>
         </font>
@@ -687,7 +692,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -700,7 +705,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -762,7 +767,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -775,7 +780,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -825,7 +830,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -838,7 +843,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -885,7 +890,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -898,6 +903,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -944,7 +950,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -957,7 +963,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -1004,7 +1010,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -1017,7 +1023,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -1064,7 +1070,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
@@ -1077,7 +1083,7 @@ QSlider::handle:horizontal
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>8</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="text">
