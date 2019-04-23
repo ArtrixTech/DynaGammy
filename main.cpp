@@ -26,18 +26,18 @@
 #pragma comment(lib, "D3D11.lib")
 #pragma comment(lib, "Advapi32.lib")
 
-unsigned char	MIN_BRIGHTNESS  = 176;
-unsigned char	MAX_BRIGHTNESS  = 255;
-unsigned short	OFFSET          = 70;
-unsigned char	SPEED           = 2;
-unsigned char	TEMP            = 1;
-unsigned char	THRESHOLD       = 32;
-unsigned short	UPDATE_TIME_MS  = 50;
-unsigned short	UPDATE_TIME_MIN;
-unsigned short	UPDATE_TIME_MAX;
+unsigned char	min_brightness   = 176;
+unsigned char	max_brightness   = 255;
+unsigned short	offset           = 70;
+unsigned char	speed            = 2;
+unsigned char	temp             = 1;
+unsigned char	threshold        = 32;
+unsigned short	polling_rate_ms  = 100;
+unsigned short	polling_rate_min = 10;
+unsigned short	polling_rate_max = 500;
 
-unsigned short scrBr       = DEFAULT_BRIGHTNESS;  //Current screen brightness
-unsigned short targetScrBr = DEFAULT_BRIGHTNESS;  //Difference between max and current screen brightness
+unsigned short scrBr       = default_brightness;  //Current screen brightness
+unsigned short targetScrBr = default_brightness;  //Difference between max and current screen brightness
 
 const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 
@@ -385,7 +385,7 @@ class DXGIDupl
 
         D3D11_MAPPED_SUBRESOURCE map;
 
-        while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING) Sleep(UPDATE_TIME_MS);
+        while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING) Sleep(polling_rate_ms);
 
         d3d_context->Unmap(staging_tex, 0);
         staging_tex->Release();
@@ -468,7 +468,7 @@ void getGDISnapshot(unsigned char* buf)
     bminfoheader.biClrImportant = 0;
 
     GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
-    Sleep(UPDATE_TIME_MS);
+    Sleep(polling_rate_ms);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);
@@ -500,7 +500,7 @@ int getBrightness(const unsigned char* buf)
 
 void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 {
-    if (brightness > DEFAULT_BRIGHTNESS) {
+    if (brightness > default_brightness) {
         return;
     }
 
@@ -521,7 +521,7 @@ void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
 struct Args {
     //Arguments to be passed to the AdjustBrightness thread
     short imgDelta = 0;
-    unsigned short imgBr = 0;
+    short imgBr = 0;
     size_t threadCount = 0;
     MainWindow* w = nullptr;
 };
@@ -534,13 +534,13 @@ void adjustBrightness(Args &args)
         std::cout << "Thread " << threadId << " started...\n";
     #endif
 
-    short sleeptime = (100 - args.imgDelta / 4) / SPEED;
+    short sleeptime = (100 - args.imgDelta / 4) / speed;
     //args.imgDelta = 0;
 
-    targetScrBr = DEFAULT_BRIGHTNESS - args.imgBr + OFFSET;
+    targetScrBr = default_brightness - args.imgBr + offset;
 
-    if		(targetScrBr > MAX_BRIGHTNESS) targetScrBr = MAX_BRIGHTNESS;
-    else if (targetScrBr < MIN_BRIGHTNESS) targetScrBr = MIN_BRIGHTNESS;
+    if		(targetScrBr > max_brightness) targetScrBr = max_brightness;
+    else if (targetScrBr < min_brightness) targetScrBr = min_brightness;
 
     if (scrBr < targetScrBr) sleeptime /= 3;
 
@@ -552,11 +552,11 @@ void adjustBrightness(Args &args)
         }
         else --scrBr;
 
-        setGDIBrightness(scrBr, gdivs[TEMP-1], bdivs[TEMP-1]);
+        setGDIBrightness(scrBr, gdivs[temp-1], bdivs[temp-1]);
 
         if(args.w->isVisible()) args.w->updateBrLabel();
 
-        if (scrBr == MIN_BRIGHTNESS || scrBr == MAX_BRIGHTNESS)
+        if (scrBr == min_brightness || scrBr == max_brightness)
         {
             targetScrBr = scrBr;
             break;
@@ -570,31 +570,32 @@ void adjustBrightness(Args &args)
     #endif
 }
 
-void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
+void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
 {
     #ifdef dbg
     std::cout << "Starting routine...\n";
     #endif
 
-    auto imgBr      = DEFAULT_BRIGHTNESS;
-    auto oldImgBr   = DEFAULT_BRIGHTNESS;
-    auto oldMin     = MIN_BRIGHTNESS;
-    auto oldMax     = MAX_BRIGHTNESS;
-    auto oldOffset  = OFFSET;
+    int imgBr     = default_brightness;
+    int old_imgBr = default_brightness;
+
+    short old_min    = default_brightness;
+    short old_max    = default_brightness;
+    short old_offset = default_brightness;
 
     //Buffer to store screen pixels
     unsigned char* buf = nullptr;
-    if(useGDI) buf = new unsigned char[bufLen];
+    if(!useDXGI) buf = new unsigned char[bufLen];
 
     Args args;
     args.w = wnd;
 
-    bool forceChange = true;
     short imgDelta = 0;
+    bool forceChange = true;
 
     while (!wnd->quitClicked)
     {
-        if (!useGDI)
+        if (useDXGI)
         {
             while (!dx.getDXGISnapshot(buf))
             {
@@ -607,11 +608,11 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
         }
 
         imgBr = getBrightness(buf);
-        imgDelta += abs(oldImgBr - imgBr);
+        imgDelta += abs(old_imgBr - imgBr);
 
-        if (imgDelta > THRESHOLD || forceChange)
+        if (imgDelta > threshold || forceChange)
         { 
-            args.imgBr = imgBr;
+            args.imgBr = short(imgBr);
             args.imgDelta = imgDelta;
             imgDelta = 0;
 
@@ -621,18 +622,18 @@ void app(MainWindow* wnd, DXGIDupl &dx, bool useGDI)
             forceChange = false;
         }
 
-        if (MIN_BRIGHTNESS != oldMin || MAX_BRIGHTNESS != oldMax || OFFSET != oldOffset) {
+        if (min_brightness != old_min || max_brightness != old_max || offset != old_offset) {
             forceChange = true;
         }
 
-        oldImgBr = imgBr;
-        oldMin = MIN_BRIGHTNESS;
-        oldMax = MAX_BRIGHTNESS;
-        oldOffset = OFFSET;
+        old_imgBr  = imgBr;
+        old_min    = min_brightness;
+        old_max    = max_brightness;
+        old_offset = offset;
     }
 
-    setGDIBrightness(DEFAULT_BRIGHTNESS, 1, 1);
-    if(useGDI) delete[] buf;
+    setGDIBrightness(default_brightness, 1, 1);
+    if(!useDXGI) delete[] buf;
     QApplication::quit();
 }
 
@@ -650,18 +651,12 @@ int main(int argc, char *argv[])
 
     DXGIDupl dx {};
 
-    bool useGDI = false;
+    const bool useDXGI = dx.initDXGI();
 
-    if (!dx.initDXGI() || useGDI)
+    if (!useDXGI)
     {
-        useGDI = true;
-        UPDATE_TIME_MIN = 1000;
-        UPDATE_TIME_MAX = 5000;
-    }
-    else
-    {
-        UPDATE_TIME_MIN = 10;
-        UPDATE_TIME_MAX = 500;
+        polling_rate_min = 1000;
+        polling_rate_max = 5000;
     }
 
     readSettings();
@@ -670,7 +665,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     MainWindow wnd;
 
-    std::thread t(app, &wnd, std::ref(dx), useGDI);
+    std::thread t(app, &wnd, std::ref(dx), useDXGI);
     t.detach();
 
     return a.exec();
@@ -768,14 +763,14 @@ void readSettings()
             std::cout << "File is empty. Filling with defaults...\n";
             #endif
 
-            std::array<std::string, settingsCount> lines = {
-                "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
-                "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
-                "offset=" + std::to_string(OFFSET),
-                "speed=" + std::to_string(SPEED),
-                "temp=" + std::to_string(TEMP),
-                "threshold=" + std::to_string(THRESHOLD),
-                "updateRate=" + std::to_string(UPDATE_TIME_MS)
+            std::array<std::string, settings_count> lines = {
+                "minBrightness=" + std::to_string(min_brightness),
+                "maxBrightness=" + std::to_string(max_brightness),
+                "offset=" + std::to_string(offset),
+                "speed=" + std::to_string(speed),
+                "temp=" + std::to_string(temp),
+                "threshold=" + std::to_string(threshold),
+                "updateRate=" + std::to_string(polling_rate_ms)
             };
 
             for(const auto &s : lines) file << s << '\n';
@@ -785,7 +780,7 @@ void readSettings()
         }
 
         std::string line;
-        int values[settingsCount];
+        std::array<int, settings_count> values;
         int c = 0;
 
         #ifdef dbg
@@ -801,16 +796,16 @@ void readSettings()
             if(!line.empty()) values[c++] = std::stoi(line.substr(line.find('=') + 1));
         }
 
-        MIN_BRIGHTNESS = UCHAR(values[0]);
-        MAX_BRIGHTNESS = UCHAR(values[1]);
-        OFFSET         = USHORT(values[2]);
-        SPEED          = UCHAR(values[3]);
-        TEMP           = UCHAR(values[4]);
-        THRESHOLD      = UCHAR(values[5]);
-        UPDATE_TIME_MS = USHORT(values[6]);
+        min_brightness = UCHAR(values[0]);
+        max_brightness = UCHAR(values[1]);
+        offset         = USHORT(values[2]);
+        speed          = UCHAR(values[3]);
+        temp           = UCHAR(values[4]);
+        threshold      = UCHAR(values[5]);
+        polling_rate_ms = USHORT(values[6]);
 
-        if(UPDATE_TIME_MS < UPDATE_TIME_MIN) UPDATE_TIME_MS = UPDATE_TIME_MIN;
-        if(UPDATE_TIME_MS > UPDATE_TIME_MAX) UPDATE_TIME_MS = UPDATE_TIME_MAX;
+        if(polling_rate_ms < polling_rate_min) polling_rate_ms = polling_rate_min;
+        if(polling_rate_ms > polling_rate_max) polling_rate_ms = polling_rate_max;
 
         file.close();
     }

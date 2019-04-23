@@ -14,7 +14,6 @@
 #include <QHelpEvent>
 #include <QAction>
 #include <QMenu>
-//#include <QGraphicsOpacityEffect>
 #include <iostream>
 #include <fstream>
 
@@ -75,14 +74,14 @@ void updateFile()
 
     if(file.is_open())
     {
-        std::array<std::string, settingsCount> lines = {
-            "minBrightness=" + std::to_string(MIN_BRIGHTNESS),
-            "maxBrightness=" + std::to_string(MAX_BRIGHTNESS),
-            "offset=" + std::to_string(OFFSET),
-            "speed=" + std::to_string(SPEED),
-            "temp=" + std::to_string(TEMP),
-            "threshold=" + std::to_string(THRESHOLD),
-            "updateRate=" + std::to_string(UPDATE_TIME_MS)
+        std::array<std::string, settings_count> lines = {
+            "minBrightness=" + std::to_string(min_brightness),
+            "maxBrightness=" + std::to_string(max_brightness),
+            "offset=" + std::to_string(offset),
+            "speed=" + std::to_string(speed),
+            "temp=" + std::to_string(temp),
+            "threshold=" + std::to_string(threshold),
+            "updateRate=" + std::to_string(polling_rate_ms)
         };
 
         for(const auto &s : lines) file << s << '\n';
@@ -125,25 +124,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     /*Set slider properties*/
     {
-        ui->minBrLabel->setText(QStringLiteral("%1").arg(MIN_BRIGHTNESS));
-        ui->maxBrLabel->setText(QStringLiteral("%1").arg(MAX_BRIGHTNESS));
-        ui->offsetLabel->setText(QStringLiteral("%1").arg(OFFSET));
-        ui->speedLabel->setText(QStringLiteral("%1").arg(SPEED));
-        ui->tempLabel->setText(QStringLiteral("%1").arg(TEMP));
-        ui->thresholdLabel->setText(QStringLiteral("%1").arg(THRESHOLD));
+        ui->minBrLabel->setText(QStringLiteral("%1").arg(min_brightness));
+        ui->maxBrLabel->setText(QStringLiteral("%1").arg(max_brightness));
+        ui->offsetLabel->setText(QStringLiteral("%1").arg(offset));
+        ui->speedLabel->setText(QStringLiteral("%1").arg(speed));
+        ui->tempLabel->setText(QStringLiteral("%1").arg(temp));
+        ui->thresholdLabel->setText(QStringLiteral("%1").arg(threshold));
         ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 
-        ui->minBrSlider->setValue(MIN_BRIGHTNESS);
-        ui->maxBrSlider->setValue(MAX_BRIGHTNESS);
-        ui->offsetSlider->setValue(OFFSET);
-        ui->speedSlider->setValue(SPEED);
-        ui->tempSlider->setValue(TEMP);
-        ui->thresholdSlider->setValue(THRESHOLD);
+        ui->minBrSlider->setValue(min_brightness);
+        ui->maxBrSlider->setValue(max_brightness);
+        ui->offsetSlider->setValue(offset);
+        ui->speedSlider->setValue(speed);
+        ui->tempSlider->setValue(temp);
+        ui->thresholdSlider->setValue(threshold);
 
         /*Set pollingSlider properties*/
         {
-            const auto temp = UPDATE_TIME_MS; //After setRange, UPDATE_TIME_MS changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
-            ui->pollingSlider->setRange(UPDATE_TIME_MIN, UPDATE_TIME_MAX);
+            const auto temp = polling_rate_ms; //After setRange, UPDATE_TIME_MS changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
+            ui->pollingSlider->setRange(polling_rate_min, polling_rate_max);
             ui->pollingLabel->setText(QString::number(temp));
             ui->pollingSlider->setValue(temp);
         }
@@ -207,40 +206,40 @@ void MainWindow::updateBrLabel() {
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
-    if(val > MAX_BRIGHTNESS) val = MAX_BRIGHTNESS;
-    MIN_BRIGHTNESS = val;
+    if(val > max_brightness) val = max_brightness;
+    min_brightness = val;
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
-    if(val < MIN_BRIGHTNESS) val = MIN_BRIGHTNESS;
-    MAX_BRIGHTNESS = val;
+    if(val < min_brightness) val = min_brightness;
+    max_brightness = val;
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
-    OFFSET = val;
+    offset = val;
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
-    SPEED = val;
+    speed = val;
 }
 
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
-    TEMP = val;
-    setGDIBrightness(scrBr, gdivs[TEMP-1], bdivs[TEMP-1]);
+    temp = val;
+    setGDIBrightness(scrBr, gdivs[temp-1], bdivs[temp-1]);
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
 {
-    THRESHOLD = val;
+    threshold = val;
 }
 
 void MainWindow::on_pollingSlider_valueChanged(int val)
 {
-    UPDATE_TIME_MS = val;
+    polling_rate_ms = val;
 }
 
 /////////////////////////////////////////////////////////
