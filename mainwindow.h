@@ -39,12 +39,10 @@ private:
     QSystemTrayIcon* trayIcon;
     QMenu* trayIconMenu {};
     QMenu* createMenu();
-
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+    QPoint mouse;
     void on_close_clicked();
-    int mouseClickXCoord {};
-    int mouseClickYCoord {};
 };
 
 #endif // MAINWINDOW_H

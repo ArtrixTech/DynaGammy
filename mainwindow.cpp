@@ -150,8 +150,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     /*Make sliders update settings file*/
     {
-        auto signal = &QAbstractSlider::sliderReleased;
-        auto slot = [=]{updateFile();};
+        auto signal = &QAbstractSlider::valueChanged;
+        auto slot = [=]{
+            //Prevents the window from jumping when dragging the slider groove
+            mouse = QWidget::mapFromGlobal(QCursor::pos());
+            updateFile();
+        };
 
         connect(ui->minBrSlider, signal, slot);
         connect(ui->maxBrSlider, signal, slot);
@@ -161,7 +165,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(ui->thresholdSlider, signal, slot);
         connect(ui->pollingSlider, signal, slot);
     }
-
 }
 
 QMenu* MainWindow::createMenu()
@@ -200,6 +203,28 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::updateBrLabel() {
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+   mouse = event->pos();
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    move(event->globalX() - mouse.x(), event->globalY() - mouse.y());
+}
+
+void MainWindow::on_hideButton_clicked()
+{
+    this->hide();
+}
+
+void MainWindow::on_closeButton_clicked()
+{
+    MainWindow::quitClicked = true;
+    MainWindow::hide();
+    trayIcon->hide();
 }
 
 /////////////////////////////////////////////////////////
@@ -243,27 +268,6 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 }
 
 /////////////////////////////////////////////////////////
-
-void MainWindow::mousePressEvent(QMouseEvent *event) {
-    mouseClickXCoord = event->x();
-    mouseClickYCoord = event->y();
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent *event) {
-    move(event->globalX()-mouseClickXCoord,event->globalY()-mouseClickYCoord);
-}
-
-void MainWindow::on_closeButton_clicked()
-{
-    MainWindow::quitClicked = true;
-    MainWindow::hide();
-    trayIcon->hide();
-}
-
-void MainWindow::on_hideButton_clicked()
-{
-    this->hide();
-}
 
 MainWindow::~MainWindow()
 {
