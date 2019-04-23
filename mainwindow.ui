@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>335</width>
-    <height>343</height>
+    <height>309</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
   <property name="maximumSize">
    <size>
     <width>335</width>
-    <height>447</height>
+    <height>483</height>
    </size>
   </property>
   <property name="palette">
@@ -491,20 +491,15 @@
   <property name="styleSheet">
    <string notr="true">QWidget
 {
-	background-color:rgb(17, 35, 40);
-	background-color:rgb(20, 22, 35);
+	/*background-color:rgb(17, 35, 40);*/
+		/*background-color:rgb(20, 22, 35);*/
 }
-
-QLabel#statusLabel {
-font-size: 17px;
-}
-
 QSlider::groove:horizontal 
 {
-    height:4px;
-   	background-color:rgb(30, 48, 73);
-	background-color: QLinearGradient(x1: 0.38, y2: 2.1, stop: 0 rgb(70, 92, 100),  stop: 1 rgb(30, 48, 73));
+   /*	background-color:rgb(30, 48, 73);
+	background-color: QLinearGradient(x1: 0.38, y2: 2.1, stop: 0 rgb(70, 92, 100),  stop: 1 rgb(30, 48, 73));*/
 	background-color: rgb(35, 112, 145);
+   	height:4px;
 	margin-bottom: 4px;
 	border-radius:2px;
 }
@@ -520,8 +515,8 @@ font-family:&quot;Segoe UI&quot;;
 font-size: 12px;
 color:white;
 }
-QStatusBar{
-color:white;
+QLabel#statusLabel {
+font-size: 17px;
 }
 
 
@@ -671,27 +666,21 @@ color:white;
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="layoutWidget">
+   <widget class="QWidget" name="">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>60</y>
+      <x>-4</x>
+      <y>58</y>
       <width>341</width>
-      <height>366</height>
+      <height>404</height>
      </rect>
     </property>
-    <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,0,0,0,0,0,0">
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <property name="sizeConstraint">
-      <enum>QLayout::SetMaximumSize</enum>
-     </property>
+    <layout class="QVBoxLayout" name="verticalLayout_9">
      <property name="leftMargin">
-      <number>26</number>
+      <number>28</number>
      </property>
      <property name="rightMargin">
-      <number>26</number>
+      <number>28</number>
      </property>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -896,30 +885,34 @@ color:white;
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
-          <widget class="QLabel" name="label_4">
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>-1</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Speed:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="speedLabel">
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>-1</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>4</string>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QLabel" name="label_5">
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>-1</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Temperature:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="tempLabel">
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>-1</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>4</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <spacer name="horizontalSpacer_6">
@@ -937,7 +930,7 @@ color:white;
         </layout>
        </item>
        <item>
-        <widget class="QSlider" name="speedSlider">
+        <widget class="QSlider" name="tempSlider">
          <property name="minimum">
           <number>1</number>
          </property>
@@ -954,50 +947,54 @@ color:white;
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QLabel" name="label_5">
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>-1</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Temperature:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="tempLabel">
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>-1</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>4</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>-1</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Speed:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="speedLabel">
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>-1</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>4</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_7">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
        <item>
-        <widget class="QSlider" name="tempSlider">
+        <widget class="QSlider" name="speedSlider">
          <property name="minimum">
           <number>1</number>
          </property>
@@ -1160,12 +1157,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>63</y>
+     <x>307</x>
+     <y>94</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>62</y>
+     <x>131</x>
+     <y>66</y>
     </hint>
    </hints>
   </connection>
@@ -1176,12 +1173,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>159</y>
+     <x>307</x>
+     <y>344</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>159</y>
+     <x>109</x>
+     <y>256</y>
     </hint>
    </hints>
   </connection>
@@ -1192,12 +1189,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>138</y>
+     <x>307</x>
+     <y>286</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>138</y>
+     <x>72</x>
+     <y>315</y>
     </hint>
    </hints>
   </connection>
@@ -1208,12 +1205,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>201</y>
+     <x>307</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>201</y>
+     <x>139</x>
+     <y>431</y>
     </hint>
    </hints>
   </connection>
@@ -1224,12 +1221,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>180</y>
+     <x>307</x>
+     <y>402</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>180</y>
+     <x>105</x>
+     <y>373</y>
     </hint>
    </hints>
   </connection>
@@ -1240,12 +1237,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>159</y>
+     <x>307</x>
+     <y>344</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>159</y>
+     <x>109</x>
+     <y>256</y>
     </hint>
    </hints>
   </connection>
@@ -1256,12 +1253,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>96</y>
+     <x>307</x>
+     <y>170</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>96</y>
+     <x>132</x>
+     <y>141</y>
     </hint>
    </hints>
   </connection>
@@ -1272,12 +1269,12 @@ color:white;
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>117</y>
+     <x>307</x>
+     <y>228</y>
     </hint>
     <hint type="destinationlabel">
-     <x>125</x>
-     <y>117</y>
+     <x>84</x>
+     <y>199</y>
     </hint>
    </hints>
   </connection>
