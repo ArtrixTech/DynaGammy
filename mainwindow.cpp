@@ -229,7 +229,7 @@ void MainWindow::on_speedSlider_valueChanged(int val)
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
     temp = val;
-    setGDIBrightness(scrBr, gdivs[temp-1], bdivs[temp-1]);
+    setGDIBrightness(scrBr, val);
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)

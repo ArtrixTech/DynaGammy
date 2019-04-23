@@ -375,7 +375,7 @@ class DXGIDupl
         if (hr != S_OK)
         {
             #ifdef dbg
-            std::printf("Failed to create the 2D texture, error: %ld.\n", hr);
+            std::cout << "Failed to create the 2D texture, error: " << hr << '\n';
             #endif
             return false;
         }
@@ -498,13 +498,23 @@ int getBrightness(const unsigned char* buf)
     return colorSum / screenRes; //Assigns a value between 0 and 255
 }
 
-void setGDIBrightness(WORD brightness, float gdiv, float bdiv)
+void setGDIBrightness(WORD brightness, int temp)
 {
     if (brightness > default_brightness) {
         return;
     }
 
     WORD gammaArr[3][256];
+
+    float gdiv = 1;
+    float bdiv = 1;
+    float val = temp;
+
+    if(temp > 1)
+    {
+        bdiv += (val / 100);
+        gdiv += (val / 270);
+    }
 
     for (WORD i = 0; i < 256; ++i)
     {
@@ -552,7 +562,7 @@ void adjustBrightness(Args &args)
         }
         else --scrBr;
 
-        setGDIBrightness(scrBr, gdivs[temp-1], bdivs[temp-1]);
+        setGDIBrightness(scrBr, temp);
 
         if(args.w->isVisible()) args.w->updateBrLabel();
 
@@ -632,7 +642,7 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
         old_offset = offset;
     }
 
-    setGDIBrightness(default_brightness, 1, 1);
+    setGDIBrightness(default_brightness, 1);
     if(!useDXGI) delete[] buf;
     QApplication::quit();
 }

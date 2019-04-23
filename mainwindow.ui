@@ -666,7 +666,7 @@ font-size: 17px;
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>-4</x>
@@ -935,7 +935,7 @@ font-size: 17px;
           <number>1</number>
          </property>
          <property name="maximum">
-          <number>4</number>
+          <number>100</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
