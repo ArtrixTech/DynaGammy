@@ -36,8 +36,7 @@ unsigned short	polling_rate_ms  = 100;
 unsigned short	polling_rate_min = 10;
 unsigned short	polling_rate_max = 500;
 
-unsigned short scrBr       = default_brightness;  //Current screen brightness
-unsigned short targetScrBr = default_brightness;  //Difference between max and current screen brightness
+unsigned short scrBr = default_brightness; //Current screen brightness
 
 const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 
@@ -476,7 +475,7 @@ void getGDISnapshot(unsigned char* buf)
     DeleteDC(memoryDC);
 }
 
-int getBrightness(const unsigned char* buf)
+int calcBrightness(const unsigned char* buf)
 {
     UCHAR r = buf[2];
     UCHAR g = buf[1];
@@ -545,18 +544,17 @@ void adjustBrightness(Args &args)
     #endif
 
     short sleeptime = (100 - args.imgDelta / 4) / speed;
-    //args.imgDelta = 0;
 
-    targetScrBr = default_brightness - args.imgBr + offset;
+    short targetBr = default_brightness - args.imgBr + offset;
 
-    if		(targetScrBr > max_brightness) targetScrBr = max_brightness;
-    else if (targetScrBr < min_brightness) targetScrBr = min_brightness;
+    if		(targetBr > max_brightness) targetBr = max_brightness;
+    else if (targetBr < min_brightness) targetBr = min_brightness;
 
-    if (scrBr < targetScrBr) sleeptime /= 3;
+    if (scrBr < targetBr) sleeptime /= 3;
 
-    while (scrBr != targetScrBr && threadId == args.threadCount)
+    while (scrBr != targetBr && threadId == args.threadCount)
     {
-        if (scrBr < targetScrBr)
+        if (scrBr < targetBr)
         {
             ++scrBr;
         }
@@ -568,7 +566,7 @@ void adjustBrightness(Args &args)
 
         if (scrBr == min_brightness || scrBr == max_brightness)
         {
-            targetScrBr = scrBr;
+            targetBr = scrBr;
             break;
         }
 
@@ -617,7 +615,7 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
             getGDISnapshot(buf);
         }
 
-        imgBr = getBrightness(buf);
+        imgBr = calcBrightness(buf);
         imgDelta += abs(old_imgBr - imgBr);
 
         if (imgDelta > threshold || forceChange)

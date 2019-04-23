@@ -17,7 +17,6 @@ extern unsigned short	polling_rate_ms;
 extern unsigned short	polling_rate_min, polling_rate_max;
 
 extern unsigned short scrBr;
-extern unsigned short targetScrBr;
 
 void setGDIBrightness(unsigned short brightness, int temp);
 
