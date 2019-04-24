@@ -141,7 +141,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         /*Set pollingSlider properties*/
         {
-            const auto temp = polling_rate_ms; //After setRange, UPDATE_TIME_MS changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
+            const auto temp = polling_rate_ms; //After setRange, polling_rate_ms changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
             ui->pollingSlider->setRange(polling_rate_min, polling_rate_max);
             ui->pollingLabel->setText(QString::number(temp));
             ui->pollingSlider->setValue(temp);
