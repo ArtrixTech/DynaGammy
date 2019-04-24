@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/res">
+        <file>icons/64x64ball.ico</file>
+        <file>icons/16x16ball.ico</file>
+        <file>icons/32x32ball.ico</file>
+        <file>icons/Close-24.png</file>
+        <file>icons/Minus-24.png</file>
+    </qresource>
+</RCC>
