@@ -307,7 +307,7 @@ class DXGIDupl
         return true;
     }
 
-    bool getDXGISnapshot(unsigned char* &buf) noexcept
+    bool getDXGISnapshot(uint8_t* buf) noexcept
     {
         HRESULT hr;
 
@@ -386,12 +386,12 @@ class DXGIDupl
         staging_tex->Release();
         d3d_context->Release();
 
-    #ifdef dbg
-            //std::cout << "rowPitch = " << map.RowPitch << " depthPitch = " << map.DepthPitch << " bufLen = " << bufLen << '\n';
-    #endif
+        #ifdef dbg
+        //std::cout << "depthPitch = " << map.DepthPitch << '\n';
+        #endif
 
-        buf = reinterpret_cast<unsigned char*>(map.pData);
-        //memcpy(buf, map.pData, map.DepthPitch);
+        //buf = reinterpret_cast<uint8_t*>(map.pData); //750 Ti: stable, Intel HD 2000: can crash when reading the buffer in calcBrightness
+        memcpy(buf, map.pData, bufLen); //750 Ti: stable, Intel HD 2000: can cause a crash when copying
 
         return true;
     }
@@ -439,7 +439,7 @@ class DXGIDupl
     }
 };
 
-void getGDISnapshot(unsigned char* buf)
+void getGDISnapshot(uint8_t* buf)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
     HDC memoryDC = CreateCompatibleDC(screenDC); //Memory DC for GDI screenshot
@@ -583,13 +583,13 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
     int imgBr     = default_brightness;
     int old_imgBr = default_brightness;
 
-    short old_min    = default_brightness;
-    short old_max    = default_brightness;
-    short old_offset = default_brightness;
+    int old_min    = default_brightness;
+    int old_max    = default_brightness;
+    int old_offset = default_brightness;
 
     //Buffer to store screen pixels
-    unsigned char* buf = nullptr;
-    if(!useDXGI) buf = new unsigned char[bufLen];
+    uint8_t* buf = nullptr;
+    buf = new uint8_t[bufLen];
 
     Args args;
     args.w = wnd;
@@ -637,7 +637,7 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
     }
 
     setGDIBrightness(default_brightness, 1);
-    if(!useDXGI) delete[] buf;
+    delete[] buf;
     QApplication::quit();
 }
 
