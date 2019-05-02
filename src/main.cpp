@@ -432,10 +432,10 @@ class DXGIDupl
 
     ~DXGIDupl()
     {
-        duplication->ReleaseFrame();
-        output1->Release();
-        d3d_context->Release();
-        d3d_device->Release();
+        if(duplication) duplication->ReleaseFrame();
+        if(output1)     output1->Release();
+        if(d3d_context) d3d_context->Release();
+        if(d3d_device)  d3d_device->Release();
     }
 };
 
