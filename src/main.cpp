@@ -471,26 +471,29 @@ void getGDISnapshot(uint8_t* buf)
     DeleteDC(memoryDC);
 }
 
-int calcBrightness(const unsigned char* buf)
+int calcBrightness(uint8_t* buf)
 {
-    UCHAR r = buf[2];
-    UCHAR g = buf[1];
-    UCHAR b = buf[0];
+    int r_sum = 0;
+    int g_sum = 0;
+    int b_sum = 0;
 
-    unsigned int colorSum = 0;
-
-    for (auto i = bufLen; i > 0; i -= 4)
+    for (int i = bufLen; i > 0; i -= 4)
     {
-        r = buf[i + 2];
-        g = buf[i + 1];
-        b = buf[i];
-
-        colorSum += (r + g + b);
+        r_sum += buf[i + 2];
+        g_sum += buf[i + 1];
+        b_sum += buf[i];
     }
 
-    colorSum /= 3;
+    int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f)) / screenRes;
 
-    return colorSum / screenRes; //Assigns a value between 0 and 255
+#ifdef dbg
+    std::cout << "\nRed: " << r_sum << '\n';
+    std::cout << "Green: " << g_sum << '\n';
+    std::cout << "Blue: " << b_sum << '\n';
+    std::cout << "Luma:" << luma << '\n';
+#endif
+
+    return luma;
 }
 
 void setGDIBrightness(WORD brightness, int temp)
