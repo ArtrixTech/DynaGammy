@@ -69,9 +69,8 @@ class DXGIDupl
 
         //Retrieve a IDXGIFactory to enumerate the adapters
         {
-            IDXGIFactory1* pFactory;
-
-            hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+            IDXGIFactory1* pFactory = nullptr;
+            hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory));
 
             if (hr != S_OK)
             {
@@ -274,7 +273,7 @@ class DXGIDupl
 
         //Initialize output duplication
         {
-            hr = output->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
+            hr = output->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
 
             if (hr != S_OK)
             {
@@ -323,7 +322,7 @@ class DXGIDupl
             case S_OK:
             {
                 //Get the texture interface
-                hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&tex);
+                hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&tex));
 
                 desktop_resource->Release();
                 tex->Release();
