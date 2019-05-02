@@ -43,7 +43,7 @@ const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
 const int screenRes = w * h;
-const int bufLen = screenRes * 4;
+const unsigned bufLen = screenRes * 4;
 
 class DXGIDupl
 {
