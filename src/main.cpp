@@ -376,7 +376,11 @@ class DXGIDupl
 
         D3D11_MAPPED_SUBRESOURCE map;
 
-        while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING) Sleep(polling_rate_ms);
+        do
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
+        }
+        while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING);
 
         d3d_context->Unmap(staging_tex, 0);
         staging_tex->Release();
