@@ -316,13 +316,6 @@ class DXGIDupl
         DXGI_OUTDUPL_FRAME_INFO frame_info;
         IDXGIResource* desktop_resource;
 
-        if (!duplication) {
-            #ifdef dbg
-            std::cout << "Duplication is nullptr.\n";
-            #endif
-            return false;
-        }
-
         hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_resource);
 
         switch(hr)
