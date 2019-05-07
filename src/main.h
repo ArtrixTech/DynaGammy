@@ -1,11 +1,14 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-//#define dbg
+#define dbg
+
+#include <string>
 
 constexpr unsigned char min_brightness_limit = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char default_brightness = 255;
 constexpr unsigned char settings_count = 7;
+constexpr auto          settings_filename = L"gammySettings.cfg";
 
 extern unsigned char	min_brightness;
 extern unsigned char	max_brightness;
@@ -23,5 +26,7 @@ void setGDIBrightness(unsigned short brightness, int temp);
 void checkInstance();
 void checkGammaRange();
 void readSettings();
+
+std::wstring getExecutablePath(bool);
 
 #endif // MAIN_H
