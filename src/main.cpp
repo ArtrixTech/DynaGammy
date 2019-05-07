@@ -750,70 +750,90 @@ void checkGammaRange()
     if (hKey) RegCloseKey(hKey);
 }
 
+std::wstring getExecutablePath(bool add_cfg)
+{
+    wchar_t buf[FILENAME_MAX] {};
+    GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
+    std::wstring path(buf);
+
+    std::wstring appname = L"Gammy.exe";
+    path.erase(path.find(appname), appname.length());
+
+    if(add_cfg) path += settings_filename;
+
+    return path;
+}
+
 void readSettings()
 {
-    std::string filename = "gammySettings.cfg";
+    const std::wstring path = getExecutablePath(true);
 
 #ifdef dbg
-    std::cout << "Opening settings file...\n";
+    std::wcout << "Settings path: " << path << '\n';
 #endif
-    std::fstream file(filename, std::fstream::in | std::fstream::out | std::fstream::app);
 
-    if(file.is_open())
+    std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
+
+    if(!file.is_open())
+    {
+    #ifdef dbg
+        std::cout << "Unable to open settings.\n";
+    #endif
+        return;
+    }
+
+    if(std::filesystem::is_empty(path))
     {
         #ifdef dbg
-        std::cout << "File opened successfully.\n";
+        std::cout << "Settings file is empty. Writing defaults...\n";
         #endif
-        if(std::filesystem::file_size(filename) == 0)
-        {
-            #ifdef dbg
-            std::cout << "File is empty. Filling with defaults...\n";
-            #endif
 
-            std::array<std::string, settings_count> lines = {
-                "minBrightness=" + std::to_string(min_brightness),
-                "maxBrightness=" + std::to_string(max_brightness),
-                "offset=" + std::to_string(offset),
-                "speed=" + std::to_string(speed),
-                "temp=" + std::to_string(temp),
-                "threshold=" + std::to_string(threshold),
-                "updateRate=" + std::to_string(polling_rate_ms)
-            };
+        std::array<std::string, settings_count> lines = {
+            "minBrightness=" + std::to_string(min_brightness),
+            "maxBrightness=" + std::to_string(max_brightness),
+            "offset=" + std::to_string(offset),
+            "speed=" + std::to_string(speed),
+            "temp=" + std::to_string(temp),
+            "threshold=" + std::to_string(threshold),
+            "updateRate=" + std::to_string(polling_rate_ms)
+        };
 
-            for(const auto &s : lines) file << s << '\n';
+        for(const auto &s : lines) file << s << '\n';
 
-            file.close();
-            return;
-        }
+        file.close();
+        return;
+    }
 
+    //Read settings
+    {
         std::string line;
         std::array<int, settings_count> values;
         int c = 0;
 
         #ifdef dbg
-        std::cout << "Parsing settings file...\n";
+        std::cout << "Reading settings...\n";
         #endif
 
         while (getline(file, line))
         {
             #ifdef dbg
-            std::cout << "Parsing line: " << line << '\n';
+            std::cout << "Reading line: " << line << '\n';
             #endif
 
             if(!line.empty()) values[c++] = std::stoi(line.substr(line.find('=') + 1));
         }
 
-        min_brightness = UCHAR(values[0]);
-        max_brightness = UCHAR(values[1]);
-        offset         = USHORT(values[2]);
-        speed          = UCHAR(values[3]);
-        temp           = UCHAR(values[4]);
-        threshold      = UCHAR(values[5]);
-        polling_rate_ms = USHORT(values[6]);
+        min_brightness  = values[0];
+        max_brightness  = values[1];
+        offset          = values[2];
+        speed           = values[3];
+        temp            = values[4];
+        threshold       = values[5];
+        polling_rate_ms = values[6];
 
         if(polling_rate_ms < polling_rate_min) polling_rate_ms = polling_rate_min;
         if(polling_rate_ms > polling_rate_max) polling_rate_ms = polling_rate_max;
-
-        file.close();
     }
+
+    file.close();
 }

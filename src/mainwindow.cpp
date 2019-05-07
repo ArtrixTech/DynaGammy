@@ -70,7 +70,9 @@ void toggleRegkey(bool isChecked)
 
 void updateFile()
 {
-    std::ofstream file("gammySettings.cfg", std::ofstream::out | std::ofstream::trunc);
+    static const std::wstring path = getExecutablePath(true);
+
+    std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
 
     if(file.is_open())
     {
