@@ -29,7 +29,7 @@
 unsigned char	min_brightness   = 176;
 unsigned char	max_brightness   = 255;
 unsigned short	offset           = 70;
-unsigned char	speed            = 2;
+unsigned char	speed            = 3;
 unsigned char	temp             = 1;
 unsigned char	threshold        = 32;
 unsigned short	polling_rate_ms  = 100;
@@ -487,10 +487,11 @@ int calcBrightness(uint8_t* buf)
     int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f)) / screenRes;
 
 #ifdef dbg
+    /*
     std::cout << "\nRed: " << r_sum << '\n';
     std::cout << "Green: " << g_sum << '\n';
     std::cout << "Blue: " << b_sum << '\n';
-    std::cout << "Luma:" << luma << '\n';
+    std::cout << "Luma:" << luma << '\n';*/
 #endif
 
     return luma;
