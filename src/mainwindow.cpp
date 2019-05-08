@@ -153,12 +153,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     /*Make sliders update settings file*/
     {
         auto signal = &QAbstractSlider::valueChanged;
-        auto slot = [&]{
-            //Prevents the window from jumping when dragging the slider groove.
-            //It still jumps when clicking on the borders, which does not change the value.
-            mouse = QWidget::mapFromGlobal(QCursor::pos());
-            updateFile();
-        };
+        auto slot = [&]{updateFile();};
 
         connect(ui->minBrSlider, signal, slot);
         connect(ui->maxBrSlider, signal, slot);
@@ -208,14 +203,23 @@ void MainWindow::updateBrLabel() {
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
-void MainWindow::mousePressEvent(QMouseEvent *event)
+void MainWindow::mousePressEvent(QMouseEvent* e)
 {
-    mouse = event->pos();
+   mouse = e->pos();
+   windowPressed = true;
 }
 
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
+void MainWindow::mouseReleaseEvent(QMouseEvent* e)
 {
-    move(event->globalX() - mouse.x(), event->globalY() - mouse.y());
+   windowPressed = false;
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent* e)
+{
+   if (windowPressed)
+   {
+       move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
+   }
 }
 
 void MainWindow::on_hideButton_clicked()
