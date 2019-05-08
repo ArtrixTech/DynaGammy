@@ -1,10 +1,10 @@
 #define IDI_ICON1  1
 
-#define VER_FILEVERSION             0,9,3,0
-#define VER_FILEVERSION_STR         "0.9.3\0"
+#define VER_FILEVERSION             0,9,4,0
+#define VER_FILEVERSION_STR         "0.9.4\0"
 
-#define VER_PRODUCTVERSION          0,9,3,0
-#define VER_PRODUCTVERSION_STR      "0.9.3\0"
+#define VER_PRODUCTVERSION          0,9,4,0
+#define VER_PRODUCTVERSION_STR      "0.9.4\0"
 
 #define VER_COMPANYNAME_STR         "Fushko"
 #define VER_FILEDESCRIPTION_STR     "Gammy"
