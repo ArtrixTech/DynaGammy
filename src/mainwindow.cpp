@@ -70,6 +70,10 @@ void toggleRegkey(bool isChecked)
 
 void updateFile()
 {
+#ifdef dbg
+    std::cout << "Updating file...\n";
+     #endif
+
     static const std::wstring path = getExecutablePath(true);
 
     std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
@@ -152,16 +156,41 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     /*Make sliders update settings file*/
     {
-        auto signal = &QAbstractSlider::valueChanged;
-        auto slot = [&]{updateFile();};
+        {
+            auto signal = &QAbstractSlider::sliderReleased;
+            auto slot = [&]{ updateFile(); };
 
-        connect(ui->minBrSlider, signal, slot);
-        connect(ui->maxBrSlider, signal, slot);
-        connect(ui->offsetSlider, signal, slot);
-        connect(ui->speedSlider, signal, slot);
-        connect(ui->tempSlider, signal, slot);
-        connect(ui->thresholdSlider, signal, slot);
-        connect(ui->pollingSlider, signal, slot);
+            connect(ui->minBrSlider, signal, slot);
+            connect(ui->maxBrSlider, signal, slot);
+            connect(ui->offsetSlider, signal, slot);
+            connect(ui->speedSlider, signal, slot);
+            connect(ui->tempSlider, signal, slot);
+            connect(ui->thresholdSlider, signal, slot);
+            connect(ui->pollingSlider, signal, slot);
+        }
+
+        {
+            //sliderReleased doesn't fire when pressing the arrow keys or Pageup/down to change the values.
+            //To workaround this, we use valueChanged and ignore it when the slider is not pressed, to avoid unnecessary disk writes.
+            //There is probably a more elegant way of doing this, but it works for now.
+
+            auto signal = &QAbstractSlider::valueChanged;
+            auto lambda = [&](QAbstractSlider* s)
+            {
+                if(!s->isSliderDown())
+                {
+                    updateFile();
+                }
+            };
+
+            connect(ui->minBrSlider, signal, std::bind(lambda, ui->minBrSlider));
+            connect(ui->maxBrSlider, signal, std::bind(lambda, ui->maxBrSlider));
+            connect(ui->offsetSlider, signal, std::bind(lambda, ui->offsetSlider));
+            connect(ui->speedSlider, signal, std::bind(lambda, ui->speedSlider));
+            connect(ui->tempSlider, signal, std::bind(lambda, ui->tempSlider));
+            connect(ui->thresholdSlider, signal, std::bind(lambda, ui->thresholdSlider));
+            connect(ui->pollingSlider, signal, std::bind(lambda, ui->pollingSlider));
+        }
     }
 }
 
