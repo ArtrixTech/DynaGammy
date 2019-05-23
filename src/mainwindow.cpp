@@ -170,6 +170,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         {
+            //sliderReleased doesn't fire when pressing the arrow keys or Pageup/down to change the values.
+            //To workaround this, we use valueChanged and ignore it when the slider is not pressed, to avoid unnecessary disk writes.
+            //There is probably a more elegant way of doing this, but it works for now.
+
             auto signal = &QAbstractSlider::valueChanged;
             auto lambda = [&](QAbstractSlider* s)
             {
@@ -187,7 +191,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             connect(ui->thresholdSlider, signal, std::bind(lambda, ui->thresholdSlider));
             connect(ui->pollingSlider, signal, std::bind(lambda, ui->pollingSlider));
         }
-
     }
 }
 
