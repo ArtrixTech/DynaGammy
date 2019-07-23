@@ -7,10 +7,22 @@
 #include "main.h"
 #include <QApplication>
 #include <QLabel>
-#include <Windows.h>
-#include <dxgi.h>
-#include <dxgi1_2.h>
-#include <d3d11.h>
+
+#ifdef _WIN32
+    #include <Windows.h>
+    #include <dxgi.h>
+    #include <dxgi1_2.h>
+    #include <d3d11.h>
+
+    #pragma comment(lib, "gdi32.lib")
+    #pragma comment(lib, "user32.lib")
+    #pragma comment(lib, "DXGI.lib")
+    #pragma comment(lib, "D3D11.lib")
+    #pragma comment(lib, "Advapi32.lib")
+#elif __linux__
+    #include <unistd.h>
+#endif
+
 #include <array>
 #include <vector>
 #include <iostream>
@@ -19,12 +31,6 @@
 #include <filesystem>
 #include <thread>
 #include <functional>
-
-#pragma comment(lib, "gdi32.lib")
-#pragma comment(lib, "user32.lib")
-#pragma comment(lib, "DXGI.lib")
-#pragma comment(lib, "D3D11.lib")
-#pragma comment(lib, "Advapi32.lib")
 
 unsigned char	min_brightness   = 176;
 unsigned char	max_brightness   = 255;
@@ -38,13 +44,20 @@ unsigned short	polling_rate_max = 500;
 
 unsigned short scrBr = default_brightness; //Current screen brightness
 
+#ifdef _WIN32
 const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
+#elif __linux__
+const int w{}; //@TODO: Initialize screen dimensions for linux
+const int h{};
+#endif
+
 const int screenRes = w * h;
 const unsigned bufLen = screenRes * 4;
 
+#ifdef _WIN32
 class DXGIDupl
 {
     ID3D11Device*			d3d_device;
@@ -470,6 +483,7 @@ void getGDISnapshot(uint8_t* buf)
     DeleteObject(oldObj);
     DeleteDC(memoryDC);
 }
+#endif
 
 int calcBrightness(uint8_t* buf)
 {
@@ -497,6 +511,7 @@ int calcBrightness(uint8_t* buf)
     return luma;
 }
 
+#ifdef _WIN32
 void setGDIBrightness(WORD brightness, int temp)
 {
     if (brightness > default_brightness) {
@@ -526,6 +541,7 @@ void setGDIBrightness(WORD brightness, int temp)
 
     SetDeviceGammaRamp(screenDC, LPVOID(gammaArr));
 }
+#endif
 
 struct Args {
     //Arguments to be passed to the AdjustBrightness thread
@@ -560,7 +576,11 @@ void adjustBrightness(Args &args)
         }
         else --scrBr;
 
+#ifdef _WIN32
         setGDIBrightness(scrBr, temp);
+#elif __linux__
+        //@TODO: set brightness on linux
+#endif
 
         if(args.w->isVisible()) args.w->updateBrLabel();
 
@@ -578,7 +598,13 @@ void adjustBrightness(Args &args)
     #endif
 }
 
-void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
+void app(MainWindow* wnd
+         #ifdef _WIN32
+         ,
+         DXGIDupl &dx,
+         const bool useDXGI
+         #endif
+         )
 {
     #ifdef dbg
     std::cout << "Starting routine...\n";
@@ -603,6 +629,7 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
 
     while (!wnd->quitClicked)
     {
+#ifdef _WIN32
         if (useDXGI)
         {
             while (!dx.getDXGISnapshot(buf))
@@ -614,6 +641,9 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
         {
             getGDISnapshot(buf);
         }
+#elif __linux__
+        //@TODO: linux screenshot loop
+#endif
 
         imgBr = calcBrightness(buf);
         imgDelta += abs(old_imgBr - imgBr);
@@ -640,19 +670,25 @@ void app(MainWindow* wnd, DXGIDupl &dx, const bool useDXGI)
         old_offset = offset;
     }
 
+#ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
+#elif __linux__
+    //@TODO: set defaults on linux
+#endif
     delete[] buf;
     QApplication::quit();
 }
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
     #ifdef dbg
     FILE *f1, *f2, *f3;
     AllocConsole();
     freopen_s(&f1, "CONIN$", "r", stdin);
     freopen_s(&f2, "CONOUT$", "w", stdout);
     freopen_s(&f3, "CONOUT$", "w", stderr);
+
     #endif
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
     checkInstance();
@@ -666,21 +702,30 @@ int main(int argc, char *argv[])
         polling_rate_min = 1000;
         polling_rate_max = 5000;
     }
+    #endif
 
-    readSettings();
+    //readSettings();
+
+#ifdef _WIN32
     checkGammaRange();
+#endif
 
     QApplication a(argc, argv);
     MainWindow wnd;
 
-    std::thread t(app, &wnd, std::ref(dx), useDXGI);
+    std::thread t(app, &wnd
+              #ifdef _WIN32
+                  ,
+                  std::ref(dx), useDXGI
+              #endif
+                  );
     t.detach();
 
     return a.exec();
 }
 
 //////////////////////////////////////////////
-
+#ifdef _WIN32
 void checkInstance()
 {
     HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
@@ -692,6 +737,7 @@ void checkInstance()
         exit(0);
     }
 }
+
 
 void checkGammaRange()
 {
@@ -750,11 +796,22 @@ void checkGammaRange()
 
     if (hKey) RegCloseKey(hKey);
 }
+#endif
 
 std::wstring getExecutablePath(bool add_cfg)
 {
     wchar_t buf[FILENAME_MAX] {};
+
+#ifdef _WIN32
     GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
+#elif __linux__
+    char exePath[PATH_MAX];
+        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        if (len == -1 || len == sizeof(exePath))
+            len = 0;
+        exePath[len] = '\0';
+#endif
+
     std::wstring path(buf);
 
     std::wstring appname = L"Gammy.exe";
@@ -767,10 +824,26 @@ std::wstring getExecutablePath(bool add_cfg)
 
 void readSettings()
 {
+
+#ifdef _WIN32
     const std::wstring path = getExecutablePath(true);
+#elif __linux__
+    const std::wstring tmpPath = getExecutablePath(true);
+
+    //Apparently fstream has no wstring constructor in linux (?), so we have to
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+
+    //.to_bytes: wstr->str, .from_bytes: str->wstr)
+    const std::string path = converter.to_bytes(tmpPath);
+#endif
 
 #ifdef dbg
-    std::wcout << "Settings path: " << path << '\n';
+    #ifdef _WIN32
+        std::wcout << "Settings path: " << path << '\n';
+    #elif __linux__
+         std::cout << "Settings path: " << path << '\n';
+    #endif
 #endif
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);

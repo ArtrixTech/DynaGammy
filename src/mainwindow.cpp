@@ -6,7 +6,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
+#ifdef _WIN32
 #include <Windows.h>
+#elif __linux__
+#include <locale>
+#include <codecvt>
+#endif
 #include <array>
 #include <QScreen>
 #include <QSystemTrayIcon>
@@ -17,6 +22,7 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef _WIN32
 void toggleRegkey(bool isChecked)
 {
     LSTATUS s;
@@ -67,14 +73,21 @@ void toggleRegkey(bool isChecked)
 
     if(hKey) RegCloseKey(hKey);
 }
+#endif
 
 void updateFile()
 {
 #ifdef dbg
     std::cout << "Updating file...\n";
-     #endif
+#endif
 
+#ifdef _WIN32
     static const std::wstring path = getExecutablePath(true);
+#elif __linux__
+    static const std::wstring tmpPath = getExecutablePath(true);
+    static       std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+    static const std::string path = converter.to_bytes(tmpPath);
+#endif
 
     std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
 
@@ -199,6 +212,7 @@ QMenu* MainWindow::createMenu()
     QAction* startupAction = new QAction("&Run at startup", this);
     startupAction->setCheckable(true);
 
+#ifdef _WIN32
     connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
@@ -208,6 +222,7 @@ QMenu* MainWindow::createMenu()
         startupAction->setChecked(true);
     }
     else startupAction->setChecked(false);
+#endif
 
     QAction* quitAction = new QAction("&Quit Gammy", this);
     connect(quitAction, &QAction::triggered, this, [=]{on_closeButton_clicked();});
@@ -290,7 +305,11 @@ void MainWindow::on_speedSlider_valueChanged(int val)
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
     temp = val;
+#ifdef _WIN32
     setGDIBrightness(scrBr, val);
+#elif __linux__
+    //@TODO: Set temperature on linux
+#endif
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
