@@ -21,6 +21,7 @@
     #pragma comment(lib, "Advapi32.lib")
 #elif __linux__
     #include <unistd.h>
+    #include <X11/Xlib.h>
 #endif
 
 #include <array>
@@ -50,8 +51,11 @@ const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
 #elif __linux__
-const int w{}; //@TODO: Initialize screen dimensions for linux
-const int h{};
+const static Display* disp = XOpenDisplay(nullptr);
+const Screen* scr = DefaultScreenOfDisplay(disp);
+
+const int w = scr->width;
+const int h = scr->height;
 #endif
 
 const int screenRes = w * h;
@@ -709,7 +713,6 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
     checkGammaRange();
 #endif
-
     QApplication a(argc, argv);
     MainWindow wnd;
 
