@@ -50,3 +50,5 @@ RESOURCES += \
     res.qrc
 
 DISTFILES +=
+
+LIBS += -lX11
