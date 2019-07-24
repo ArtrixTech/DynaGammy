@@ -51,4 +51,7 @@ RESOURCES += \
 
 DISTFILES +=
 
-LIBS += -lX11
+linux {
+    LIBS += -lX11
+    LIBS += -lXxf86vm -L/user/lib/x86_64-linux-gnu/
+}
