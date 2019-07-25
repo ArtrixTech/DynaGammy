@@ -8,7 +8,8 @@
 constexpr unsigned char min_brightness_limit = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char default_brightness = 255;
 constexpr unsigned char settings_count = 7;
-constexpr auto          settings_filename = L"gammySettings.cfg";
+constexpr auto          appname = "Gammy";
+constexpr auto          settings_filename = "gammysettings.cfg";
 
 extern unsigned char	min_brightness;
 extern unsigned char	max_brightness;
@@ -27,6 +28,10 @@ void checkInstance();
 void checkGammaRange();
 void readSettings();
 
+#ifdef _WIN32
 std::wstring getExecutablePath(bool);
+#else
+std::string getAppPath(bool);
+#endif
 
 #endif // MAIN_H
