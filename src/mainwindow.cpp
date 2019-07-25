@@ -84,9 +84,7 @@ void updateFile()
 #ifdef _WIN32
     static const std::wstring path = getExecutablePath(true);
 #elif __linux__
-    static const std::wstring tmpPath = getExecutablePath(true);
-    static       std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-    static const std::string path = converter.to_bytes(tmpPath);
+    static const std::string path = getAppPath(true);
 #endif
 
     std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);

@@ -854,7 +854,7 @@ int main(int argc, char *argv[])
     }
     #endif
 
-    //readSettings();
+    readSettings();
 
 #ifdef _WIN32
     checkGammaRange();
@@ -947,20 +947,11 @@ void checkGammaRange()
 }
 #endif
 
+#ifdef _WIN32
 std::wstring getExecutablePath(bool add_cfg)
 {
     wchar_t buf[FILENAME_MAX] {};
-
-#ifdef _WIN32
     GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
-#elif __linux__
-    char exePath[PATH_MAX];
-        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
-        if (len == -1 || len == sizeof(exePath))
-            len = 0;
-        exePath[len] = '\0';
-#endif
-
     std::wstring path(buf);
 
     std::wstring appname = L"Gammy.exe";
@@ -970,42 +961,57 @@ std::wstring getExecutablePath(bool add_cfg)
 
     return path;
 }
+#else
+std::string getAppPath(bool add_cfg)
+{
+    #ifdef dbg
+    std::cout << "Getting app path...\n";
+    #endif
+
+    char buf[FILENAME_MAX] {};
+    char appPath[PATH_MAX];
+
+    ssize_t len = readlink("/proc/self/exe", appPath, sizeof(appPath));
+    if (len == -1 || len == sizeof(appPath)) len = 0;
+    appPath[len] = '\0';
+
+    std::string path(appPath);
+    std::string appname = "Gammy";
+
+    path.erase(path.find(appname), appname.length());
+
+    if(add_cfg) path += settings_filename;
+
+    return path;
+}
+#endif
 
 void readSettings()
 {
-
 #ifdef _WIN32
     const std::wstring path = getExecutablePath(true);
-#elif __linux__
-    const std::wstring tmpPath = getExecutablePath(true);
-
-    //Apparently fstream has no wstring constructor in linux (?), so we have to
-
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-
-    //.to_bytes: wstr->str, .from_bytes: str->wstr)
-    const std::string path = converter.to_bytes(tmpPath);
+#else
+    const std::string path = getAppPath(true);
 #endif
 
 #ifdef dbg
-    #ifdef _WIN32
-        std::wcout << "Settings path: " << path << '\n';
-    #elif __linux__
-         std::cout << "Settings path: " << path << '\n';
-    #endif
+    std::cout << "Opening file...\n";
 #endif
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
-    if(!file.is_open())
+    if(!file || !file.is_open())
     {
-    #ifdef dbg
-        std::cout << "Unable to open settings.\n";
-    #endif
+        #ifdef dbg
+        std::cout << "Unable to open settings file.\n";
+        #endif
         return;
     }
 
-    if(std::filesystem::is_empty(path))
+    file.seekg(0, std::ios::end);
+    bool empty = file.tellg() == 0;
+
+    if(empty)
     {
         #ifdef dbg
         std::cout << "Settings file is empty. Writing defaults...\n";
