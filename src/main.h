@@ -7,20 +7,20 @@
 
 constexpr unsigned char min_brightness_limit = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char default_brightness = 255;
-constexpr unsigned char settings_count = 7;
+constexpr int           settings_count = 7;
 constexpr auto          appname = "Gammy";
 constexpr auto          settings_filename = "gammysettings.cfg";
 
-extern unsigned char	min_brightness;
-extern unsigned char	max_brightness;
-extern unsigned short	offset;
-extern unsigned char	speed;
-extern unsigned char	temp;
-extern unsigned char	threshold;
-extern unsigned short	polling_rate_ms;
-extern unsigned short	polling_rate_min, polling_rate_max;
+extern int min_brightness;
+extern int max_brightness;
+extern int offset;
+extern int speed;
+extern int temp;
+extern int threshold;
+extern int polling_rate_ms;
+extern int polling_rate_min, polling_rate_max;
 
-extern unsigned short scrBr;
+extern int scrBr;
 
 void setGDIBrightness(unsigned short brightness, int temp);
 

@@ -40,17 +40,17 @@
 #include <thread>
 #include <functional>
 
-unsigned char	min_brightness   = 176;
-unsigned char	max_brightness   = 255;
-unsigned short	offset           = 70;
-unsigned char	speed            = 3;
-unsigned char	temp             = 1;
-unsigned char	threshold        = 32;
-unsigned short	polling_rate_ms  = 100;
-unsigned short	polling_rate_min = 10;
-unsigned short	polling_rate_max = 500;
+int	min_brightness   = 176;
+int	max_brightness   = 255;
+int	offset           = 70;
+int	speed            = 3;
+int	temp             = 1;
+int	threshold        = 32;
+int	polling_rate_ms  = 100;
+int	polling_rate_min = 10;
+int	polling_rate_max = 500;
 
-unsigned short scrBr = default_brightness; //Current screen brightness
+int scrBr = default_brightness; //Current screen brightness
 
 #ifdef _WIN32
 const HDC screenDC = GetDC(nullptr); //GDI Device Context of entire screen
