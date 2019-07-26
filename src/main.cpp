@@ -1000,7 +1000,7 @@ void readSettings()
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
-    if(!file || !file.is_open())
+    if(!file.is_open())
     {
         #ifdef dbg
         std::cout << "Unable to open settings file.\n";
@@ -1035,21 +1035,32 @@ void readSettings()
 
     //Read settings
     {
-        std::string line;
         std::array<int, settings_count> values;
-        int c = 0;
+        values.fill(-1);
 
         #ifdef dbg
         std::cout << "Reading settings...\n";
         #endif
 
-        while (getline(file, line))
+        file.seekg(0);
+
+        size_t c = 0;
+        for (std::string line; std::getline(file, line);)
         {
             #ifdef dbg
-            std::cout << "Reading line: " << line << '\n';
+            std::cout << line << '\n';
             #endif
 
             if(!line.empty()) values[c++] = std::stoi(line.substr(line.find('=') + 1));
+        }
+
+        if(values[0] == -1)
+        {
+            #ifdef dbg
+                std::cout << "ERROR: unable to read settings.\n";
+            #endif
+
+            return;
         }
 
         min_brightness  = values[0];
