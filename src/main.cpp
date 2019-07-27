@@ -559,15 +559,34 @@ void setGDIBrightness(WORD brightness, int temp)
 class X11
 {
 private:
-    int ramp_size = 0;
+    int ramp_sz = 0;
     int screen = 0; //@TODO: actual screen number
 
-    uint16_t* initial_ramp;
-    uint16_t* initial_r;
-    uint16_t* initial_g;
-    uint16_t* initial_b;
+    uint16_t* init_ramp;
 
-    uint16_t* new_ramp;
+    void fillRamp(uint16_t*& ramp, int amount)
+    {
+        uint16_t* r = &ramp[0 * ramp_sz];
+        uint16_t* g = &ramp[1 * ramp_sz];
+        uint16_t* b = &ramp[2 * ramp_sz];
+
+        double slope = 1. * 32 / 255;
+
+        uint16_t output = slope * amount;
+
+#ifdef dbg
+        std::cout << "ScrBr: " << amount << " Interp: " << output << '\n';
+#endif
+
+        for (uint16_t i = 0 ,val = 0; i < ramp_sz; i++)
+        {
+            val = i * output;
+
+            r[i] = val;
+            g[i] = val;
+            b[i] = val;
+        }
+    }
 
 public:
     X11()
@@ -595,13 +614,13 @@ public:
             }
 
             #ifdef dbg
-            std::cout << "Major version: " << major_ver << " Minor version: " << minor_ver << "\n";
+            std::cout << "Major ver: " << major_ver << " Minor ver: " << minor_ver << "\n";
             #endif
        }
 
-        /**Get Gamma ramp and size */
+        /**Get initial gamma ramp and size */
         {
-            if (!XF86VidModeGetGammaRampSize(display, screen, &ramp_size))
+            if (!XF86VidModeGetGammaRampSize(display, screen, &ramp_sz))
             {
                 #ifdef dbg
                 std::cout << "Failed to get XF86 gamma ramp size.\n";
@@ -609,25 +628,19 @@ public:
                 return;
             }
 
-            #ifdef dbg
-            std::cout << "Gamma ramp size: " << ramp_size << "\n";
-            #endif
+            init_ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
 
-            initial_ramp = new uint16_t[3 * ramp_size * sizeof(uint16_t)];
+            uint16_t* r = &init_ramp[0 * ramp_sz];
+            uint16_t* g = &init_ramp[1 * ramp_sz];
+            uint16_t* b = &init_ramp[2 * ramp_sz];
 
-            initial_r = &initial_ramp[0 * ramp_size];
-            initial_g = &initial_ramp[1 * ramp_size];
-            initial_b = &initial_ramp[2 * ramp_size];
-
-            if (!XF86VidModeGetGammaRamp(display, screen, ramp_size, initial_r, initial_g, initial_b))
+            if (!XF86VidModeGetGammaRamp(display, screen, ramp_sz, r, g, b))
             {
                 #ifdef dbg
                 std::cout << "Failed to get XF86 gamma ramp.\n";
                 #endif
                 return;
             }
-
-            new_ramp = new uint16_t[3 * ramp_size * sizeof(uint16_t)];
         }
     }
 
@@ -639,42 +652,42 @@ public:
         int x = 0, y = 0;
         XImage* img;
 
-        //This seems pretty CPU intensive
         img = XGetImage(display, root, x, y, w, h, AllPlanes, ZPixmap);
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
         memcpy(buf, img->data, bufLen);
 
         XDestroyImage(img);
     }
 
-    void setX11Brightness(uint16_t scrBr)
+    void setXF86Brightness(uint16_t scrBr)
     {
-        uint16_t* newgamma_r = &new_ramp[0 * ramp_size];
-        uint16_t* newgamma_g = &new_ramp[1 * ramp_size];
-        uint16_t* newgamma_b = &new_ramp[2 * ramp_size];
-
-        //Screen brightness needs to be interpolated from 0-255 to 0-32
-
-        for (uint16_t i = 0, val = 0; i < ramp_size; i++)
-        {
-            newgamma_r[i] = val;
-            newgamma_g[i] = val;
-            newgamma_b[i] = val;
-
-            val += 28;
+        if (scrBr > default_brightness) {
+            return;
         }
 
-        XF86VidModeSetGammaRamp(display, screen, ramp_size, newgamma_r, newgamma_g, newgamma_b);
+        uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+
+        fillRamp(ramp, scrBr);
+
+        delete[] ramp;
+
+        XF86VidModeSetGammaRamp(display, screen, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+    }
+
+    void setInitialGamma()
+    {
+        XF86VidModeSetGammaRamp(display, screen, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+
+        //uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+        //fillRamp(ramp, max_brightness);
+        //XF86VidModeSetGammaRamp(display, screen, ramp_sz, r, g, b);
     }
 
     ~X11()
     {
-        delete[] new_ramp;
-
-        XF86VidModeSetGammaRamp(display, screen, ramp_size, initial_r, initial_g, initial_b);
         XCloseDisplay(display);
 
-        delete[] initial_ramp;
+        delete[] init_ramp;
     }
 };
 #endif
@@ -696,13 +709,13 @@ void adjustBrightness(Args &args
 {
     size_t threadId = ++args.threadCount;
 
-    #ifdef dbg
+    #ifdef dbgthread
         std::cout << "Thread " << threadId << " started...\n";
     #endif
 
     short sleeptime = (100 - args.imgDelta / 4) / speed;
 
-    short targetBr = default_brightness - args.imgBr + offset;
+    int targetBr = default_brightness - args.imgBr + offset;
 
     if		(targetBr > max_brightness) targetBr = max_brightness;
     else if (targetBr < min_brightness) targetBr = min_brightness;
@@ -711,6 +724,7 @@ void adjustBrightness(Args &args
 
     while (scrBr != targetBr && threadId == args.threadCount)
     {
+
         if (scrBr < targetBr)
         {
             ++scrBr;
@@ -720,7 +734,7 @@ void adjustBrightness(Args &args
 #ifdef _WIN32
         setGDIBrightness(scrBr, temp);
 #elif __linux__
-        //x11.setX11Brightness(scrBr);
+        x11.setXF86Brightness(scrBr);
 #endif
 
         if(args.w->isVisible()) args.w->updateBrLabel();
@@ -734,8 +748,8 @@ void adjustBrightness(Args &args
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
     }
 
-    #ifdef dbg
-    std::printf("Thread %zd finished. Stopped: %d\n", threadId, threadId < args.threadCount);
+    #ifdef dbgthread
+        std::printf("Thread %zd finished. Stopped: %d\n", threadId, threadId < args.threadCount);
     #endif
 }
 
@@ -770,7 +784,6 @@ void app(MainWindow* wnd
 
 #ifdef __linux__
     X11 x11;
-    x11.setX11Brightness(0);
 #endif
 
     while (!wnd->quitClicked)
@@ -788,12 +801,11 @@ void app(MainWindow* wnd
             getGDISnapshot(buf);
         }
 #elif __linux__
-        //@TODO: linux screenshot loop
          x11.getX11Snapshot(buf);
 #endif
 
         imgBr = calcBrightness(buf);
-        //::cout << imgBr << "\n";
+        //std::cout << imgBr << "\n";
         imgDelta += abs(old_imgBr - imgBr);
 
         if (imgDelta > threshold || forceChange)
@@ -824,6 +836,8 @@ void app(MainWindow* wnd
 
 #ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
+#else
+    x11.setInitialGamma();
 #endif
     delete[] buf;
     QApplication::quit();
@@ -861,13 +875,13 @@ int main(int argc, char *argv[])
 #endif
     QApplication a(argc, argv);
     MainWindow wnd;
+    wnd.show();
 
-    std::thread t(app, &wnd
-              #ifdef _WIN32
-                  ,
-                  std::ref(dx), useDXGI
-              #endif
-                  );
+    #ifdef _WIN32
+    std::thread t(app, &wnd, std::ref(dx), useDXGI);
+    #else
+    std::thread t(app, &wnd);
+    #endif
     t.detach();
 
     return a.exec();
@@ -968,7 +982,6 @@ std::string getAppPath(bool add_cfg)
     std::cout << "Getting app path...\n";
     #endif
 
-    char buf[FILENAME_MAX] {};
     char appPath[PATH_MAX];
 
     ssize_t len = readlink("/proc/self/exe", appPath, sizeof(appPath));
