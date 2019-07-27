@@ -631,8 +631,7 @@ void fillRamp(uint16_t*& ramp, int ramp_sz, int amount, int temp)
     }
 
 #ifdef dbg
-    //std::cout << "ScrBr: " << amount << " Interp: " << output << '\n';
-    std::cout << "temp: " << temp << " gdiv: " << gdiv << "tval: " << tval << '\n';
+    std::cout << "ScrBr: " << amount << " Interp: " << output << '\n';
 #endif
 
     for (uint16_t i = 0, val = 0; i < ramp_sz; i++)
