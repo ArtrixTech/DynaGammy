@@ -207,10 +207,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 QMenu* MainWindow::createMenu()
 {
+    auto menu = new QMenu(this);
+#ifdef _WIN32
     QAction* startupAction = new QAction("&Run at startup", this);
     startupAction->setCheckable(true);
+    menu->addAction(startupAction);
 
-#ifdef _WIN32
     connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
@@ -220,13 +222,15 @@ QMenu* MainWindow::createMenu()
         startupAction->setChecked(true);
     }
     else startupAction->setChecked(false);
+#else
+     QAction* showAction = new QAction("&Open settings", this);
+     connect(showAction, &QAction::triggered, this, [=]{MainWindow::show();});
+     menu->addAction(showAction);
 #endif
 
     QAction* quitAction = new QAction("&Quit Gammy", this);
     connect(quitAction, &QAction::triggered, this, [=]{on_closeButton_clicked();});
 
-    auto menu = new QMenu(this);
-    menu->addAction(startupAction);
     menu->addAction(quitAction);
 
     return menu;
