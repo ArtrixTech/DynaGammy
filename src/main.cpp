@@ -873,7 +873,7 @@ int main(int argc, char *argv[])
 #endif
     QApplication a(argc, argv);
     MainWindow wnd;
-    wnd.show();
+    //wnd.show();
 
     #ifdef _WIN32
     std::thread t(app, &wnd, std::ref(dx), useDXGI);
