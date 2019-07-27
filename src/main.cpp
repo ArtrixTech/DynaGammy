@@ -28,7 +28,6 @@
     //#include <opencv2/highgui.hpp>
     #include <cstdint>
     #include <cstring>
-    #include <vector>
 #endif
 
 #include <array>
@@ -556,140 +555,141 @@ void setGDIBrightness(WORD brightness, int temp)
 #endif
 
 #ifdef __linux__
-class X11
+X11::X11()
 {
-private:
-    int ramp_sz = 0;
-    int screen = 0; //@TODO: actual screen number
+    #ifdef dbg
+    std::cout << "Initializing XF86... ";
+    #endif
 
-    uint16_t* init_ramp;
-
-    void fillRamp(uint16_t*& ramp, int amount)
+    /**Query XF86Vidmode extension */
     {
-        uint16_t* r = &ramp[0 * ramp_sz];
-        uint16_t* g = &ramp[1 * ramp_sz];
-        uint16_t* b = &ramp[2 * ramp_sz];
-
-        double slope = 1. * 32 / 255;
-
-        double output = slope * amount;
-
-#ifdef dbg
-        std::cout << "ScrBr: " << amount << " Interp: " << output << '\n';
-#endif
-
-        for (uint16_t i = 0, val = 0; i < ramp_sz; i++)
+        int ev_base, err_base;
+        if (!XF86VidModeQueryExtension(display, &ev_base, &err_base))
         {
-            val = i * output;
-
-            r[i] = val;
-            g[i] = val;
-            b[i] = val;
-        }
-    }
-
-public:
-    X11()
-    {
-        #ifdef dbg
-        std::cout << "Initializing XF86... ";
-        #endif
-
-        /**Query XF86Vidmode extension */
-        {
-            int ev_base, err_base;
-            if (!XF86VidModeQueryExtension(display, &ev_base, &err_base))
-            {
-                #ifdef dbg
-                std::cout << "Failed to query XF86VidMode extension.\n";
-                #endif
-                return;
-            }
-
-            int major_ver, minor_ver;
-            if (!XF86VidModeQueryVersion(display, &major_ver, &minor_ver))
-            {
-                std::cout << "Failed to query XF86VidMode version.\n";
-                return;
-            }
-
             #ifdef dbg
-            std::cout << "Major ver: " << major_ver << " Minor ver: " << minor_ver << "\n";
+            std::cout << "Failed to query XF86VidMode extension.\n";
             #endif
-       }
-
-        /**Get initial gamma ramp and size */
-        {
-            if (!XF86VidModeGetGammaRampSize(display, screen, &ramp_sz))
-            {
-                #ifdef dbg
-                std::cout << "Failed to get XF86 gamma ramp size.\n";
-                #endif
-                return;
-            }
-
-            init_ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
-
-            uint16_t* r = &init_ramp[0 * ramp_sz];
-            uint16_t* g = &init_ramp[1 * ramp_sz];
-            uint16_t* b = &init_ramp[2 * ramp_sz];
-
-            if (!XF86VidModeGetGammaRamp(display, screen, ramp_sz, r, g, b))
-            {
-                #ifdef dbg
-                std::cout << "Failed to get XF86 gamma ramp.\n";
-                #endif
-                return;
-            }
-        }
-    }
-
-    void getX11Snapshot(uint8_t* buf)
-    {
-        Window root;
-        root = DefaultRootWindow(display);
-
-        int x = 0, y = 0;
-        XImage* img;
-
-        img = XGetImage(display, root, x, y, w, h, AllPlanes, ZPixmap);
-        std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
-        memcpy(buf, img->data, bufLen);
-
-        XDestroyImage(img);
-    }
-
-    void setXF86Brightness(uint16_t scrBr)
-    {
-        if (scrBr > default_brightness) {
             return;
         }
 
-        uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+        int major_ver, minor_ver;
+        if (!XF86VidModeQueryVersion(display, &major_ver, &minor_ver))
+        {
+            std::cout << "Failed to query XF86VidMode version.\n";
+            return;
+        }
 
-        fillRamp(ramp, scrBr);
+        #ifdef dbg
+        std::cout << "Major ver: " << major_ver << " Minor ver: " << minor_ver << "\n";
+        #endif
+   }
 
-        delete[] ramp;
-
-        XF86VidModeSetGammaRamp(display, screen, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
-    }
-
-    void setInitialGamma()
+    /**Get initial gamma ramp and size */
     {
-        XF86VidModeSetGammaRamp(display, screen, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+        if (!XF86VidModeGetGammaRampSize(display, screen_num, &ramp_sz))
+        {
+            #ifdef dbg
+            std::cout << "Failed to get XF86 gamma ramp size.\n";
+            #endif
+            return;
+        }
 
-        //uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
-        //fillRamp(ramp, max_brightness);
-        //XF86VidModeSetGammaRamp(display, screen, ramp_sz, r, g, b);
+        init_ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+
+        uint16_t* r = &init_ramp[0 * ramp_sz];
+        uint16_t* g = &init_ramp[1 * ramp_sz];
+        uint16_t* b = &init_ramp[2 * ramp_sz];
+
+        if (!XF86VidModeGetGammaRamp(display, screen_num, ramp_sz, r, g, b))
+        {
+            #ifdef dbg
+            std::cout << "Failed to get XF86 gamma ramp.\n";
+            #endif
+            return;
+        }
     }
+}
 
-    ~X11()
+void fillRamp(uint16_t*& ramp, int ramp_sz, int amount, int temp)
+{
+    uint16_t* r = &ramp[0 * ramp_sz];
+    uint16_t* g = &ramp[1 * ramp_sz];
+    uint16_t* b = &ramp[2 * ramp_sz];
+
+    double slope = 1. * 32 / 255;
+
+    double gdiv = 1.;
+    double bdiv = 1.;
+    double tval = temp;
+
+    double output = slope * amount;
+
+    if(temp > 1)
     {
-        XCloseDisplay(display);
-
-        delete[] init_ramp;
+        bdiv += (tval / 100);
+        gdiv += (tval / 270);
     }
-};
+
+#ifdef dbg
+    //std::cout << "ScrBr: " << amount << " Interp: " << output << '\n';
+    std::cout << "temp: " << temp << " gdiv: " << gdiv << "tval: " << tval << '\n';
+#endif
+
+    for (uint16_t i = 0, val = 0; i < ramp_sz; i++)
+    {
+        val = i * output;
+
+        r[i] = val;
+        g[i] = val / gdiv;
+        b[i] = val / bdiv;
+    }
+}
+
+void X11::getX11Snapshot(uint8_t* buf)
+{
+    Window root;
+    root = DefaultRootWindow(display);
+
+    int x = 0, y = 0;
+    XImage* img;
+
+    img = XGetImage(display, root, x, y, w, h, AllPlanes, ZPixmap);
+    std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
+    memcpy(buf, img->data, bufLen);
+
+    XDestroyImage(img);
+}
+
+void setXF86Brightness(uint16_t scrBr, int temp, int ramp_sz)
+{
+    if (scrBr > default_brightness) {
+        return;
+    }
+
+    uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+
+    fillRamp(ramp, ramp_sz, scrBr, temp);
+
+    delete[] ramp;
+
+    XF86VidModeSetGammaRamp(display, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+}
+
+void X11::setInitialGamma()
+{
+    XF86VidModeSetGammaRamp(display, screen_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+
+    //uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+    //fillRamp(ramp, max_brightness);
+    //XF86VidModeSetGammaRamp(display, screen, ramp_sz, r, g, b);
+}
+
+X11::~X11()
+{
+    XCloseDisplay(display);
+
+    delete[] init_ramp;
+}
 #endif
 
 struct Args {
@@ -724,7 +724,6 @@ void adjustBrightness(Args &args
 
     while (scrBr != targetBr && threadId == args.threadCount)
     {
-
         if (scrBr < targetBr)
         {
             ++scrBr;
@@ -734,7 +733,7 @@ void adjustBrightness(Args &args
 #ifdef _WIN32
         setGDIBrightness(scrBr, temp);
 #elif __linux__
-        x11.setXF86Brightness(scrBr);
+        setXF86Brightness(scrBr, temp, 2048);
 #endif
 
         if(args.w->isVisible()) args.w->updateBrLabel();

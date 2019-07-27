@@ -306,7 +306,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
 #elif __linux__
-    //@TODO: Set temperature on linux
+    setXF86Brightness(scrBr, temp, 2048);
 #endif
 }
 

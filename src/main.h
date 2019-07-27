@@ -24,6 +24,7 @@ extern int scrBr;
 
 void setGDIBrightness(unsigned short brightness, int temp);
 
+
 void checkInstance();
 void checkGammaRange();
 void readSettings();
@@ -33,5 +34,23 @@ std::wstring getExecutablePath(bool);
 #else
 std::string getAppPath(bool);
 #endif
+
+class X11
+{
+private:
+    int ramp_sz;
+    int screen_num;
+    uint16_t* init_ramp;
+
+public:
+    X11();
+
+    void getX11Snapshot(uint8_t* buf);
+    void setInitialGamma();
+
+    ~X11();
+};
+
+void setXF86Brightness(uint16_t scrBr, int temp, int ramp_sz);
 
 #endif // MAIN_H
