@@ -572,13 +572,13 @@ private:
 
         double slope = 1. * 32 / 255;
 
-        uint16_t output = slope * amount;
+        double output = slope * amount;
 
 #ifdef dbg
         std::cout << "ScrBr: " << amount << " Interp: " << output << '\n';
 #endif
 
-        for (uint16_t i = 0 ,val = 0; i < ramp_sz; i++)
+        for (uint16_t i = 0, val = 0; i < ramp_sz; i++)
         {
             val = i * output;
 
