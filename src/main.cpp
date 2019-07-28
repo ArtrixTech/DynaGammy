@@ -636,6 +636,10 @@ void app(MainWindow* wnd
     short imgDelta = 0;
     bool forceChange = true;
 
+#ifdef __linux__
+    x11.setXF86Brightness(scrBr, temp);
+#endif
+
     while (!wnd->quitClicked)
     {
 #ifdef _WIN32
@@ -687,7 +691,7 @@ void app(MainWindow* wnd
 #ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
 #else
-    x11.setInitialGamma();
+    x11.setInitialGamma(false);
 #endif
     delete[] buf;
     QApplication::quit();
