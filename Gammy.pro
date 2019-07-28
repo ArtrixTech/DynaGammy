@@ -27,13 +27,15 @@ CONFIG += c++17
 
 SOURCES += \
         src/main.cpp \
-        src/mainwindow.cpp
+        src/mainwindow.cpp \
+    src/x11.cpp
 
 HEADERS += \
         src/mainwindow.h \
     src/main.h \
     winres.h \
-    winres.rc
+    winres.rc \
+    src/x11.h
 
 FORMS += \
         src/mainwindow.ui

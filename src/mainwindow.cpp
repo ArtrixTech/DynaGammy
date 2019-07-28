@@ -6,6 +6,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
+#include "x11.h"
 #ifdef _WIN32
 #include <Windows.h>
 #elif __linux__
@@ -310,7 +311,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
 #elif __linux__
-    setXF86Brightness(scrBr, temp, 2048);
+     x11.setXF86Brightness(scrBr, val);
 #endif
 }
 
