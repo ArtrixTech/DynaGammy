@@ -37,7 +37,7 @@ X11::X11()
         }
 
         #ifdef dbg
-        std::cout << "Major ver: " << major_ver << " Minor ver: " << minor_ver << "\n";
+        std::cout << "XF86 Major ver: " << major_ver << " Minor ver: " << minor_ver << "\n";
         #endif
    }
 
@@ -127,10 +127,25 @@ void X11::setXF86Brightness(uint16_t scrBr, int temp)
     XF86VidModeSetGammaRamp(display, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
 }
 
-void X11::setInitialGamma()
+void X11::setInitialGamma(bool set_previous)
 {
-    //Sets the gamma to how it was before the program started
-    XF86VidModeSetGammaRamp(display, screen_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+#ifdef dbg
+    std::cout << "Setting initial gamma...\n";
+#endif
+
+    if(set_previous)
+    {
+        //Sets the gamma to how it was before the program started
+        XF86VidModeSetGammaRamp(display, screen_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+    }
+    else
+    {
+        //Sets the gamma to default values
+        uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+        fillRamp(ramp, default_brightness, 1);
+        XF86VidModeSetGammaRamp(display, screen_num, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+        delete[] ramp;
+    }
 }
 
 X11::~X11()
