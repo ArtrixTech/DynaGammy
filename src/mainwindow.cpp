@@ -225,7 +225,7 @@ QMenu* MainWindow::createMenu()
     else startupAction->setChecked(false);
 #else
      QAction* showAction = new QAction("&Open settings", this);
-     connect(showAction, &QAction::triggered, this, [=]{MainWindow::show();});
+     connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
      menu->addAction(showAction);
 #endif
 
