@@ -14,11 +14,14 @@ class X11
     int screen_num;
     uint16_t* init_ramp;
 
+    unsigned w, h;
     size_t bufLen;
 
 public:
     X11();
-    unsigned w, h;
+
+    unsigned getWidth();
+    unsigned getHeight();
 
     void getX11Snapshot(uint8_t* buf);
     void fillRamp(uint16_t*& ramp, int amount, int temp);

@@ -55,7 +55,7 @@ const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUA
 const int screenRes = w * h;
 #elif __linux__
 X11 x11;
-const int screenRes = x11.w * x11.h;
+const int screenRes = x11.getWidth() * x11.getHeight();
 #endif
 
 const unsigned bufLen = screenRes * 4;

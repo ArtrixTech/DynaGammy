@@ -67,6 +67,14 @@ X11::X11()
     }
 }
 
+unsigned X11::getWidth() {
+    return w;
+}
+
+unsigned X11::getHeight() {
+    return h;
+}
+
 void X11::getX11Snapshot(uint8_t* buf)
 {
     Window root;
