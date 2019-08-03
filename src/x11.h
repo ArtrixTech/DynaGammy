@@ -1,3 +1,4 @@
+#ifdef __linux__
 #ifndef X11_H
 #define X11_H
 
@@ -34,3 +35,4 @@ public:
 extern X11 x11;
 
 #endif // X11_H
+#endif

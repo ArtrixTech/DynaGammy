@@ -26,11 +26,13 @@ CONFIG += c++11
 CONFIG += c++17
 
 SOURCES += \
+    src/DXGIDupl.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/x11.cpp
 
 HEADERS += \
+    src/DXGIDupl.h \
         src/mainwindow.h \
     src/main.h \
     winres.h \

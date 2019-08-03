@@ -1,3 +1,4 @@
+#ifdef __linux
 #include "x11.h"
 #include "main.h"
 #include <iostream>
@@ -162,3 +163,5 @@ X11::~X11()
 
     delete[] init_ramp;
 }
+
+#endif

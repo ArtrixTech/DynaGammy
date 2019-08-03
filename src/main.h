@@ -9,7 +9,7 @@ constexpr unsigned char min_brightness_limit = 64; //Below 127, SetDeviceGammaRa
 constexpr unsigned char default_brightness = 255;
 constexpr int           settings_count = 7;
 constexpr auto          appname = "Gammy";
-constexpr auto          settings_filename = "gammysettings.cfg";
+const std::string       settings_filename = "gammysettings.cfg";
 
 extern int min_brightness;
 extern int max_brightness;
