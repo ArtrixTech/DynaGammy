@@ -15,13 +15,17 @@ X11::X11()
 
     display = XOpenDisplay(nullptr);
     scr = DefaultScreenOfDisplay(display);
+    scr_num = DefaultScreen(display);
+    root = DefaultRootWindow(display);
     w = unsigned(scr->width);
     h = unsigned(scr->height);
-    bufLen = w * h * 4;
 
     /**Query XF86Vidmode extension */
     {
+        XInitExtension(display, "XF86VidMode");
+
         int ev_base, err_base;
+
         if (!XF86VidModeQueryExtension(display, &ev_base, &err_base))
         {
             #ifdef dbg
@@ -44,7 +48,7 @@ X11::X11()
 
     /**Get initial gamma ramp and size */
     {
-        if (!XF86VidModeGetGammaRampSize(display, screen_num, &ramp_sz))
+        if (!XF86VidModeGetGammaRampSize(display, scr_num, &ramp_sz))
         {
             #ifdef dbg
             std::cout << "Failed to get XF86 gamma ramp size.\n";
@@ -58,7 +62,7 @@ X11::X11()
         uint16_t* g = &init_ramp[1 * ramp_sz];
         uint16_t* b = &init_ramp[2 * ramp_sz];
 
-        if (!XF86VidModeGetGammaRamp(display, screen_num, ramp_sz, r, g, b))
+        if (!XF86VidModeGetGammaRamp(display, scr_num, ramp_sz, r, g, b))
         {
             #ifdef dbg
             std::cout << "Failed to get XF86 gamma ramp.\n";
@@ -78,17 +82,12 @@ unsigned X11::getHeight() {
 
 void X11::getX11Snapshot(uint8_t* buf)
 {
-    Window root;
-    root = DefaultRootWindow(display);
-
-    int x = 0, y = 0;
-    XImage* img;
-
-    img = XGetImage(display, root, x, y, w, h, AllPlanes, ZPixmap);
-    std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
-    memcpy(buf, img->data, bufLen);
-
+    XImage* img = XGetImage(display, root, 0, 0, w, h, AllPlanes, ZPixmap);
+    size_t len = size_t(img->bytes_per_line * img->height);
+    memcpy(buf, img->data, len);
     XDestroyImage(img);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
 }
 
 void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
@@ -111,6 +110,8 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
         gdiv += (tval / 270);
     }
 
+    std::cout << output << '\n';
+
     for (uint16_t i = 0; i < ramp_sz; i++)
     {
         double val = i * output;
@@ -131,9 +132,21 @@ void X11::setXF86Brightness(uint16_t scrBr, int temp)
 
     fillRamp(ramp, scrBr, temp);
 
+    bool r = XF86VidModeSetGammaRamp(display, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+
     delete[] ramp;
 
-    XF86VidModeSetGammaRamp(display, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+    if(!r)
+    {
+       #ifdef dbg
+       std::cout << "Failed to set XF86 Gamma ramp.\n";
+       #endif
+
+       delete[] ramp;
+
+       return;
+    }
+
 }
 
 void X11::setInitialGamma(bool set_previous)
@@ -145,14 +158,14 @@ void X11::setInitialGamma(bool set_previous)
     if(set_previous)
     {
         //Sets the gamma to how it was before the program started
-        XF86VidModeSetGammaRamp(display, screen_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+        XF86VidModeSetGammaRamp(display, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
     }
     else
     {
         //Sets the gamma to default values
         uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
         fillRamp(ramp, default_brightness, 1);
-        XF86VidModeSetGammaRamp(display, screen_num, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+        XF86VidModeSetGammaRamp(display, scr_num, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
         delete[] ramp;
     }
 }

@@ -10,13 +10,13 @@ class X11
 {
     Display* display;
     Screen* scr;
+    Window root;
 
     int ramp_sz;
-    int screen_num;
+    int scr_num;
     uint16_t* init_ramp;
 
     unsigned w, h;
-    size_t bufLen;
 
 public:
     X11();
