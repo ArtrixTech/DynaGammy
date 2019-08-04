@@ -62,7 +62,7 @@ int calcBrightness(uint8_t* buf)
     int g_sum = 0;
     int b_sum = 0;
 
-    for (int i = bufLen; i > 0; i -= 4)
+    for (int i = bufLen - 4; i > 0; i -= 4)
     {
         r_sum += buf[i + 2];
         g_sum += buf[i + 1];
@@ -71,12 +71,11 @@ int calcBrightness(uint8_t* buf)
 
     int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f)) / screenRes;
 
-#ifdef dbg
-    /*
+#ifdef dbgluma
     std::cout << "\nRed: " << r_sum << '\n';
     std::cout << "Green: " << g_sum << '\n';
     std::cout << "Blue: " << b_sum << '\n';
-    std::cout << "Luma:" << luma << '\n';*/
+    std::cout << "Luma:" << luma << '\n';
 #endif
 
     return luma;
