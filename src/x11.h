@@ -8,7 +8,8 @@
 
 class X11
 {
-    Display* display;
+    Display* img_dsp;
+    Display* gamma_dsp; //Need to use two diffent displays to avoid XIO fatal error
     Screen* scr;
     Window root;
 

@@ -13,20 +13,23 @@ X11::X11()
     std::cout << "Initializing X11... ";
     #endif
 
-    display = XOpenDisplay(nullptr);
-    scr = DefaultScreenOfDisplay(display);
-    scr_num = DefaultScreen(display);
-    root = DefaultRootWindow(display);
+    img_dsp = XOpenDisplay(nullptr);
+    gamma_dsp = XOpenDisplay(nullptr);
+
+    Display* dsp = XOpenDisplay(nullptr);
+    scr = DefaultScreenOfDisplay(dsp);
+    scr_num = DefaultScreen(dsp);
+    root = DefaultRootWindow(dsp);
     w = unsigned(scr->width);
     h = unsigned(scr->height);
 
     /**Query XF86Vidmode extension */
     {
-        XInitExtension(display, "XF86VidMode");
+        XInitExtension(dsp, "XF86VidMode");
 
         int ev_base, err_base;
 
-        if (!XF86VidModeQueryExtension(display, &ev_base, &err_base))
+        if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base))
         {
             #ifdef dbg
             std::cout << "Failed to query XF86VidMode extension.\n";
@@ -35,7 +38,7 @@ X11::X11()
         }
 
         int major_ver, minor_ver;
-        if (!XF86VidModeQueryVersion(display, &major_ver, &minor_ver))
+        if (!XF86VidModeQueryVersion(dsp, &major_ver, &minor_ver))
         {
             std::cout << "Failed to query XF86VidMode version.\n";
             return;
@@ -48,7 +51,7 @@ X11::X11()
 
     /**Get initial gamma ramp and size */
     {
-        if (!XF86VidModeGetGammaRampSize(display, scr_num, &ramp_sz))
+        if (!XF86VidModeGetGammaRampSize(dsp, scr_num, &ramp_sz))
         {
             #ifdef dbg
             std::cout << "Failed to get XF86 gamma ramp size.\n";
@@ -62,7 +65,7 @@ X11::X11()
         uint16_t* g = &init_ramp[1 * ramp_sz];
         uint16_t* b = &init_ramp[2 * ramp_sz];
 
-        if (!XF86VidModeGetGammaRamp(display, scr_num, ramp_sz, r, g, b))
+        if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
             #ifdef dbg
             std::cout << "Failed to get XF86 gamma ramp.\n";
@@ -70,6 +73,8 @@ X11::X11()
             return;
         }
     }
+
+    XCloseDisplay(dsp);
 }
 
 unsigned X11::getWidth() {
@@ -82,10 +87,13 @@ unsigned X11::getHeight() {
 
 void X11::getX11Snapshot(uint8_t* buf)
 {
-    XImage* img = XGetImage(display, root, 0, 0, w, h, AllPlanes, ZPixmap);
+    XImage* img = XGetImage(img_dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
     size_t len = size_t(img->bytes_per_line * img->height);
+
     memcpy(buf, img->data, len);
+
     XDestroyImage(img);
+    //XCloseDisplay(d);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
 }
@@ -129,10 +137,9 @@ void X11::setXF86Brightness(uint16_t scrBr, int temp)
     }
 
     uint16_t* ramp = new uint16_t[3 * size_t(ramp_sz) * sizeof(uint16_t)];
-
     fillRamp(ramp, scrBr, temp);
 
-    bool r = XF86VidModeSetGammaRamp(display, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+    bool r = XF86VidModeSetGammaRamp(gamma_dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
 
     delete[] ramp;
 
@@ -146,7 +153,6 @@ void X11::setXF86Brightness(uint16_t scrBr, int temp)
 
        return;
     }
-
 }
 
 void X11::setInitialGamma(bool set_previous)
@@ -155,25 +161,29 @@ void X11::setInitialGamma(bool set_previous)
     std::cout << "Setting initial gamma...\n";
 #endif
 
+    Display* d = XOpenDisplay(nullptr);
+
     if(set_previous)
     {
         //Sets the gamma to how it was before the program started
-        XF86VidModeSetGammaRamp(display, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
     }
     else
     {
         //Sets the gamma to default values
-        uint16_t* ramp = new uint16_t[3 * ramp_sz * sizeof(uint16_t)];
+        uint16_t* ramp = new uint16_t[3 * size_t(ramp_sz) * sizeof(uint16_t)];
         fillRamp(ramp, default_brightness, 1);
-        XF86VidModeSetGammaRamp(display, scr_num, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
         delete[] ramp;
     }
+
+    XCloseDisplay(d);
 }
 
 X11::~X11()
 {
-    XCloseDisplay(display);
-
+    XCloseDisplay(img_dsp);
+    XCloseDisplay(gamma_dsp);
     delete[] init_ramp;
 }
 
