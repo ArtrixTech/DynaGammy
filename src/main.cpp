@@ -21,6 +21,8 @@
 #elif __linux__
     #include "x11.h"
     #include <unistd.h>
+    #include <sys/types.h>
+    #include <pwd.h>
 #endif
 
 #include <array>
@@ -426,24 +428,23 @@ std::wstring getExecutablePath(bool add_cfg)
     return path;
 }
 #else
-std::string getAppPath(bool add_cfg)
+
+std::string getHomePath(bool add_cfg)
 {
-    #ifdef dbg
-    std::cout << "Getting app path...\n";
-    #endif
+    const char* home_path;
 
-    char appPath[PATH_MAX];
+    if ((home_path = getenv("HOME")) == nullptr)
+    {
+        home_path = getpwuid(getuid())->pw_dir;
+    }
 
-    ssize_t len = readlink("/proc/self/exe", appPath, sizeof(appPath));
-    if (len == -1 || len == sizeof(appPath)) len = 0;
-    appPath[len] = '\0';
+    std::string path(home_path);
 
-    std::string path(appPath);
-    std::string appname = "Gammy";
+    if(add_cfg) path += "/.gammy";
 
-    path.erase(path.find(appname), appname.length());
-
-    if(add_cfg) path += settings_filename;
+#ifdef dbg
+    std::cout << "Config path: " << path << '\n';
+#endif
 
     return path;
 }
@@ -454,11 +455,11 @@ void readSettings()
 #ifdef _WIN32
     const std::wstring path = getExecutablePath(true);
 #else
-    const std::string path = getAppPath(true);
+    const std::string path = getHomePath(true);
 #endif
 
 #ifdef dbg
-    std::cout << "Opening file...\n";
+    std::cout << "Opening config...\n";
 #endif
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
@@ -477,7 +478,7 @@ void readSettings()
     if(empty)
     {
         #ifdef dbg
-        std::cout << "Settings file is empty. Writing defaults...\n";
+        std::cout << "Config empty. Writing defaults...\n";
         #endif
 
         std::array<std::string, settings_count> lines = {

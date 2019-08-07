@@ -31,7 +31,7 @@ void readSettings();
 #ifdef _WIN32
 std::wstring getExecutablePath(bool);
 #else
-std::string getAppPath(bool);
+std::string getHomePath(bool);
 #endif
 
 
