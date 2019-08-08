@@ -13,6 +13,7 @@
 #include <locale>
 #include <codecvt>
 #endif
+
 #include <array>
 #include <QScreen>
 #include <QSystemTrayIcon>
@@ -22,90 +23,6 @@
 #include <QMenu>
 #include <iostream>
 #include <fstream>
-
-#ifdef _WIN32
-void toggleRegkey(bool isChecked)
-{
-    LSTATUS s;
-    HKEY hKey = nullptr;
-    LPCWSTR subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-
-    if (isChecked)
-    {
-        WCHAR path[MAX_PATH + 3], tmpPath[MAX_PATH + 3];
-        GetModuleFileName(nullptr, tmpPath, MAX_PATH + 1);
-        wsprintfW(path, L"\"%s\"", tmpPath);
-
-        s = RegCreateKeyExW(HKEY_CURRENT_USER, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | KEY_WOW64_64KEY, nullptr, &hKey, nullptr);
-
-        if (s == ERROR_SUCCESS)
-        {
-            #ifdef dbg
-            std::cout << "RegKey opened.\n";
-            #endif
-
-            s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
-
-            #ifdef dbg
-                if (s == ERROR_SUCCESS) {
-                    std::cout << "RegValue set.\n";
-                }
-                else {
-                    std::cout << "Error when setting RegValue.\n";
-                }
-            #endif
-        }
-        #ifdef dbg
-        else {
-            std::cout << "Error when opening RegKey.\n";
-        }
-        #endif
-    }
-    else {
-        s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
-
-        #ifdef dbg
-            if (s == ERROR_SUCCESS)
-                std::cout << "RegValue deleted.\n";
-            else
-                std::cout << "RegValue deletion failed.\n";
-        #endif
-    }
-
-    if(hKey) RegCloseKey(hKey);
-}
-#endif
-
-void updateFile()
-{
-#ifdef dbg
-    std::cout << "Updating file...\n";
-#endif
-
-#ifdef _WIN32
-    static const std::wstring path = getExecutablePath(true);
-#elif __linux__
-    static const std::string path = getHomePath(true);
-#endif
-
-    std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
-
-    if(file.is_open())
-    {
-        std::array<std::string, settings_count> lines = {
-            "minBrightness=" + std::to_string(min_brightness),
-            "maxBrightness=" + std::to_string(max_brightness),
-            "offset=" + std::to_string(offset),
-            "speed=" + std::to_string(speed),
-            "temp=" + std::to_string(temp),
-            "threshold=" + std::to_string(threshold),
-            "updateRate=" + std::to_string(polling_rate_ms)
-        };
-
-        for(const auto &s : lines) file << s << '\n';
-        file.close();
-    }
-}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
@@ -142,66 +59,27 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     /*Set slider properties*/
     {
-        ui->minBrLabel->setText(QStringLiteral("%1").arg(min_brightness));
-        ui->maxBrLabel->setText(QStringLiteral("%1").arg(max_brightness));
-        ui->offsetLabel->setText(QStringLiteral("%1").arg(offset));
-        ui->speedLabel->setText(QStringLiteral("%1").arg(speed));
-        ui->tempLabel->setText(QStringLiteral("%1").arg(temp));
-        ui->thresholdLabel->setText(QStringLiteral("%1").arg(threshold));
+        ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr].second));
+        ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr].second));
+        ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset].second));
+        ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed].second));
+        ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp].second));
+        ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold].second));
         ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 
-        ui->minBrSlider->setValue(min_brightness);
-        ui->maxBrSlider->setValue(max_brightness);
-        ui->offsetSlider->setValue(offset);
-        ui->speedSlider->setValue(speed);
-        ui->tempSlider->setValue(temp);
-        ui->thresholdSlider->setValue(threshold);
+        ui->minBrSlider->setValue(cfg[MinBr].second);
+        ui->maxBrSlider->setValue(cfg[MaxBr].second);
+        ui->offsetSlider->setValue(cfg[Offset].second);
+        ui->speedSlider->setValue(cfg[Speed].second);
+        ui->tempSlider->setValue(cfg[Temp].second);
+        ui->thresholdSlider->setValue(cfg[Threshold].second);
 
         /*Set pollingSlider properties*/
         {
-            const auto temp = polling_rate_ms; //After setRange, polling_rate_ms changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
+            const auto temp = cfg[Polling_rate].second; //After setRange, polling_rate_ms changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
             ui->pollingSlider->setRange(polling_rate_min, polling_rate_max);
             ui->pollingLabel->setText(QString::number(temp));
             ui->pollingSlider->setValue(temp);
-        }
-    }
-
-    /*Make sliders update settings file*/
-    {
-        {
-            auto signal = &QAbstractSlider::sliderReleased;
-            auto slot = [&]{ updateFile(); };
-
-            connect(ui->minBrSlider, signal, slot);
-            connect(ui->maxBrSlider, signal, slot);
-            connect(ui->offsetSlider, signal, slot);
-            connect(ui->speedSlider, signal, slot);
-            connect(ui->tempSlider, signal, slot);
-            connect(ui->thresholdSlider, signal, slot);
-            connect(ui->pollingSlider, signal, slot);
-        }
-
-        {
-            //sliderReleased doesn't fire when pressing the arrow keys or Pageup/down to change the values.
-            //To workaround this, we use valueChanged and ignore it when the slider is not pressed, to avoid unnecessary disk writes.
-            //There is probably a more elegant way of doing this, but it works for now.
-
-            auto signal = &QAbstractSlider::valueChanged;
-            auto lambda = [&](QAbstractSlider* s)
-            {
-                if(!s->isSliderDown())
-                {
-                    updateFile();
-                }
-            };
-
-            connect(ui->minBrSlider, signal, std::bind(lambda, ui->minBrSlider));
-            connect(ui->maxBrSlider, signal, std::bind(lambda, ui->maxBrSlider));
-            connect(ui->offsetSlider, signal, std::bind(lambda, ui->offsetSlider));
-            connect(ui->speedSlider, signal, std::bind(lambda, ui->speedSlider));
-            connect(ui->tempSlider, signal, std::bind(lambda, ui->tempSlider));
-            connect(ui->thresholdSlider, signal, std::bind(lambda, ui->thresholdSlider));
-            connect(ui->pollingSlider, signal, std::bind(lambda, ui->pollingSlider));
         }
     }
 }
@@ -281,33 +159,35 @@ void MainWindow::on_closeButton_clicked()
     trayIcon->hide();
 }
 
-/////////////////////////////////////////////////////////
+//___________________________________________________________
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
-    if(val > max_brightness) val = max_brightness;
-    min_brightness = val;
+    if(val > cfg[MaxBr].second) val = cfg[MaxBr].second;
+
+    cfg[MinBr].second = val;
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
-    if(val < min_brightness) val = min_brightness;
-    max_brightness = val;
+    if(val < cfg[MinBr].second) val = cfg[MinBr].second;
+
+    cfg[MaxBr].second = val;
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
-    offset = val;
+    cfg[Offset].second = val;
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
-    speed = val;
+    cfg[Speed].second = val;
 }
 
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
-    temp = val;
+    cfg[Temp].second = val;
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
 #elif __linux__
@@ -317,15 +197,13 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
 {
-    threshold = val;
+    cfg[Threshold].second = val;
 }
 
 void MainWindow::on_pollingSlider_valueChanged(int val)
 {
-    polling_rate_ms = val;
+    cfg[Polling_rate].second = val;
 }
-
-/////////////////////////////////////////////////////////
 
 MainWindow::~MainWindow()
 {

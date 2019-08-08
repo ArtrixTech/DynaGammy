@@ -91,11 +91,9 @@ void X11::getX11Snapshot(uint8_t* buf)
     size_t len = size_t(img->bytes_per_line * img->height);
 
     memcpy(buf, img->data, len);
-
     XDestroyImage(img);
-    //XCloseDisplay(d);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(polling_rate_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate].second));
 }
 
 void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
