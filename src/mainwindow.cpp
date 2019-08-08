@@ -7,11 +7,9 @@
 #include "ui_mainwindow.h"
 #include "main.h"
 #include "x11.h"
+
 #ifdef _WIN32
 #include <Windows.h>
-#elif __linux__
-#include <locale>
-#include <codecvt>
 #endif
 
 #include <array>

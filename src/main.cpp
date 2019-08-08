@@ -312,13 +312,13 @@ void readConfig()
     file.seekg(0, std::ios::end);
     bool empty = file.tellg() == 0;
 
-    size_t c = 0;
     if(empty)
     {
         #ifdef dbg
         std::cout << "Config empty. Writing defaults...\n";
         #endif
 
+        size_t c = 0;
         for(const auto &s : cfg[c++].first) file << s << '\n';
 
         file.close();
@@ -330,9 +330,6 @@ void readConfig()
         #ifdef dbg
         std::cout << "Reading settings...\n";
         #endif
-
-        std::array<int, cfg_count> values;
-        values.fill(-1);
 
         file.seekg(0);
 

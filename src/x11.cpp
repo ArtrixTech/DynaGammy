@@ -116,8 +116,6 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
         gdiv += (tval / 270);
     }
 
-    std::cout << output << '\n';
-
     for (uint16_t i = 0; i < ramp_sz; i++)
     {
         double val = i * output;
