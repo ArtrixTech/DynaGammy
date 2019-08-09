@@ -11,7 +11,7 @@
 
 #ifdef _WIN32
     #include <Windows.h>
-    #include "DXGIDupl.h"
+    #include "dxgidupl.h"
 
     #pragma comment(lib, "gdi32.lib")
     #pragma comment(lib, "user32.lib")
@@ -50,7 +50,6 @@ std::array<std::pair<std::string, int>, cfg_count> cfg =
 }};
 
 #ifdef _WIN32
-DXGIDupl dx;
 const HDC screenDC = GetDC(nullptr);
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
@@ -64,6 +63,7 @@ const unsigned bufLen = screenRes * 4;
 
 int calcBrightness(uint8_t* buf)
 {
+
     int r_sum = 0;
     int g_sum = 0;
     int b_sum = 0;
@@ -95,12 +95,7 @@ struct Args {
     MainWindow* w = nullptr;
 };
 
-void adjustBrightness(Args &args
-                      #ifdef __linux__
-                      ,
-                      X11 &x11
-                      #endif
-                      )
+void adjustBrightness(Args &args)
 {
     size_t threadId = ++args.threadCount;
 
@@ -153,13 +148,7 @@ void adjustBrightness(Args &args
     #endif
 }
 
-void app(MainWindow* wnd
-         #ifdef _WIN32
-         ,
-         DXGIDupl &dx,
-         const bool useDXGI
-         #endif
-         )
+void app(MainWindow* wnd)
 {
     #ifdef dbg
     std::cout << "Starting routine...\n";
@@ -182,13 +171,23 @@ void app(MainWindow* wnd
     short imgDelta = 0;
     bool forceChange = true;
 
-#ifdef __linux__
+    #ifdef _WIN32
+    DXGIDupl dx;
+    bool useDXGI = dx.initDXGI();
+
+    if (!useDXGI)
+    {
+        polling_rate_min = 1000;
+        polling_rate_max = 5000;
+        wnd->updatePollingSlider(polling_rate_min, polling_rate_max);
+    }
+    #else
     x11.setXF86Brightness(scrBr, cfg[Temp].second);
-#endif
+    #endif
 
     while (!wnd->quitClicked)
     {
-#ifdef _WIN32
+        #ifdef _WIN32
         if (useDXGI)
         {
             while (!dx.getDXGISnapshot(buf))
@@ -200,9 +199,9 @@ void app(MainWindow* wnd
         {
             getGDISnapshot(buf);
         }
-#elif __linux__
-         x11.getX11Snapshot(buf);
-#endif
+        #else
+        x11.getX11Snapshot(buf);
+        #endif
 
         imgBr = calcBrightness(buf);
         //std::cout << imgBr << "\n";
@@ -214,11 +213,8 @@ void app(MainWindow* wnd
             args.imgDelta = imgDelta;
             imgDelta = 0;
 
-#ifdef _WIN32
             std::thread t(adjustBrightness, std::ref(args));
-#elif __linux__
-            std::thread t(adjustBrightness, std::ref(args), std::ref(x11));
-#endif
+
             t.detach();
 
             forceChange = false;
@@ -259,27 +255,14 @@ int main(int argc, char *argv[])
 
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
-    const bool useDXGI = dx.initDXGI();
-
-    if (!useDXGI)
-    {
-        polling_rate_min = 1000;
-        polling_rate_max = 5000;
-    }
-
     checkGammaRange();
 #endif
-    readConfig();
 
     QApplication a(argc, argv);
     MainWindow wnd;
     //wnd.show();
 
-    #ifdef _WIN32
-    std::thread t(app, &wnd, std::ref(dx), useDXGI);
-    #else
     std::thread t(app, &wnd);
-    #endif
     t.detach();
 
     return a.exec();
@@ -342,8 +325,8 @@ void readConfig()
 
             if(!line.empty())
             {
-                std::string substr = line.substr(0, line.find('=') + 1);
-                std::string val = line.substr(line.find('=') + 1);
+                size_t pos = line.find('=') + 1;
+                std::string val = line.substr(pos);
 
                 cfg[c++].second = std::stoi(val);
             }

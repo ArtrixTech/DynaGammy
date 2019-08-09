@@ -19,6 +19,7 @@ public:
     bool quitClicked = false;
 
     void updateBrLabel();
+    void updatePollingSlider(int, int);
 
 private slots:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);

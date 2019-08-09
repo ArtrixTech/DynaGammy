@@ -55,15 +55,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
     }
 
+    readConfig();
+
     /*Set slider properties*/
     {
+        ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+
         ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr].second));
         ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr].second));
         ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset].second));
         ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed].second));
         ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp].second));
         ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold].second));
-        ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+        ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg[Polling_rate].second));
 
         ui->minBrSlider->setValue(cfg[MinBr].second);
         ui->maxBrSlider->setValue(cfg[MaxBr].second);
@@ -71,15 +75,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->speedSlider->setValue(cfg[Speed].second);
         ui->tempSlider->setValue(cfg[Temp].second);
         ui->thresholdSlider->setValue(cfg[Threshold].second);
-
-        /*Set pollingSlider properties*/
-        {
-            const auto temp = cfg[Polling_rate].second; //After setRange, polling_rate_ms changes to 1000 when using GDI. Perhaps setRange fires valueChanged.
-            ui->pollingSlider->setRange(polling_rate_min, polling_rate_max);
-            ui->pollingLabel->setText(QString::number(temp));
-            ui->pollingSlider->setValue(temp);
-        }
+        ui->pollingSlider->setValue(cfg[Polling_rate].second);
     }
+}
+
+void MainWindow::updatePollingSlider(int min, int max)
+{
+   ui->pollingSlider->setRange(min, max);
+
+   const auto poll = cfg[Polling_rate].second;
+   ui->pollingLabel->setText(QString::number(poll));
+   ui->pollingSlider->setValue(poll);
 }
 
 QMenu* MainWindow::createMenu()
