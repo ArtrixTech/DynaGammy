@@ -431,7 +431,7 @@ void getGDISnapshot(uint8_t* buf)
     bminfoheader.biClrImportant = 0;
 
     GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
-    Sleep(polling_rate_ms);
+    Sleep(cfg[Polling_rate].second);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);

@@ -48,7 +48,7 @@ std::wstring getExecutablePath(bool);
 void toggleRegkey(bool);
 
 void getGDISnapshot(uint8_t* buf);
-void setGDIBrightness(WORD brightness, int temp);
+void setGDIBrightness(unsigned short brightness, int temp);
 #else
 std::string getHomePath(bool);
 #endif
