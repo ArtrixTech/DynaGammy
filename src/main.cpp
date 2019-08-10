@@ -332,8 +332,8 @@ void readConfig()
             }
         }
 
-        if(cfg[Polling_rate].second < polling_rate_min) cfg[Polling_rate].second = polling_rate_min;
-        if(cfg[Polling_rate].second > polling_rate_max) cfg[Polling_rate].second = polling_rate_max;
+        //if(cfg[Polling_rate].second < polling_rate_min) cfg[Polling_rate].second = polling_rate_min;
+        //if(cfg[Polling_rate].second > polling_rate_max) cfg[Polling_rate].second = polling_rate_max;
     }
 
     file.close();

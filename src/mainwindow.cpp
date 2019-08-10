@@ -84,6 +84,16 @@ void MainWindow::updatePollingSlider(int min, int max)
    ui->pollingSlider->setRange(min, max);
 
    const auto poll = cfg[Polling_rate].second;
+
+   if(poll < polling_rate_min)
+   {
+       cfg[Polling_rate].second = polling_rate_min;
+   }
+   else if(poll > polling_rate_max)
+   {
+       cfg[Polling_rate].second = polling_rate_max;
+   }
+
    ui->pollingLabel->setText(QString::number(poll));
    ui->pollingSlider->setValue(poll);
 }
