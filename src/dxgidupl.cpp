@@ -372,11 +372,11 @@ void DXGIDupl::restartDXGI()
             case DXGI_ERROR_SESSION_DISCONNECTED: printf("DXGI_ERROR_SESSION_DISCONNECTED\n"); break;
             }
 
-            std::cout << "Retrying... (5 sec)\n";
+            std::cout << "Retrying... (2.5 sec)\n";
         }
         #endif
 
-        Sleep(5000);
+        Sleep(2500);
     } while (hr != S_OK);
 
 #ifdef dbg
