@@ -81,17 +81,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 void MainWindow::updatePollingSlider(int min, int max)
 {
-   ui->pollingSlider->setRange(min, max);
-
    const auto poll = cfg[Polling_rate].second;
 
-   if(poll < polling_rate_min)
+   ui->pollingSlider->setRange(min, max);
+
+   if(poll < min)
    {
-       cfg[Polling_rate].second = polling_rate_min;
+       cfg[Polling_rate].second = min;
    }
-   else if(poll > polling_rate_max)
+   else if(poll > max)
    {
-       cfg[Polling_rate].second = polling_rate_max;
+       cfg[Polling_rate].second = max;
    }
 
    ui->pollingLabel->setText(QString::number(poll));
