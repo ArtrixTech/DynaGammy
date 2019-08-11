@@ -137,18 +137,14 @@ void X11::setXF86Brightness(uint16_t scrBr, int temp)
 
     bool r = XF86VidModeSetGammaRamp(gamma_dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
 
-    delete[] ramp;
-
+#ifdef dbg
     if(!r)
     {
-       #ifdef dbg
-       std::cout << "Failed to set XF86 Gamma ramp.\n";
-       #endif
-
-       delete[] ramp;
-
-       return;
+       std::cout << "setXF86Brightness failed.\n";
     }
+#endif
+
+    delete[] ramp;
 }
 
 void X11::setInitialGamma(bool set_previous)
@@ -166,11 +162,7 @@ void X11::setInitialGamma(bool set_previous)
     }
     else
     {
-        //Sets the gamma to default values
-        uint16_t* ramp = new uint16_t[3 * size_t(ramp_sz) * sizeof(uint16_t)];
-        fillRamp(ramp, default_brightness, 1);
-        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
-        delete[] ramp;
+        X11::setXF86Brightness(default_brightness, 1);
     }
 
     XCloseDisplay(d);

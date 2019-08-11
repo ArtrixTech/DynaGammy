@@ -155,7 +155,7 @@ void adjustBrightness(Args &args)
 void app(MainWindow* wnd)
 {
     #ifdef dbg
-    std::cout << "Starting routine...\n";
+    std::cout << "Starting brightness adjustment...\n";
     #endif
 
     int imgBr     = default_brightness;
@@ -289,14 +289,14 @@ int main(int argc, char *argv[])
 
 void readConfig()
 {
+#ifdef dbg
+    std::cout << "Opening config...\n";
+#endif
+
 #ifdef _WIN32
     const std::wstring path = getExecutablePath(true);
 #else
     const std::string path = getHomePath(true);
-#endif
-
-#ifdef dbg
-    std::cout << "Opening config...\n";
 #endif
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
@@ -325,32 +325,22 @@ void readConfig()
         return;
     }
 
-    //Read settings
+    file.seekg(0);
+
+    size_t c = 0;
+    for (std::string line; std::getline(file, line);)
     {
         #ifdef dbg
-        std::cout << "Reading settings...\n";
+        std::cout << line << '\n';
         #endif
 
-        file.seekg(0);
-
-        size_t c = 0;
-        for (std::string line; std::getline(file, line);)
+        if(!line.empty())
         {
-            #ifdef dbg
-            std::cout << line << '\n';
-            #endif  
+            size_t pos = line.find('=') + 1;
+            std::string val = line.substr(pos);
 
-            if(!line.empty())
-            {
-                size_t pos = line.find('=') + 1;
-                std::string val = line.substr(pos);
-
-                cfg[c++].second = std::stoi(val);
-            }
+            cfg[c++].second = std::stoi(val);
         }
-
-        //if(cfg[Polling_rate].second < polling_rate_min) cfg[Polling_rate].second = polling_rate_min;
-        //if(cfg[Polling_rate].second > polling_rate_max) cfg[Polling_rate].second = polling_rate_max;
     }
 
     file.close();
@@ -359,12 +349,12 @@ void readConfig()
 void updateConfig()
 {
 #ifdef dbg
-    std::cout << "Updating config...\n";
+    std::cout << "Saving config... ";
 #endif
 
 #ifdef _WIN32
     static const std::wstring path = getExecutablePath(true);
-#elif __linux__
+#else
     static const std::string path = getHomePath(true);
 #endif
 
