@@ -23,6 +23,7 @@
     #include <unistd.h>
     #include <sys/types.h>
     #include <pwd.h>
+    #include <signal.h>
 #endif
 
 #include <array>
@@ -256,6 +257,19 @@ int main(int argc, char *argv[])
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
     checkGammaRange();
+#else
+    if (signal(SIGINT, sig_handler) == SIG_ERR)
+    {
+        std::cout << "Error: can't catch SIGINT\n";
+    }
+    if (signal(SIGQUIT, sig_handler) == SIG_ERR)
+    {
+        std::cout << "Error: can't catch SIGQUIT\n";
+    }
+    if (signal(SIGTERM, sig_handler) == SIG_ERR)
+    {
+        std::cout << "Error: can't catch SIGTERM\n";
+    }
 #endif
 
     QApplication a(argc, argv);
@@ -400,10 +414,42 @@ std::string getHomePath(bool add_cfg)
     if(add_cfg) path += "/.gammy";
 
 #ifdef dbg
-    std::cout << "Config path: " << path << '\n';
+    std::cout << "Path: " << path << '\n';
 #endif
 
     return path;
+}
+
+void sig_handler(int signo)
+{
+    switch(signo)
+    {
+        case SIGINT:
+        {
+            #ifdef dbg
+            std::cout << "Received SIGINT.\n";
+            #endif
+            break;
+        }
+        case SIGTERM:
+        {
+            #ifdef dbg
+            std::cout << "Received SIGTERM.\n";
+            #endif
+            break;
+        }
+        case SIGQUIT:
+        {
+            #ifdef dbg
+            std::cout << "Received SIGQUIT.\n";
+            #endif
+            break;
+        }
+    }
+
+    updateConfig();
+    x11.setInitialGamma(false);
+    QApplication::quit();
 }
 #else
 

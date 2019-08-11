@@ -51,6 +51,7 @@ void getGDISnapshot(uint8_t* buf);
 void setGDIBrightness(unsigned short brightness, int temp);
 #else
 std::string getHomePath(bool);
+void sig_handler(int signo);
 #endif
 
 #endif // MAIN_H
