@@ -16,7 +16,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    bool quitClicked = false;
+    bool quit = false;
 
     void updateBrLabel();
     void updatePollingSlider(int, int);

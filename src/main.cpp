@@ -127,11 +127,14 @@ void adjustBrightness(Args &args)
         }
         else --scrBr;
 
+        if(!args.w->quit)
+        {
 #ifdef _WIN32
-        setGDIBrightness(scrBr, cfg[Temp].second);
-#elif __linux__
-        x11.setXF86Brightness(scrBr, cfg[Temp].second);
+            setGDIBrightness(scrBr, cfg[Temp].second);
+#else
+            x11.setXF86Brightness(scrBr, cfg[Temp].second);
 #endif
+        }
 
         if(args.w->isVisible()) args.w->updateBrLabel();
 
@@ -186,7 +189,7 @@ void app(MainWindow* wnd)
     x11.setXF86Brightness(scrBr, cfg[Temp].second);
     #endif
 
-    while (!wnd->quitClicked)
+    while (!wnd->quit)
     {
         #ifdef _WIN32
         if (useDXGI)
@@ -237,7 +240,7 @@ void app(MainWindow* wnd)
 #else
     x11.setInitialGamma(false);
 #endif
-    updateConfig();
+
     delete[] buf;
     QApplication::quit();
 }

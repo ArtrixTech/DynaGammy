@@ -168,9 +168,11 @@ void MainWindow::on_hideButton_clicked()
 
 void MainWindow::on_closeButton_clicked()
 {
-    MainWindow::quitClicked = true;
     MainWindow::hide();
     trayIcon->hide();
+    updateConfig();
+
+    MainWindow::quit = true;
 }
 
 //___________________________________________________________
