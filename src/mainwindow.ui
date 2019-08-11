@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>335</width>
-    <height>309</height>
+    <height>315</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -495,12 +495,10 @@
    <string notr="true">QWidget
 {
 	/*background-color:rgb(17, 35, 40);*/
-		/*background-color:rgb(20, 22, 35);*/
+	/*background-color:rgb(20, 22, 35);*/
 }
 QSlider::groove:horizontal 
 {
-   /*	background-color:rgb(30, 48, 73);
-	background-color: QLinearGradient(x1: 0.38, y2: 2.1, stop: 0 rgb(70, 92, 100),  stop: 1 rgb(30, 48, 73));*/
 	background-color: rgb(35, 112, 145);
    	height:4px;
 	margin-bottom: 0px;
@@ -508,10 +506,13 @@ QSlider::groove:horizontal
 }
 QSlider::handle:horizontal
 {
-	background-color: QLinearGradient(x1: 0.5, y2: 2.1, stop: 0 white,  stop: 1 rgb(30, 48, 73));
-    width:  16px;
-    margin: -6px 0px; 
-    border-radius: 8px;
+	background-color: rgb(235, 225, 255);
+/*	background-color: QLinearGradient(x1: 0.5, y2: 2.1, stop: 0 white,  stop: 1 rgb(30, 48, 73));*/
+/*background-color: rgb(35, 112, 145);*/
+    width:  7px;
+ 	margin: -7px 0px;
+    border-radius: 9px;
+	border: 6px solid transparent
 }
 QLabel {
 font-family:&quot;Segoe UI&quot;;
@@ -617,14 +618,14 @@ font-size: 17px;
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>265</x>
-      <y>3</y>
-      <width>61</width>
-      <height>21</height>
+      <x>250</x>
+      <y>0</y>
+      <width>81</width>
+      <height>32</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="btnLayout">
-     <item>
+     <item alignment="Qt::AlignRight|Qt::AlignTop">
       <widget class="QPushButton" name="hideButton">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">

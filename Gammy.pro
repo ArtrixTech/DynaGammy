@@ -26,14 +26,18 @@ CONFIG += c++11
 CONFIG += c++17
 
 SOURCES += \
+    src/dxgidupl.cpp \
         src/main.cpp \
-        src/mainwindow.cpp
+        src/mainwindow.cpp \
+    src/x11.cpp
 
 HEADERS += \
+    src/dxgidupl.h \
         src/mainwindow.h \
     src/main.h \
     winres.h \
-    winres.rc
+    winres.rc \
+    src/x11.h
 
 FORMS += \
         src/mainwindow.ui
@@ -50,3 +54,8 @@ RESOURCES += \
     res.qrc
 
 DISTFILES +=
+
+linux {
+    LIBS += -lX11
+    LIBS += -lXxf86vm -L/user/lib/x86_64-linux-gnu/
+}
