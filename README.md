@@ -31,6 +31,7 @@ qmake Gammy.pro
 make
 ./Gammy
 ```
+NOTE: If make fails with "PlaceholderText is not a member of QPalette" errors in ui_mainwindow.h, delete the offending lines and run make again.
 
 ## Usage
 Gammy starts minimized in the tray. Click on it to open the window. Expand the options by dragging the arrow in the bottom right.
