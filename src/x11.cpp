@@ -13,6 +13,8 @@ X11::X11()
     std::cout << "Initializing X11... ";
     #endif
 
+    XInitThreads();
+
     img_dsp = XOpenDisplay(nullptr);
     gamma_dsp = XOpenDisplay(nullptr);
 
@@ -87,7 +89,10 @@ unsigned X11::getHeight() {
 
 void X11::getX11Snapshot(uint8_t* buf)
 {
+    XLockDisplay(img_dsp);
     XImage* img = XGetImage(img_dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
+    XUnlockDisplay(img_dsp);
+
     size_t len = size_t(img->bytes_per_line * img->height);
 
     memcpy(buf, img->data, len);
@@ -170,8 +175,8 @@ void X11::setInitialGamma(bool set_previous)
 
 X11::~X11()
 {
-    XCloseDisplay(img_dsp);
-    XCloseDisplay(gamma_dsp);
+    if(img_dsp) XCloseDisplay(img_dsp);
+    if(gamma_dsp) XCloseDisplay(gamma_dsp);
     delete[] init_ramp;
 }
 
