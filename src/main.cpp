@@ -244,10 +244,10 @@ void app(MainWindow* wnd, Args &args)
                 std::cout << "app: ready (" << args.callcnt << ")\n";
     #endif
                 args.cvr.notify_one();
-
-                forceChange = false;
             }
             else args.img_delta = 0;
+
+            forceChange = false;
         }
 
         if (cfg[MinBr].second != old_min || cfg[MaxBr].second != old_max || cfg[Offset].second != old_offset)
