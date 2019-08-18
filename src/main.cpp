@@ -244,6 +244,7 @@ void app(MainWindow* wnd, Args &args)
 
                 forceChange = false;
             }
+            else args.img_delta = 0;
         }
 
         if (cfg[MinBr].second != old_min || cfg[MaxBr].second != old_max || cfg[Offset].second != old_offset)
