@@ -92,12 +92,13 @@ int calcBrightness(uint8_t* buf)
 
 struct Args
 {
-    float img_delta = 0;
     int img_br = 0;
+    int target_br = 0;
+    float img_delta = 0;
     size_t callcnt = 0;
+
     std::mutex mtx;
     std::condition_variable cvr;
-
     MainWindow* w = nullptr;
 };
 
@@ -125,22 +126,20 @@ void adjustBrightness(Args &args)
         int sleeptime = (100 - int(args.img_delta) / 4) / cfg[Speed].second;
         args.img_delta = 0;
 
-        int target_br = default_brightness - args.img_br + cfg[Offset].second;
-
-        if (target_br > cfg[MaxBr].second)
+        if (args.target_br > cfg[MaxBr].second)
         {
-             target_br = cfg[MaxBr].second;
+             args.target_br = cfg[MaxBr].second;
         }
-        else if (target_br < cfg[MinBr].second)
+        else if (args.target_br < cfg[MinBr].second)
         {
-             target_br = cfg[MinBr].second;
+             args.target_br = cfg[MinBr].second;
         }
 
-        if (scrBr < target_br) sleeptime /= 3;
+        if (scrBr < args.target_br) sleeptime /= 3;
 
-        while (scrBr != target_br && c == args.callcnt)
+        while (scrBr != args.target_br && c == args.callcnt)
         {
-            if (scrBr < target_br)
+            if (scrBr < args.target_br)
             {
                 ++scrBr;
             }
@@ -159,7 +158,7 @@ void adjustBrightness(Args &args)
 
             if (scrBr == cfg[MinBr].second || scrBr == cfg[MaxBr].second)
             {
-                target_br = scrBr;
+                args.target_br = scrBr;
                 break;
             }
 
@@ -232,13 +231,19 @@ void app(MainWindow* wnd, Args &args)
 
         if (args.img_delta > cfg[Threshold].second || forceChange)
         {
-            ++args.callcnt;
-#ifdef dbgthr
-            std::cout << "app: ready (" << args.callcnt << ")\n";
-#endif
-            args.cvr.notify_one();
+            args.target_br = default_brightness - args.img_br + cfg[Offset].second;
+            if(args.target_br > default_brightness) args.target_br = default_brightness;
 
-            forceChange = false;
+            if(args.target_br != scrBr)
+            {
+                ++args.callcnt;
+    #ifdef dbgthr
+                std::cout << "app: ready (" << args.callcnt << ")\n";
+    #endif
+                args.cvr.notify_one();
+
+                forceChange = false;
+            }
         }
 
         if (cfg[MinBr].second != old_min || cfg[MaxBr].second != old_max || cfg[Offset].second != old_offset)
