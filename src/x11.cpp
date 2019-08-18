@@ -97,8 +97,6 @@ void X11::getX11Snapshot(uint8_t* buf)
 
     memcpy(buf, img->data, len);
     XDestroyImage(img);
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate].second));
 }
 
 void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
@@ -155,7 +153,7 @@ void X11::setXF86Brightness(uint16_t scrBr, int temp)
 void X11::setInitialGamma(bool set_previous)
 {
 #ifdef dbg
-    std::cout << "Setting initial gamma...\n";
+    std::cout << "Setting initial gamma\n";
 #endif
 
     Display* d = XOpenDisplay(nullptr);
