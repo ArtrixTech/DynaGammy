@@ -26,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
+    quit = false;
+
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
 
     /*Set window properties */
