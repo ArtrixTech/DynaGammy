@@ -106,26 +106,25 @@ void adjustBrightness(Args &args)
     size_t c = 0;
     size_t old_c = 0;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     while(!args.w->quit)
     {
         {
-
 #ifdef dbgthr
-            std::cout << "adjustBrightness(): waiting (" << c << ")\n";
+            std::cout << "adjustBrightness: waiting (" << c << ")\n";
 #endif
             std::unique_lock<std::mutex> lock(args.mtx);
-            args.cvr.wait(lock, [&]{return args.callcnt != old_c;});
+            args.cvr.wait(lock, [&]{return args.callcnt > old_c;});
         }
 
         c = args.callcnt;
 
 #ifdef dbgthr
-        std::cout << "adjustBrightness(): working (" << c << ")\n";
+        std::cout << "adjustBrightness: working (" << c << ")\n";
 #endif
 
-        int sleeptime = (100 - args.img_delta / 4) / cfg[Speed].second;
+        int sleeptime = (100 - int(args.img_delta) / 4) / cfg[Speed].second;
+        args.img_delta = 0;
+
         int target_br = default_brightness - args.img_br + cfg[Offset].second;
 
         if (target_br > cfg[MaxBr].second)
@@ -170,7 +169,7 @@ void adjustBrightness(Args &args)
         old_c = c;
 
 #ifdef dbgthr
-        std::cout << "adjustBrightness(): complete (" << c << ")\n";
+        std::cout << "adjustBrightness: complete (" << c << ")\n";
 #endif
     }
 }
@@ -186,14 +185,10 @@ void app(MainWindow* wnd, Args &args)
     int old_max    = default_brightness;
     int old_offset = default_brightness;
 
-    int target_br = default_brightness;
-    int old_target_br = default_brightness;
-
     //Buffer to store screen pixels
-    uint8_t* buf = nullptr;
-    buf = new uint8_t[bufLen];
+    uint8_t* buf = new uint8_t[bufLen];
 
-    bool forceChange = true;
+    bool forceChange = false;
 
     #ifdef _WIN32
     DXGIDupl dx;
@@ -209,7 +204,7 @@ void app(MainWindow* wnd, Args &args)
     x11.setXF86Brightness(scrBr, cfg[Temp].second);
     #endif
 
-    bool first = true;
+    std::once_flag f;
 
     while (!wnd->quit)
     {
@@ -233,30 +228,14 @@ void app(MainWindow* wnd, Args &args)
         args.img_br = calcBrightness(buf);
         args.img_delta += abs(old_imgBr - args.img_br);
 
-        args.img_delta -= 0.1f;
-
-        if(args.img_delta < 0) args.img_delta = 0;
-
-        /*if(first) {
-            args.img_delta = 0;
-            first = false;
-        }*/
+        std::call_once(f, [&](){ args.img_delta = 0; });
 
         if (args.img_delta > cfg[Threshold].second || forceChange)
         {
-            args.img_delta = 0;
-
-            //target_br = default_brightness - args.img_br + cfg[Offset].second;
-            //if(target_br == old_target_br) continue;
-
-            {
-                std::lock_guard<std::mutex> lock(args.mtx);
-                ++args.callcnt;
-
+            ++args.callcnt;
 #ifdef dbgthr
-                std::cout << "app(): signals ready (" << args.callcnt << ")\n";
+            std::cout << "app: ready (" << args.callcnt << ")\n";
 #endif
-            }
             args.cvr.notify_one();
 
             forceChange = false;
@@ -267,7 +246,6 @@ void app(MainWindow* wnd, Args &args)
             forceChange = true;
         }
 
-        old_target_br = target_br;
         old_imgBr  = args.img_br;
         old_min    = cfg[MinBr].second;
         old_max    = cfg[MaxBr].second;
@@ -279,6 +257,12 @@ void app(MainWindow* wnd, Args &args)
 #else
     x11.setInitialGamma(false);
 #endif
+
+    ++args.callcnt;
+    #ifdef dbgthr
+        std::cout << "app: notifying to quit (" << args.callcnt << ")\n";
+    #endif
+    args.cvr.notify_one();
 
     delete[] buf;
     QApplication::quit();
