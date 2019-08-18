@@ -126,15 +126,6 @@ void adjustBrightness(Args &args)
         int sleeptime = (100 - int(args.img_delta) / 4) / cfg[Speed].second;
         args.img_delta = 0;
 
-        if (args.target_br > cfg[MaxBr].second)
-        {
-             args.target_br = cfg[MaxBr].second;
-        }
-        else if (args.target_br < cfg[MinBr].second)
-        {
-             args.target_br = cfg[MinBr].second;
-        }
-
         if (scrBr < args.target_br) sleeptime /= 3;
 
         while (scrBr != args.target_br && c == args.callcnt)
@@ -232,7 +223,19 @@ void app(MainWindow* wnd, Args &args)
         if (args.img_delta > cfg[Threshold].second || forceChange)
         {
             args.target_br = default_brightness - args.img_br + cfg[Offset].second;
-            if(args.target_br > default_brightness) args.target_br = default_brightness;
+
+            if (args.target_br > cfg[MaxBr].second)
+            {
+                 args.target_br = cfg[MaxBr].second;
+            }
+            else if (args.target_br < cfg[MinBr].second)
+            {
+                 args.target_br = cfg[MinBr].second;
+            }
+
+#ifdef dbgbr
+            std::cout << scrBr << " -> " << args.target_br << " | " << args.img_delta << '\n';
+#endif
 
             if(args.target_br != scrBr)
             {
