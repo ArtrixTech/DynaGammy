@@ -94,7 +94,7 @@ struct Args
 {
     int img_br = 0;
     int target_br = 0;
-    float img_delta = 0;
+    int img_delta = 0;
     size_t callcnt = 0;
 
     std::mutex mtx;
@@ -123,7 +123,7 @@ void adjustBrightness(Args &args)
         std::cout << "adjustBrightness: working (" << c << ")\n";
 #endif
 
-        int sleeptime = (100 - int(args.img_delta) / 4) / cfg[Speed].second;
+        int sleeptime = (100 - args.img_delta / 4) / cfg[Speed].second;
         args.img_delta = 0;
 
         if (scrBr < args.target_br) sleeptime /= 3;
