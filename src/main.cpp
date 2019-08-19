@@ -352,13 +352,10 @@ void readConfig()
     if(empty)
     {
         #ifdef dbg
-        std::cout << "Config empty. Writing defaults...\n";
+        std::cout << "Config empty.\n";
         #endif
 
-        size_t c = 0;
-        for(const auto &s : cfg[c++].first) file << s << '\n';
-
-        file.close();
+        updateConfig();
         return;
     }
 
