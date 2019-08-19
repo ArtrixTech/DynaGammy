@@ -1071,6 +1071,9 @@ font-size: 17px;
        </item>
        <item>
         <widget class="QSlider" name="thresholdSlider">
+         <property name="minimum">
+          <number>1</number>
+         </property>
          <property name="maximum">
           <number>255</number>
          </property>
