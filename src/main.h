@@ -12,17 +12,17 @@ constexpr int           cfg_count = 7;
 constexpr auto          appname = "Gammy";
 const std::string       settings_filename = "gammysettings.cfg";
 
-constexpr auto min_br_str       = "minBrightness=";
-constexpr auto max_br_str       = "maxBrightness=";
-constexpr auto offset_str       = "offset=";
-constexpr auto speed_str        = "speed=";
-constexpr auto temp_str         = "temp=";
-constexpr auto threshold_str    = "threshold=";
-constexpr auto polling_rate_str = "updateRate=";
+constexpr std::array<const char*, cfg_count> cfg_str = {
+    "minBrightness=",
+    "maxBrightness=",
+    "offset=",
+    "temp=",
+    "speed=",
+    "threshold=",
+    "updateRate=",
+};
 
-extern int polling_rate_min, polling_rate_max;
-
-extern std::array<std::pair<std::string, int>, cfg_count> cfg;
+extern std::array<int, cfg_count> cfg;
 
 enum settings {
     MinBr,
@@ -35,6 +35,7 @@ enum settings {
 };
 
 extern int scrBr;
+extern int polling_rate_min, polling_rate_max;
 
 void setGDIBrightness(unsigned short brightness, int temp);
 

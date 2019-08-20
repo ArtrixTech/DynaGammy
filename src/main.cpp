@@ -35,22 +35,23 @@
 #include <functional>
 #include <mutex>
 #include <condition_variable>
+#include <ctime>
 
 int scrBr = default_brightness; //Current screen brightness
 
 int	polling_rate_min = 10;
 int	polling_rate_max = 500;
 
-std::array<std::pair<std::string, int>, cfg_count> cfg =
-{{
-   { min_br_str, 176 },
-   { max_br_str, 255 },
-   { offset_str, 70 },
-   { temp_str, 1 },
-   { speed_str, 3 },
-   { threshold_str, 32 },
-   { polling_rate_str, 100 }
-}};
+std::array<int, cfg_count> cfg =
+{
+    176,    // MinBr
+    255,    // MaxBr
+    70,     // Offset
+    1,      // Temp
+    3,      // Speed
+    32,     // Threshold
+    100     // Polling_Rate
+};
 
 #ifdef _WIN32
 const HDC screenDC = GetDC(nullptr);
@@ -123,7 +124,7 @@ void adjustBrightness(Args &args)
         std::cout << "adjustBrightness: working (" << c << ")\n";
 #endif
 
-        int sleeptime = (100 - args.img_delta / 4) / cfg[Speed].second;
+        int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
         args.img_delta = 0;
 
         if (scrBr < args.target_br) sleeptime /= 3;
@@ -141,13 +142,13 @@ void adjustBrightness(Args &args)
                 #ifdef _WIN32
                 setGDIBrightness(scrBr, cfg[Temp].second);
                 #else
-                x11.setXF86Brightness(scrBr, cfg[Temp].second);
+                x11.setXF86Brightness(scrBr, cfg[Temp]);
                 #endif
             }
 
             if(args.w->isVisible()) args.w->updateBrLabel();
 
-            if (scrBr == cfg[MinBr].second || scrBr == cfg[MaxBr].second)
+            if (scrBr == cfg[MinBr] || scrBr == cfg[MaxBr])
             {
                 args.target_br = scrBr;
                 break;
@@ -191,7 +192,7 @@ void app(MainWindow* wnd, Args &args)
         wnd->updatePollingSlider(polling_rate_min, polling_rate_max);
     }
     #else
-    x11.setXF86Brightness(scrBr, cfg[Temp].second);
+    x11.setXF86Brightness(scrBr, cfg[Temp]);
     #endif
 
     std::once_flag f;
@@ -212,7 +213,7 @@ void app(MainWindow* wnd, Args &args)
         }
 #else
         x11.getX11Snapshot(buf);
-        std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate].second));
+        std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
 
         args.img_br = calcBrightness(buf);
@@ -220,17 +221,17 @@ void app(MainWindow* wnd, Args &args)
 
         std::call_once(f, [&](){ args.img_delta = 0; });
 
-        if (args.img_delta > cfg[Threshold].second || forceChange)
+        if (args.img_delta > cfg[Threshold] || forceChange)
         {
-            args.target_br = default_brightness - args.img_br + cfg[Offset].second;
+            args.target_br = default_brightness - args.img_br + cfg[Offset];
 
-            if (args.target_br > cfg[MaxBr].second)
+            if (args.target_br > cfg[MaxBr])
             {
-                 args.target_br = cfg[MaxBr].second;
+                 args.target_br = cfg[MaxBr];
             }
-            else if (args.target_br < cfg[MinBr].second)
+            else if (args.target_br < cfg[MinBr])
             {
-                 args.target_br = cfg[MinBr].second;
+                 args.target_br = cfg[MinBr];
             }
 
 #ifdef dbgbr
@@ -250,15 +251,15 @@ void app(MainWindow* wnd, Args &args)
             forceChange = false;
         }
 
-        if (cfg[MinBr].second != old_min || cfg[MaxBr].second != old_max || cfg[Offset].second != old_offset)
+        if (cfg[MinBr] != old_min || cfg[MaxBr] != old_max || cfg[Offset] != old_offset)
         {
             forceChange = true;
         }
 
         old_imgBr  = args.img_br;
-        old_min    = cfg[MinBr].second;
-        old_max    = cfg[MaxBr].second;
-        old_offset = cfg[Offset].second;
+        old_min    = cfg[MinBr];
+        old_max    = cfg[MaxBr];
+        old_offset = cfg[Offset];
     }
 
 #ifdef _WIN32
@@ -373,7 +374,7 @@ void readConfig()
             size_t pos = line.find('=') + 1;
             std::string val = line.substr(pos);
 
-            cfg[c++].second = std::stoi(val);
+            cfg[c++] = std::stoi(val);
         }
     }
 
@@ -398,8 +399,8 @@ void updateConfig()
     {
         for(size_t i = 0; i < cfg_count; i++)
         {
-            std::string s = cfg[i].first;
-            int val = cfg[i].second;
+            std::string s = cfg_str[i];
+            int val = cfg[i];
 
             std::string line (s + std::to_string(val));
 
