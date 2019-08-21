@@ -60,26 +60,25 @@ const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUA
 const int screenRes = w * h;
 #else
 X11 x11;
-const int screenRes = x11.getWidth() * x11.getHeight();
+const size_t screenRes = x11.getWidth() * x11.getHeight();
 #endif
 
-const unsigned bufLen = screenRes * 4;
+const size_t bufLen = screenRes * 4;
 
 int calcBrightness(uint8_t* buf)
 {
+    size_t r_sum = 0;
+    size_t g_sum = 0;
+    size_t b_sum = 0;
 
-    int r_sum = 0;
-    int g_sum = 0;
-    int b_sum = 0;
-
-    for (int i = bufLen - 4; i > 0; i -= 4)
+    for (size_t i = bufLen - 4; i > 0; i -= 4)
     {
         r_sum += buf[i + 2];
         g_sum += buf[i + 1];
         b_sum += buf[i];
     }
 
-    int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f)) / screenRes;
+    int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f) / screenRes);
 
 #ifdef dbgluma
     std::cout << "\nRed: " << r_sum << '\n';
