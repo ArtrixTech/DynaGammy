@@ -60,18 +60,18 @@ const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUA
 const int screenRes = w * h;
 #else
 X11 x11;
-const size_t screenRes = x11.getWidth() * x11.getHeight();
+const uint64_t screenRes = x11.getWidth() * x11.getHeight();
 #endif
 
-const size_t bufLen = screenRes * 4;
+const uint64_t bufLen = screenRes * 4;
 
 int calcBrightness(uint8_t* buf)
 {
-    size_t r_sum = 0;
-    size_t g_sum = 0;
-    size_t b_sum = 0;
+    uint64_t r_sum = 0;
+    uint64_t g_sum = 0;
+    uint64_t b_sum = 0;
 
-    for (size_t i = bufLen - 4; i > 0; i -= 4)
+    for (uint64_t i = bufLen - 4; i > 0; i -= 4)
     {
         r_sum += buf[i + 2];
         g_sum += buf[i + 1];
