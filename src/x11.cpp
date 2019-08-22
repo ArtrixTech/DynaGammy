@@ -13,12 +13,12 @@ X11::X11()
     std::cout << "Initializing X11... ";
     #endif
 
+    //Seems to be the only thing needed to avoid a XIO fatal error so far.
+    //More testing needed.
     XInitThreads();
 
-    img_dsp = XOpenDisplay(nullptr);
-    gamma_dsp = XOpenDisplay(nullptr);
+    dsp = XOpenDisplay(nullptr);
 
-    Display* dsp = XOpenDisplay(nullptr);
     scr = DefaultScreenOfDisplay(dsp);
     scr_num = DefaultScreen(dsp);
     root = DefaultRootWindow(dsp);
@@ -75,8 +75,6 @@ X11::X11()
             return;
         }
     }
-
-    XCloseDisplay(dsp);
 }
 
 unsigned X11::getWidth() {
@@ -89,10 +87,9 @@ unsigned X11::getHeight() {
 
 void X11::getX11Snapshot(uint8_t* buf)
 {
-    XLockDisplay(img_dsp);
-    XImage* img = XGetImage(img_dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
-    XUnlockDisplay(img_dsp);
-
+    //XLockDisplay(dsp);
+    XImage* img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
+    //XUnlockDisplay(dsp);
     size_t len = size_t(img->bytes_per_line * img->height);
 
     memcpy(buf, img->data, len);
@@ -138,7 +135,7 @@ void X11::setXF86Brightness(int scrBr, int temp)
     uint16_t* ramp = new uint16_t[3 * size_t(ramp_sz) * sizeof(uint16_t)];
     fillRamp(ramp, scrBr, temp);
 
-    bool r = XF86VidModeSetGammaRamp(gamma_dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
+    bool r = XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
 
 #ifdef dbg
     if(!r)
@@ -173,8 +170,7 @@ void X11::setInitialGamma(bool set_previous)
 
 X11::~X11()
 {
-    if(img_dsp) XCloseDisplay(img_dsp);
-    if(gamma_dsp) XCloseDisplay(gamma_dsp);
+    if(dsp) XCloseDisplay(dsp);
     delete[] init_ramp;
 }
 
