@@ -392,22 +392,33 @@ void updateConfig()
     static const std::string path = getHomePath(true);
 #endif
 
+    if(path.empty())
+    {
+#ifdef dbg
+        std::cout << "Config path empty.\n";
+#endif
+        return;
+    }
+
     std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
 
-    if(file.good() && file.is_open())
+    if(!file.good() || !file.is_open())
     {
-        for(size_t i = 0; i < cfg_count; i++)
-        {
-            std::string s = cfg_str[i];
-            int val = cfg[i];
-
-            std::string line (s + std::to_string(val));
-
-            file << line << '\n';
-        }
-
-        file.close();
+        std::cout << "Unable to save settings file.\n";
+        return;
     }
+
+    for(size_t i = 0; i < cfg_count; i++)
+    {
+        std::string s = cfg_str[i];
+        int val = cfg[i];
+
+        std::string line (s + std::to_string(val));
+
+        file << line << '\n';
+    }
+
+    file.close();
 }
 
 void checkInstance()
@@ -429,16 +440,33 @@ void checkInstance()
 #ifndef _WIN32
 std::string getHomePath(bool add_cfg)
 {
-    const char* home_path;
+    const char* xdg_cfg_home;
+    const char* home;
 
-    if ((home_path = getenv("HOME")) == nullptr)
+    std::string path;
+    std::string cfg_filename = "gammy";
+
+    xdg_cfg_home = getenv("XDG_CONFIG_HOME");
+
+    if (!xdg_cfg_home)
     {
-        home_path = getpwuid(getuid())->pw_dir;
+#ifdef dbg
+        std::cout << "$XDG_CONFIG_HOME not set. Saving to ~.config\n";
+#endif
+        home = getenv("HOME");
+        if(!home) return "";
+
+        path = std::string(home) + "/.config/";
+    }
+    else
+    {
+        path = std::string(xdg_cfg_home) + '/';
     }
 
-    std::string path(home_path);
-
-    if(add_cfg) path += "/.gammy";
+    if(add_cfg)
+    {
+        path += cfg_filename;
+    }
 
 #ifdef dbg
     std::cout << "Path: " << path << '\n';
