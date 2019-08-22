@@ -129,7 +129,7 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
     }
 }
 
-void X11::setXF86Brightness(uint16_t scrBr, int temp)
+void X11::setXF86Brightness(int scrBr, int temp)
 {
     if (scrBr > default_brightness) {
         return;
