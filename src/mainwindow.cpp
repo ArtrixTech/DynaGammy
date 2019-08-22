@@ -63,37 +63,37 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     {
         ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 
-        ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr].second));
-        ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr].second));
-        ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset].second));
-        ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed].second));
-        ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp].second));
-        ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold].second));
-        ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg[Polling_rate].second));
+        ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr]));
+        ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr]));
+        ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset]));
+        ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed]));
+        ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp]));
+        ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold]));
+        ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg[Polling_rate]));
 
-        ui->minBrSlider->setValue(cfg[MinBr].second);
-        ui->maxBrSlider->setValue(cfg[MaxBr].second);
-        ui->offsetSlider->setValue(cfg[Offset].second);
-        ui->speedSlider->setValue(cfg[Speed].second);
-        ui->tempSlider->setValue(cfg[Temp].second);
-        ui->thresholdSlider->setValue(cfg[Threshold].second);
-        ui->pollingSlider->setValue(cfg[Polling_rate].second);
+        ui->minBrSlider->setValue(cfg[MinBr]);
+        ui->maxBrSlider->setValue(cfg[MaxBr]);
+        ui->offsetSlider->setValue(cfg[Offset]);
+        ui->speedSlider->setValue(cfg[Speed]);
+        ui->tempSlider->setValue(cfg[Temp]);
+        ui->thresholdSlider->setValue(cfg[Threshold]);
+        ui->pollingSlider->setValue(cfg[Polling_rate]);
     }
 }
 
 void MainWindow::updatePollingSlider(int min, int max)
 {
-   const auto poll = cfg[Polling_rate].second;
+   const auto poll = cfg[Polling_rate];
 
    ui->pollingSlider->setRange(min, max);
 
    if(poll < min)
    {
-       cfg[Polling_rate].second = min;
+       cfg[Polling_rate] = min;
    }
    else if(poll > max)
    {
-       cfg[Polling_rate].second = max;
+       cfg[Polling_rate] = max;
    }
 
    ui->pollingLabel->setText(QString::number(poll));
@@ -181,46 +181,46 @@ void MainWindow::on_closeButton_clicked()
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
-    if(val > cfg[MaxBr].second) val = cfg[MaxBr].second;
+    if(val > cfg[MaxBr]) val = cfg[MaxBr];
 
-    cfg[MinBr].second = val;
+    cfg[MinBr] = val;
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
-    if(val < cfg[MinBr].second) val = cfg[MinBr].second;
+    if(val < cfg[MinBr] ) val = cfg[MinBr];
 
-    cfg[MaxBr].second = val;
+    cfg[MaxBr] = val;
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
-    cfg[Offset].second = val;
+    cfg[Offset] = val;
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
-    cfg[Speed].second = val;
+    cfg[Speed] = val;
 }
 
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
-    cfg[Temp].second = val;
+    cfg[Temp] = val;
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
-#elif __linux__
+#else
      x11.setXF86Brightness(scrBr, val);
 #endif
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
 {
-    cfg[Threshold].second = val;
+    cfg[Threshold] = val;
 }
 
 void MainWindow::on_pollingSlider_valueChanged(int val)
 {
-    cfg[Polling_rate].second = val;
+    cfg[Polling_rate] = val;
 }
 
 MainWindow::~MainWindow()

@@ -1,4 +1,4 @@
-#ifdef __linux__
+#ifndef _WIN32
 #ifndef X11_H
 #define X11_H
 
@@ -27,7 +27,7 @@ public:
 
     void getX11Snapshot(uint8_t* buf);
     void fillRamp(uint16_t*& ramp, int amount, int temp);
-    void setXF86Brightness(uint16_t scrBr, int temp);
+    void setXF86Brightness(int scrBr, int temp);
     void setInitialGamma(bool set_previous);
 
     ~X11();
