@@ -1,4 +1,4 @@
-#ifdef __linux
+#ifndef _WIN32
 #include "x11.h"
 #include "main.h"
 #include <iostream>

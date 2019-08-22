@@ -18,7 +18,7 @@
     #pragma comment(lib, "DXGI.lib")
     #pragma comment(lib, "D3D11.lib")
     #pragma comment(lib, "Advapi32.lib")
-#elif __linux__
+#else
     #include "x11.h"
     #include <unistd.h>
     #include <sys/types.h>
@@ -426,7 +426,7 @@ void checkInstance()
     #endif
 }
 
-#ifdef __linux
+#ifndef _WIN32
 std::string getHomePath(bool add_cfg)
 {
     const char* home_path;

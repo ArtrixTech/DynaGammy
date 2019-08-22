@@ -208,7 +208,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     cfg[Temp] = val;
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
-#elif __linux__
+#else
      x11.setXF86Brightness(scrBr, val);
 #endif
 }

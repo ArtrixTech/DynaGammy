@@ -1,4 +1,4 @@
-#ifdef __linux__
+#ifndef _WIN32
 #ifndef X11_H
 #define X11_H
 
