@@ -176,8 +176,7 @@ void app(MainWindow* wnd, Args &args)
     int old_offset = default_brightness;
 
     //Buffer to store screen pixels
-    std::vector<uint8_t> buf;
-    buf.resize(bufLen);
+    std::vector<uint8_t> buf(bufLen);
 
     bool forceChange = false;
 
