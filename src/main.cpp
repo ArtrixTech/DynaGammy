@@ -176,7 +176,8 @@ void app(MainWindow* wnd, Args &args)
     int old_offset = default_brightness;
 
     //Buffer to store screen pixels
-    uint8_t* buf = new uint8_t[bufLen];
+    std::vector<uint8_t> buf;
+    buf.resize(bufLen);
 
     bool forceChange = false;
 
@@ -201,21 +202,21 @@ void app(MainWindow* wnd, Args &args)
 #ifdef _WIN32
         if (useDXGI)
         {
-            while (!dx.getDXGISnapshot(buf))
+            while (!dx.getDXGISnapshot(buf.data()))
             {
                 dx.restartDXGI();
             }
         }
         else
         {
-            getGDISnapshot(buf);
+            getGDISnapshot(buf.data());
         }
 #else
-        x11.getX11Snapshot(buf);
+        x11.getX11Snapshot(buf.data());
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
 
-        args.img_br = calcBrightness(buf);
+        args.img_br = calcBrightness(buf.data());
         args.img_delta += abs(old_imgBr - args.img_br);
 
         std::call_once(f, [&](){ args.img_delta = 0; });
@@ -273,7 +274,6 @@ void app(MainWindow* wnd, Args &args)
     #endif
     args.cvr.notify_one();
 
-    delete[] buf;
     QApplication::quit();
 }
 
