@@ -94,6 +94,7 @@ void X11::getX11Snapshot(uint8_t* buf)
 
     size_t len = size_t(img->bytes_per_line * img->height);
     memcpy(buf, img->data, len);
+    XDestroyImage(img);
 }
 
 void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
