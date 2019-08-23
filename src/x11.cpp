@@ -61,11 +61,12 @@ X11::X11()
             return;
         }
 
-        init_ramp = new uint16_t[3 * size_t(ramp_sz) * sizeof(uint16_t)];
+        init_ramp.resize(3 * size_t(ramp_sz) * sizeof(uint16_t));
 
-        uint16_t* r = &init_ramp[0 * ramp_sz];
-        uint16_t* g = &init_ramp[1 * ramp_sz];
-        uint16_t* b = &init_ramp[2 * ramp_sz];
+        uint16_t* d = init_ramp.data();
+        uint16_t* r = &d[0 * ramp_sz];
+        uint16_t* g = &d[1 * ramp_sz];
+        uint16_t* b = &d[2 * ramp_sz];
 
         if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
@@ -90,10 +91,9 @@ void X11::getX11Snapshot(uint8_t* buf)
     //XLockDisplay(dsp);
     XImage* img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
     //XUnlockDisplay(dsp);
-    size_t len = size_t(img->bytes_per_line * img->height);
 
+    size_t len = size_t(img->bytes_per_line * img->height);
     memcpy(buf, img->data, len);
-    XDestroyImage(img);
 }
 
 void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
@@ -132,7 +132,9 @@ void X11::setXF86Brightness(int scrBr, int temp)
         return;
     }
 
-    uint16_t* ramp = new uint16_t[3 * size_t(ramp_sz) * sizeof(uint16_t)];
+    std::vector<uint16_t> ramp_v(3 * size_t(ramp_sz) * sizeof(uint16_t));
+
+    uint16_t* ramp = ramp_v.data();
     fillRamp(ramp, scrBr, temp);
 
     bool r = XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
@@ -143,8 +145,6 @@ void X11::setXF86Brightness(int scrBr, int temp)
        std::cout << "setXF86Brightness failed.\n";
     }
 #endif
-
-    delete[] ramp;
 }
 
 void X11::setInitialGamma(bool set_previous)
@@ -164,14 +164,13 @@ void X11::setInitialGamma(bool set_previous)
     {
         X11::setXF86Brightness(default_brightness, 1);
     }
-
+  
     XCloseDisplay(d);
 }
 
 X11::~X11()
 {
     if(dsp) XCloseDisplay(dsp);
-    delete[] init_ramp;
 }
 
 #endif

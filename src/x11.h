@@ -5,6 +5,7 @@
 #include <X11/Xlib.h>
 #undef None //Needed to avoid build error with qurl.h
 #include <cstdint>
+#include <vector>
 
 class X11
 {
@@ -15,7 +16,7 @@ class X11
 
     int ramp_sz;
     int scr_num;
-    uint16_t* init_ramp;
+    std::vector<uint16_t> init_ramp;
 
     unsigned w, h;
 
