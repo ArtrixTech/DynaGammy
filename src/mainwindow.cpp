@@ -131,14 +131,14 @@ QMenu* MainWindow::createMenu()
      menu->addAction(showAction);
 #endif
 
-    QAction* quitAction = new QAction("&Quit (set default gamma)", this);
-    connect(quitAction, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
-
-    QAction* quitPrevious = new QAction("&Quit (set previous gamma)", this);
+    QAction* quitPrevious = new QAction("&Quit", this);
     connect(quitPrevious, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = true; on_closeButton_clicked(); });
 
-    menu->addAction(quitAction);
+    QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
+    connect(quitPure, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
+
     menu->addAction(quitPrevious);
+    menu->addAction(quitPure);
 
     return menu;
 }

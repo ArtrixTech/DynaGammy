@@ -502,7 +502,7 @@ void sig_handler(int signo)
     }
 
     updateConfig();
-    x11.setInitialGamma(false);
+    x11.setInitialGamma(true);
     _exit(0);
 }
 #else
