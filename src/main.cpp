@@ -264,7 +264,7 @@ void app(MainWindow* wnd, Args &args)
 #ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
 #else
-    x11.setInitialGamma(false);
+    x11.setInitialGamma(wnd->set_previous_gamma);
 #endif
 
     ++args.callcnt;

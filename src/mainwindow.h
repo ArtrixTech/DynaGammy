@@ -17,6 +17,7 @@ public:
     ~MainWindow();
 
     bool quit;
+    bool set_previous_gamma;
 
     void updateBrLabel();
     void updatePollingSlider(int, int);
