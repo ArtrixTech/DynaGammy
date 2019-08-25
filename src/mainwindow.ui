@@ -472,7 +472,7 @@
   </property>
   <property name="font">
    <font>
-    <family>Segoe UI</family>
+    <family>Sans Serif</family>
     <weight>50</weight>
     <bold>false</bold>
     <kerning>true</kerning>
@@ -489,13 +489,12 @@
     <normaloff>:/res/icons/16x16ball.ico</normaloff>:/res/icons/16x16ball.ico</iconset>
   </property>
   <property name="windowOpacity">
-   <double>50.000000000000000</double>
+   <double>100.000000000000000</double>
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget
 {
-	/*background-color:rgb(17, 35, 40);*/
-	/*background-color:rgb(20, 22, 35);*/
+	
 }
 QSlider::groove:horizontal 
 {
@@ -507,16 +506,14 @@ QSlider::groove:horizontal
 QSlider::handle:horizontal
 {
 	background-color: rgb(235, 225, 255);
-/*	background-color: QLinearGradient(x1: 0.5, y2: 2.1, stop: 0 white,  stop: 1 rgb(30, 48, 73));*/
-/*background-color: rgb(35, 112, 145);*/
     width:  7px;
  	margin: -7px 0px;
     border-radius: 9px;
 	border: 6px solid transparent
 }
 QLabel {
-font-family:&quot;Segoe UI&quot;;
-font-size: 12px;
+font-family:&quot;Noto Sans&quot;, &quot;Ubuntu&quot;, &quot;Segoe UI&quot;, sans-serif;
+font-size: 13px;
 color:white;
 }
 QLabel#statusLabel {
@@ -570,7 +567,7 @@ font-size: 17px;
        </property>
        <property name="font">
         <font>
-         <family>Segoe UI</family>
+         <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
          <pointsize>-1</pointsize>
         </font>
        </property>
@@ -589,7 +586,7 @@ font-size: 17px;
        </property>
        <property name="font">
         <font>
-         <family>Segoe UI</family>
+         <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
          <pointsize>-1</pointsize>
          <weight>50</weight>
          <bold>false</bold>
@@ -703,7 +700,7 @@ font-size: 17px;
           <widget class="QLabel" name="label">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -716,7 +713,7 @@ font-size: 17px;
           <widget class="QLabel" name="minBrLabel">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -781,7 +778,7 @@ font-size: 17px;
           <widget class="QLabel" name="label_2">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -794,7 +791,7 @@ font-size: 17px;
           <widget class="QLabel" name="maxBrLabel">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -844,7 +841,7 @@ font-size: 17px;
           <widget class="QLabel" name="label_3">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -857,7 +854,7 @@ font-size: 17px;
           <widget class="QLabel" name="offsetLabel">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -906,7 +903,7 @@ font-size: 17px;
             <widget class="QLabel" name="label_5">
              <property name="font">
               <font>
-               <family>Segoe UI</family>
+               <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
                <pointsize>-1</pointsize>
               </font>
              </property>
@@ -919,7 +916,7 @@ font-size: 17px;
             <widget class="QLabel" name="tempLabel">
              <property name="font">
               <font>
-               <family>Segoe UI</family>
+               <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
                <pointsize>-1</pointsize>
               </font>
              </property>
@@ -970,7 +967,7 @@ font-size: 17px;
             <widget class="QLabel" name="label_4">
              <property name="font">
               <font>
-               <family>Segoe UI</family>
+               <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
                <pointsize>-1</pointsize>
               </font>
              </property>
@@ -983,7 +980,7 @@ font-size: 17px;
             <widget class="QLabel" name="speedLabel">
              <property name="font">
               <font>
-               <family>Segoe UI</family>
+               <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
                <pointsize>-1</pointsize>
               </font>
              </property>
@@ -1032,7 +1029,7 @@ font-size: 17px;
           <widget class="QLabel" name="label_6">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1045,7 +1042,7 @@ font-size: 17px;
           <widget class="QLabel" name="thresholdLabel">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1095,7 +1092,7 @@ font-size: 17px;
           <widget class="QLabel" name="label_7">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1108,7 +1105,7 @@ font-size: 17px;
           <widget class="QLabel" name="pollingLabel">
            <property name="font">
             <font>
-             <family>Segoe UI</family>
+             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
