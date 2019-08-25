@@ -10,7 +10,7 @@
 X11::X11()
 {
     #ifdef dbg
-    std::cout << "Initializing X11... ";
+    std::cout << "Initializing XDisplay\n";
     #endif
 
     //Seems to be the only thing needed to avoid a XIO fatal error so far.
@@ -20,7 +20,12 @@ X11::X11()
     dsp = XOpenDisplay(nullptr);
 
     scr = DefaultScreenOfDisplay(dsp);
-    scr_num = DefaultScreen(dsp);
+    scr_num = XDefaultScreen(dsp);
+
+    #ifdef dbg
+    std::cout << "Screen num: " << scr_num << '\n';
+    #endif
+
     root = DefaultRootWindow(dsp);
     w = unsigned(scr->width);
     h = unsigned(scr->height);
@@ -117,6 +122,13 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
         gdiv += (tval / 270);
     }
 
+    /*
+    double f = 0.2; // desaturate by 20%
+    double l = 0.3 * r + 0.6 * g + 0.1 * b;
+    double new_r = r + f * (l - r);
+    double new_g = g + f * (l - g);
+    double new_b = b + f * (l - b);*/
+
     for (uint16_t i = 0; i < ramp_sz; i++)
     {
         double val = i * output;
@@ -150,19 +162,22 @@ void X11::setXF86Brightness(int scrBr, int temp)
 
 void X11::setInitialGamma(bool set_previous)
 {
-#ifdef dbg
-    std::cout << "Setting initial gamma\n";
-#endif
-
     Display* d = XOpenDisplay(nullptr);
 
     if(set_previous)
     {
+        #ifdef dbg
+            std::cout << "Setting previous gamma\n";
+        #endif
+
         //Sets the gamma to how it was before the program started
         XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
     }
     else
     {
+        #ifdef dbg
+            std::cout << "Setting pure gamma\n";
+        #endif
         X11::setXF86Brightness(default_brightness, 1);
     }
   
