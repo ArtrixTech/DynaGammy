@@ -122,13 +122,6 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
         gdiv += (tval / 270);
     }
 
-    /*
-    double f = 0.2; // desaturate by 20%
-    double l = 0.3 * r + 0.6 * g + 0.1 * b;
-    double new_r = r + f * (l - r);
-    double new_g = g + f * (l - g);
-    double new_b = b + f * (l - b);*/
-
     for (uint16_t i = 0; i < ramp_sz; i++)
     {
         double val = i * output;
