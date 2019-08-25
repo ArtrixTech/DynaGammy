@@ -4,6 +4,10 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
+#ifndef _WIN32
+#include "x11.h"
+#endif
+
 namespace Ui {
 class MainWindow;
 }
@@ -14,6 +18,11 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+
+#ifndef _WIN32
+    explicit MainWindow(X11* x11);
+#endif
+
     ~MainWindow();
 
     bool quit;
@@ -23,6 +32,7 @@ public:
     void updatePollingSlider(int, int);
 
 private slots:
+    void init();
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
 
     void on_minBrSlider_valueChanged(int val);
@@ -50,8 +60,9 @@ private:
 
     void closeEvent(QCloseEvent *);
 
-    /*void mouseDoubleClickEvent(QMouseEvent*);
-    **bool eventFilter(QObject *object, QEvent *event);*/
+    #ifndef _WIN32
+        X11* x11;
+    #endif
 };
 
 #endif // MAINWINDOW_H

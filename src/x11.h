@@ -20,6 +20,8 @@ class X11
 
     unsigned w, h;
 
+    void fillRamp(uint16_t*& ramp, int amount, int temp);
+
 public:
     X11();
 
@@ -27,14 +29,11 @@ public:
     unsigned getHeight();
 
     void getX11Snapshot(uint8_t* buf);
-    void fillRamp(uint16_t*& ramp, int amount, int temp);
     void setXF86Brightness(int scrBr, int temp);
     void setInitialGamma(bool set_previous);
 
     ~X11();
 };
-
-extern X11 x11;
 
 #endif // X11_H
 #endif

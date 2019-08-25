@@ -3,10 +3,8 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
-#include "x11.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -22,11 +20,31 @@
 #include <iostream>
 #include <fstream>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+#include "mainwindow.h"
+
+#ifndef _WIN32
+MainWindow::MainWindow(X11* x11) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     ui->setupUi(this);
-
     quit = false;
+
+    this->x11 = x11;
+
+    init();
+}
+#endif
+
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+{
+    ui->setupUi(this);
+    quit = false;
+
+    init();
+}
+
+void MainWindow::init()
+{
+    readConfig();
 
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
 
@@ -43,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->hideButton->hide();
     #endif
 
-        this->setWindowOpacity(0.95);
+        //this->setWindowOpacity(0.95);
     }
 
     /*Move window to bottom right */
@@ -64,8 +82,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         this->trayIcon->show();
         connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
     }
-
-    readConfig();
 
     /*Set slider properties*/
     {
@@ -208,7 +224,7 @@ void MainWindow::on_minBrSlider_valueChanged(int val)
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
-    if(val < cfg[MinBr] ) val = cfg[MinBr];
+    if(val < cfg[MinBr]) val = cfg[MinBr];
 
     cfg[MaxBr] = val;
 }
@@ -229,7 +245,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
 #else
-     x11.setXF86Brightness(scrBr, val);
+    x11->setXF86Brightness(scrBr, val);
 #endif
 }
 
