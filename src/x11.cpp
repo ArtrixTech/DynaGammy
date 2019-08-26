@@ -52,7 +52,7 @@ X11::X11()
         }
 
         #ifdef dbg
-        std::cout << "XF86 Major ver: " << major_ver << " Minor ver: " << minor_ver << "\n";
+        std::cout << "XF86VidMode ver: " << major_ver << "." << minor_ver << "\n";
         #endif
    }
 
