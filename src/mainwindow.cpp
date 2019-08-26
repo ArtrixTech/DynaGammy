@@ -75,9 +75,19 @@ void MainWindow::init()
 
     /*Create tray icon */
     {
+        if (!QSystemTrayIcon::isSystemTrayAvailable())
+        {
+#ifdef dbg
+            std::cout << "Qt: System tray unavailable.\n";
+#endif
+            MainWindow::show();
+        }
+
+        this->trayIcon->setIcon(appIcon);
+        this->trayIcon->setVisible(true);
+
         auto menu = this->createMenu();
         this->trayIcon->setContextMenu(menu);
-        this->trayIcon->setIcon(appIcon);
         this->trayIcon->setToolTip(QString("Gammy"));
         this->trayIcon->show();
         connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
