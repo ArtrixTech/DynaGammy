@@ -10,7 +10,7 @@
 X11::X11()
 {
     #ifdef dbg
-    std::cout << "Initializing XDisplay\n";
+    std::cout << "Initializing XDisplay ";
     #endif
 
     //Seems to be the only thing needed to avoid a XIO fatal error so far.
@@ -23,7 +23,7 @@ X11::X11()
     scr_num = XDefaultScreen(dsp);
 
     #ifdef dbg
-    std::cout << "Screen num: " << scr_num << '\n';
+    std::cout << "(scr " << scr_num << ")\n";
     #endif
 
     root = DefaultRootWindow(dsp);
