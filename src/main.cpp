@@ -57,28 +57,28 @@ std::array<int, cfg_count> cfg =
 const HDC screenDC = GetDC(nullptr);
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-const int screenRes = w * h;
+const uint64_t screenRes = w * h;
+const uint64_t bufLen = screenRes * 4;
 #else
-X11 x11;
-const uint64_t screenRes = x11.getWidth() * x11.getHeight();
+static bool* sig_received {}; //Points to wnd.quit
 #endif
 
-const uint64_t bufLen = screenRes * 4;
-
-int calcBrightness(uint8_t* buf)
+int calcBrightness(uint8_t* buf, uint64_t screen_res)
 {
     uint64_t r_sum = 0;
     uint64_t g_sum = 0;
     uint64_t b_sum = 0;
 
-    for (uint64_t i = bufLen - 4; i > 0; i -= 4)
+    static uint64_t len = screen_res * 4; //4 bits per pixel
+
+    for (uint64_t i = len - 4; i > 0; i -= 4)
     {
         r_sum += buf[i + 2];
         g_sum += buf[i + 1];
         b_sum += buf[i];
     }
 
-    int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f) / screenRes);
+    int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f) / screen_res);
 
 #ifdef dbgluma
     std::cout << "\nRed: " << r_sum << '\n';
@@ -100,6 +100,10 @@ struct Args
     std::mutex mtx;
     std::condition_variable cvr;
     MainWindow* w = nullptr;
+
+#ifndef _WIN32
+    X11* x11 = nullptr;
+#endif
 };
 
 void adjustBrightness(Args &args)
@@ -141,7 +145,7 @@ void adjustBrightness(Args &args)
                 #ifdef _WIN32
                 setGDIBrightness(scrBr, cfg[Temp].second);
                 #else
-                x11.setXF86Brightness(scrBr, cfg[Temp]);
+                args.x11->setXF86Brightness(scrBr, cfg[Temp]);
                 #endif
             }
 
@@ -175,9 +179,6 @@ void app(MainWindow* wnd, Args &args)
     int old_max    = default_brightness;
     int old_offset = default_brightness;
 
-    //Buffer to store screen pixels
-    uint8_t* buf = new uint8_t[bufLen];
-
     bool forceChange = false;
 
     #ifdef _WIN32
@@ -191,8 +192,14 @@ void app(MainWindow* wnd, Args &args)
         wnd->updatePollingSlider(polling_rate_min, polling_rate_max);
     }
     #else
-    x11.setXF86Brightness(scrBr, cfg[Temp]);
+    const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
+    const uint64_t len = screen_res * 4;
+
+    args.x11->setXF86Brightness(scrBr, cfg[Temp]);
     #endif
+
+    //Buffer to store screen pixels
+    std::vector<uint8_t> buf(len);
 
     std::once_flag f;
 
@@ -201,21 +208,21 @@ void app(MainWindow* wnd, Args &args)
 #ifdef _WIN32
         if (useDXGI)
         {
-            while (!dx.getDXGISnapshot(buf))
+            while (!dx.getDXGISnapshot(buf.data()))
             {
                 dx.restartDXGI();
             }
         }
         else
         {
-            getGDISnapshot(buf);
+            getGDISnapshot(buf.data());
         }
 #else
-        x11.getX11Snapshot(buf);
+        args.x11->getX11Snapshot(buf.data());
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
 
-        args.img_br = calcBrightness(buf);
+        args.img_br = calcBrightness(buf.data(), screen_res);
         args.img_delta += abs(old_imgBr - args.img_br);
 
         std::call_once(f, [&](){ args.img_delta = 0; });
@@ -264,7 +271,7 @@ void app(MainWindow* wnd, Args &args)
 #ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
 #else
-    x11.setInitialGamma(false);
+    args.x11->setInitialGamma(wnd->set_previous_gamma);
 #endif
 
     ++args.callcnt;
@@ -273,7 +280,6 @@ void app(MainWindow* wnd, Args &args)
     #endif
     args.cvr.notify_one();
 
-    delete[] buf;
     QApplication::quit();
 }
 
@@ -293,26 +299,29 @@ int main(int argc, char *argv[])
 
     checkGammaRange();
 #else
-    if (signal(SIGINT, sig_handler) == SIG_ERR)
-    {
-        std::cout << "Error: can't catch SIGINT\n";
-    }
-    if (signal(SIGQUIT, sig_handler) == SIG_ERR)
-    {
-        std::cout << "Error: can't catch SIGQUIT\n";
-    }
-    if (signal(SIGTERM, sig_handler) == SIG_ERR)
-    {
-        std::cout << "Error: can't catch SIGTERM\n";
-    }
+    signal(SIGINT, sig_handler);
+    signal(SIGQUIT, sig_handler);
+    signal(SIGTERM, sig_handler);
+
+    X11 x11;
 #endif
 
     QApplication a(argc, argv);
+
+#ifdef _WIN32
     MainWindow wnd;
+#else
+    MainWindow wnd(&x11);
+    sig_received = &wnd.quit;
+#endif
     //wnd.show();
 
     Args args;
     args.w = &wnd;
+
+#ifndef _WIN32
+    args.x11 = &x11;
+#endif
 
     std::thread t1(adjustBrightness, std::ref(args));
     std::thread t2(app, &wnd, std::ref(args));
@@ -320,6 +329,8 @@ int main(int argc, char *argv[])
     a.exec();
     t1.join();
     t2.join();
+
+    QApplication::quit();
 }
 
 //_______________________________________________________
@@ -327,7 +338,7 @@ int main(int argc, char *argv[])
 void readConfig()
 {
 #ifdef dbg
-    std::cout << "Opening config...\n";
+    std::cout << "Reading config...\n";
 #endif
 
 #ifdef _WIN32
@@ -448,19 +459,16 @@ std::string getHomePath(bool add_cfg)
 
     xdg_cfg_home = getenv("XDG_CONFIG_HOME");
 
-    if (!xdg_cfg_home)
+    if (xdg_cfg_home)
     {
-#ifdef dbg
-        std::cout << "$XDG_CONFIG_HOME not set. Saving to ~.config\n";
-#endif
+       path = std::string(xdg_cfg_home) + '/';
+    }
+    else
+    {
         home = getenv("HOME");
         if(!home) return "";
 
         path = std::string(home) + "/.config/";
-    }
-    else
-    {
-        path = std::string(xdg_cfg_home) + '/';
     }
 
     if(add_cfg)
@@ -503,8 +511,15 @@ void sig_handler(int signo)
     }
 
     updateConfig();
-    x11.setInitialGamma(false);
-    _exit(0);
+
+    if(sig_received)
+    {
+        *sig_received = true;
+    }
+    else
+    {
+        _exit(0);
+    }
 }
 #else
 

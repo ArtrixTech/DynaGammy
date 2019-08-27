@@ -3,10 +3,8 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "main.h"
-#include "x11.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -22,11 +20,31 @@
 #include <iostream>
 #include <fstream>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+#include "mainwindow.h"
+
+#ifndef _WIN32
+MainWindow::MainWindow(X11* x11) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     ui->setupUi(this);
-
     quit = false;
+
+    this->x11 = x11;
+
+    init();
+}
+#endif
+
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+{
+    ui->setupUi(this);
+    quit = false;
+
+    init();
+}
+
+void MainWindow::init()
+{
+    readConfig();
 
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
 
@@ -34,8 +52,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     {
         this->setWindowTitle("Gammy");
         this->setWindowIcon(appIcon);
-        this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
-        this->setWindowOpacity(0.95);
+
+    #ifdef _WIN32
+       this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+    #else
+        this->setWindowFlags(Qt::Dialog);
+        ui->closeButton->hide();
+        ui->hideButton->hide();
+    #endif
+
+        //this->setWindowOpacity(0.95);
     }
 
     /*Move window to bottom right */
@@ -49,15 +75,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     /*Create tray icon */
     {
+        if (!QSystemTrayIcon::isSystemTrayAvailable())
+        {
+#ifdef dbg
+            std::cout << "Qt: System tray unavailable.\n";
+#endif
+            MainWindow::show();
+        }
+
+        this->trayIcon->setIcon(appIcon);
+        this->trayIcon->setVisible(true);
+
         auto menu = this->createMenu();
         this->trayIcon->setContextMenu(menu);
-        this->trayIcon->setIcon(appIcon);
         this->trayIcon->setToolTip(QString("Gammy"));
         this->trayIcon->show();
         connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
     }
-
-    readConfig();
 
     /*Set slider properties*/
     {
@@ -123,10 +157,14 @@ QMenu* MainWindow::createMenu()
      menu->addAction(showAction);
 #endif
 
-    QAction* quitAction = new QAction("&Quit Gammy", this);
-    connect(quitAction, &QAction::triggered, this, [=]{on_closeButton_clicked();});
+    QAction* quitPrevious = new QAction("&Quit", this);
+    connect(quitPrevious, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = true; on_closeButton_clicked(); });
 
-    menu->addAction(quitAction);
+    QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
+    connect(quitPure, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
+
+    menu->addAction(quitPrevious);
+    menu->addAction(quitPure);
 
     return menu;
 }
@@ -147,7 +185,9 @@ void MainWindow::updateBrLabel() {
 void MainWindow::mousePressEvent(QMouseEvent* e)
 {
    mouse = e->pos();
+#ifdef _WIN32
    windowPressed = true;
+#endif
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent* e)
@@ -177,6 +217,12 @@ void MainWindow::on_closeButton_clicked()
     MainWindow::quit = true;
 }
 
+void MainWindow::closeEvent(QCloseEvent* e)
+{
+    MainWindow::hide();
+    e->ignore();
+}
+
 //___________________________________________________________
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
@@ -188,7 +234,7 @@ void MainWindow::on_minBrSlider_valueChanged(int val)
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
-    if(val < cfg[MinBr] ) val = cfg[MinBr];
+    if(val < cfg[MinBr]) val = cfg[MinBr];
 
     cfg[MaxBr] = val;
 }
@@ -209,7 +255,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
 #else
-     x11.setXF86Brightness(scrBr, val);
+    x11->setXF86Brightness(scrBr, val);
 #endif
 }
 
