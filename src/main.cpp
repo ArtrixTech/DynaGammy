@@ -143,7 +143,7 @@ void adjustBrightness(Args &args)
             if(!args.w->quit)
             {
                 #ifdef _WIN32
-                setGDIBrightness(scrBr, cfg[Temp].second);
+                setGDIBrightness(scrBr, cfg[Temp]);
                 #else
                 args.x11->setXF86Brightness(scrBr, cfg[Temp]);
                 #endif
@@ -547,7 +547,7 @@ void getGDISnapshot(uint8_t* buf)
     bminfoheader.biClrImportant = 0;
 
     GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
-    Sleep(cfg[Polling_rate].second);
+    Sleep(cfg[Polling_rate]);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);
