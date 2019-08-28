@@ -7,55 +7,46 @@
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+message(Qt version: $$[QT_VERSION])
 
-TARGET = Gammy
+TARGET = gammy
 TEMPLATE = app
-
-# The following define makes your compiler emit warnings if you use
-# any feature of Qt which has been marked as deprecated (the exact warnings
-# depend on your compiler). Please consult the documentation of the
-# deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS
-
-# You can also make your code fail to compile if you use deprecated APIs.
-# In order to do so, uncomment the following line.
-# You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 CONFIG += c++11
 CONFIG += c++17
 
-SOURCES += \
-    src/dxgidupl.cpp \
-        src/main.cpp \
-        src/mainwindow.cpp \
-    src/x11.cpp
+SOURCES += src/main.cpp src/mainwindow.cpp
+HEADERS += src/main.h src/mainwindow.h
+FORMS   += src/mainwindow.ui
 
-HEADERS += \
-    src/dxgidupl.h \
-        src/mainwindow.h \
-    src/main.h \
-    winres.h \
-    winres.rc \
-    src/x11.h
+win32
+{
+    SOURCES += src/dxgidupl.cpp
+    HEADERS += src/dxgidupl.h \
+                   winres.h winres.rc
+    RC_FILE = winres.rc
+    RESOURCES += res.qrc
+}
 
-FORMS += \
-        src/mainwindow.ui
+unix
+{
+    HEADERS += src/x11.h
+    SOURCES += src/x11.cpp
+    LIBS += -lX11 -lXxf86vm
+}
+
+RCC_DIR = res
+UI_DIR = res
+MOC_DIR = res/tmp
+OBJECTS_DIR = res/tmp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win32 {
-   RC_FILE = winres.rc
-}
-RESOURCES += \
-    res.qrc
+# Make the compiler emit warnings for deprecated Qt features
+DEFINES += QT_DEPRECATED_WARNINGS
 
-DISTFILES +=
-
-linux {
-    LIBS += -lX11
-    LIBS += -lXxf86vm -L/user/lib/x86_64-linux-gnu/
-}
+# Uncomment to make the code fail to compile if you use deprecated APIs.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
