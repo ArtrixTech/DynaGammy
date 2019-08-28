@@ -375,7 +375,7 @@ void readConfig()
     size_t c = 0;
     for (std::string line; std::getline(file, line);)
     {
-        #ifdef dbg
+        #ifdef dbgcfg
         std::cout << line << '\n';
         #endif
 
