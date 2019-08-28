@@ -1,6 +1,6 @@
 # Gammy
 
-Adjusts pixel brightness based on screen contents. It dims the screen if it's too bright (according to user settings) and viceversa. Works on Windows and Linux.
+Adjusts pixel brightness based on screen contents. It dims the screen if it's too bright (according to user settings) and viceversa.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Unpack the [latest releases](https://github.com/Fushko/gammy/releases) .zip file
 
 #### Requirements
 
-##### apt-get (or other pack. manager equivalent):
+##### apt-get (or other package manager equivalent):
 - build-essential 
 - libgl1-mesa-dev 
 - qt5-default
@@ -29,13 +29,13 @@ git clone https://github.com/Fushko/gammy.git
 cd gammy
 qmake Gammy.pro
 make
-./Gammy
+./gammy
 ```
 NOTE: If make fails with "PlaceholderText is not a member of QPalette" errors in ui_mainwindow.h, delete the offending lines and run make again.
 
 ## Usage
 
-Gammy starts minimized in the system tray. Click on it to open the window. Expand the options by dragging the arrow in the bottom right.
+Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on it to open the settings. Expand the options by dragging the bottom of the window.
 
 ## License
 
