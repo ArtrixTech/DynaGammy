@@ -26,10 +26,7 @@
 MainWindow::MainWindow(X11* x11) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     ui->setupUi(this);
-    quit = false;
-
     this->x11 = x11;
-
     init();
 }
 #endif
@@ -37,8 +34,6 @@ MainWindow::MainWindow(X11* x11) : ui(new Ui::MainWindow), trayIcon(new QSystemT
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     ui->setupUi(this);
-    quit = false;
-
     init();
 }
 
@@ -80,6 +75,7 @@ void MainWindow::init()
 #ifdef dbg
             std::cout << "Qt: System tray unavailable.\n";
 #endif
+            ignore_closeEvent = false;
             MainWindow::show();
         }
 
@@ -158,7 +154,7 @@ QMenu* MainWindow::createMenu()
 #endif
 
     QAction* quitPrevious = new QAction("&Quit", this);
-    connect(quitPrevious, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = true; on_closeButton_clicked(); });
+    connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked(); });
 
     QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
     connect(quitPure, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
@@ -220,7 +216,7 @@ void MainWindow::on_closeButton_clicked()
 void MainWindow::closeEvent(QCloseEvent* e)
 {
     MainWindow::hide();
-    e->ignore();
+    if(ignore_closeEvent) e->ignore();
 }
 
 //___________________________________________________________

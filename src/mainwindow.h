@@ -25,8 +25,9 @@ public:
 
     ~MainWindow();
 
-    bool quit;
-    bool set_previous_gamma;
+    bool quit = false;
+    bool set_previous_gamma = true;
+    bool ignore_closeEvent = true;
 
     void updateBrLabel();
     void updatePollingSlider(int, int);
