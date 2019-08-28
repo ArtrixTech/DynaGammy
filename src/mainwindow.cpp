@@ -178,12 +178,13 @@ void MainWindow::updateBrLabel() {
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
+#ifdef _WIN32
 void MainWindow::mousePressEvent(QMouseEvent* e)
 {
    mouse = e->pos();
-#ifdef _WIN32
+
    windowPressed = true;
-#endif
+
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent* e)
@@ -198,6 +199,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent* e)
        move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
    }
 }
+#endif
 
 void MainWindow::on_hideButton_clicked()
 {

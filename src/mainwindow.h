@@ -53,11 +53,13 @@ private:
     QMenu* trayIconMenu {};
     QMenu* createMenu();
 
+#ifdef _WIN32
     QPoint mouse;
     void mousePressEvent(QMouseEvent*);
     void mouseMoveEvent(QMouseEvent*);
     void mouseReleaseEvent(QMouseEvent*);
     bool windowPressed = false;
+#endif
 
     void closeEvent(QCloseEvent *);
 
