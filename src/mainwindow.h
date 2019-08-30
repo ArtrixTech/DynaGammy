@@ -50,6 +50,8 @@ private slots:
 
     void on_autoCheck_stateChanged(int arg1);
 
+    void on_manBrSlider_valueChanged(int value);
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;

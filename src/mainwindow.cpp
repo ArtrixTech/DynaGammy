@@ -58,7 +58,9 @@ void MainWindow::init()
         ui->hideButton->hide();
     #endif
 
-        //this->setWindowOpacity(0.95);
+        ui->text0->hide();
+        ui->manBrSlider->hide();
+        ui->manBrLabel->hide();
     }
 
     /*Move window to bottom right */
@@ -297,10 +299,14 @@ void MainWindow::on_autoCheck_stateChanged(int state)
     pausethr.notify_one();
 }
 
-void MainWindow::toggleSliders(bool show)
+void MainWindow::toggleSliders(bool auto_br)
 {
-    if(show)
+    if(auto_br)
     {
+        ui->text0->hide();
+        ui->manBrSlider->hide();
+        ui->manBrLabel->hide();
+
         ui->text1->show();
         ui->text2->show();
         ui->text3->show();
@@ -313,6 +319,11 @@ void MainWindow::toggleSliders(bool show)
     }
     else
     {
+        //ui->text0->show();
+        //ui->manBrLabel->show();
+        ui->manBrSlider->setValue(scrBr);
+        ui->manBrSlider->show();
+
         ui->text1->hide();
         ui->text2->hide();
         ui->text3->hide();
@@ -323,4 +334,11 @@ void MainWindow::toggleSliders(bool show)
         ui->offsetLabel->hide();
         ui->offsetSlider->hide();
     }
+}
+
+void MainWindow::on_manBrSlider_valueChanged(int value)
+{
+    scrBr = value;
+    x11->setXF86Brightness(scrBr, cfg[Temp]);
+    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
