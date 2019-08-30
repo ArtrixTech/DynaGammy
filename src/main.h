@@ -5,6 +5,8 @@
 
 #include <string>
 #include <array>
+#include <condition_variable>
+extern std::condition_variable pausethr;
 
 constexpr unsigned char min_brightness_limit = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char default_brightness = 255;

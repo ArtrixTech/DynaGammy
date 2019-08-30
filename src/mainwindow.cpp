@@ -41,6 +41,8 @@ void MainWindow::init()
 {
     readConfig();
 
+    ui->autoCheck->setChecked(true);
+
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
 
     /*Set window properties */
@@ -212,6 +214,9 @@ void MainWindow::on_closeButton_clicked()
     trayIcon->hide();
     updateConfig();
 
+    run = true;
+    pausethr.notify_one();
+
     MainWindow::quit = true;
 }
 
@@ -270,4 +275,25 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+#include <condition_variable>
+void MainWindow::on_autoCheck_stateChanged(int state)
+{
+    enum {
+        disabled = 0,
+        enabled = 2
+    };
+
+    if(state == enabled)
+    {
+        run = true;
+        std::cout << run << '\n';
+    }
+    else {
+
+        run = false;
+        std::cout << run << '\n';
+    }
+
+    pausethr.notify_one();
 }

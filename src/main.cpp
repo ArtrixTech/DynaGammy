@@ -168,7 +168,9 @@ void adjustBrightness(Args &args)
     }
 }
 
-void app(MainWindow* wnd, Args &args)
+std::condition_variable pausethr;
+
+void app(Args &args)
 {
     #ifdef dbg
     std::cout << "Starting screenshots\n";
@@ -203,8 +205,15 @@ void app(MainWindow* wnd, Args &args)
 
     std::once_flag f;
 
-    while (!wnd->quit)
+    std::mutex m;
+
+    while (!args.w->quit)
     {
+        {
+            std::unique_lock<std::mutex> lock(m);
+            pausethr.wait(lock, [&]{return args.w->run;});
+        }
+
 #ifdef _WIN32
         if (useDXGI)
         {
@@ -271,7 +280,7 @@ void app(MainWindow* wnd, Args &args)
 #ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
 #else
-    args.x11->setInitialGamma(wnd->set_previous_gamma);
+    args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif
 
     ++args.callcnt;
@@ -324,7 +333,7 @@ int main(int argc, char *argv[])
 #endif
 
     std::thread t1(adjustBrightness, std::ref(args));
-    std::thread t2(app, &wnd, std::ref(args));
+    std::thread t2(app, std::ref(args));
 
     a.exec();
     t1.join();

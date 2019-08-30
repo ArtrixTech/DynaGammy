@@ -28,6 +28,7 @@ public:
     bool quit = false;
     bool set_previous_gamma = true;
     bool ignore_closeEvent = true;
+    bool run = true;
 
     void updateBrLabel();
     void updatePollingSlider(int, int);
@@ -46,6 +47,8 @@ private slots:
 
     void on_closeButton_clicked();
     void on_hideButton_clicked();
+
+    void on_autoCheck_stateChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;
