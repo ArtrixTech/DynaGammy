@@ -53,8 +53,8 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;
-    QMenu* trayIconMenu {};
     QMenu* createMenu();
+    void toggleSliders(bool show);
 
 #ifdef _WIN32
     QPoint mouse;

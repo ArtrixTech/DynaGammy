@@ -1158,7 +1158,7 @@ font-size: 17px;
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_9">
          <item>
-          <widget class="QLabel" name="label">
+          <widget class="QLabel" name="text1">
            <property name="font">
             <font>
              <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
@@ -1236,7 +1236,7 @@ font-size: 17px;
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item>
-          <widget class="QLabel" name="label_2">
+          <widget class="QLabel" name="text2">
            <property name="font">
             <font>
              <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
@@ -1299,7 +1299,7 @@ font-size: 17px;
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
-          <widget class="QLabel" name="label_3">
+          <widget class="QLabel" name="text3">
            <property name="font">
             <font>
              <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
