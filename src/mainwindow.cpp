@@ -58,9 +58,7 @@ void MainWindow::init()
         ui->hideButton->hide();
     #endif
 
-        ui->text0->hide();
         ui->manBrSlider->hide();
-        ui->manBrLabel->hide();
     }
 
     /*Move window to bottom right */
@@ -303,9 +301,7 @@ void MainWindow::toggleSliders(bool auto_br)
 {
     if(auto_br)
     {
-        ui->text0->hide();
         ui->manBrSlider->hide();
-        ui->manBrLabel->hide();
 
         ui->text1->show();
         ui->text2->show();
@@ -319,8 +315,6 @@ void MainWindow::toggleSliders(bool auto_br)
     }
     else
     {
-        //ui->text0->show();
-        //ui->manBrLabel->show();
         ui->manBrSlider->setValue(scrBr);
         ui->manBrSlider->show();
 
