@@ -1045,7 +1045,7 @@ font-size: 17px;
         </palette>
        </property>
        <property name="styleSheet">
-        <string notr="true"/>
+        <string notr="true">margin-left: 4px</string>
        </property>
        <property name="text">
         <string>Auto</string>
