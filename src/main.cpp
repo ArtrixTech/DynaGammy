@@ -58,8 +58,8 @@ std::array<int, cfg_count> cfg =
 const HDC screenDC = GetDC(nullptr);
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-const uint64_t screenRes = w * h;
-const uint64_t bufLen = screenRes * 4;
+const uint64_t screen_res = w * h;
+const uint64_t len = screen_res * 4;
 #else
 static bool* sig_received {}; //Points to wnd.quit
 #endif
@@ -192,7 +192,7 @@ void app(Args &args)
     {
         polling_rate_min = 1000;
         polling_rate_max = 5000;
-        wnd->updatePollingSlider(polling_rate_min, polling_rate_max);
+        args.w->updatePollingSlider(polling_rate_min, polling_rate_max);
     }
     #else
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
     std::condition_variable pausethr;
 
 #ifdef _WIN32
-    MainWindow wnd(&pausethr);
+    MainWindow wnd(nullptr, &pausethr);
 #else
     MainWindow wnd(&x11, &pausethr);
     sig_received = &wnd.quit;
@@ -555,7 +555,7 @@ void getGDISnapshot(uint8_t* buf)
     bminfoheader.biPlanes = 1;
     bminfoheader.biBitCount = 32;
     bminfoheader.biCompression = BI_RGB;
-    bminfoheader.biSizeImage = bufLen;
+    bminfoheader.biSizeImage = len;
     bminfoheader.biClrUsed = 0;
     bminfoheader.biClrImportant = 0;
 

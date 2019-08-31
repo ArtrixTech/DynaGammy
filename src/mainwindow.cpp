@@ -146,12 +146,12 @@ void MainWindow::updatePollingSlider(int min, int max)
 QMenu* MainWindow::createMenu()
 {
     auto menu = new QMenu(this);
+
 #ifdef _WIN32
     QAction* startupAction = new QAction("&Run at startup", this);
     startupAction->setCheckable(true);
-    menu->addAction(startupAction);
-
     connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
+    menu->addAction(startupAction);
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
@@ -161,19 +161,20 @@ QMenu* MainWindow::createMenu()
     }
     else startupAction->setChecked(false);
 #else
-     QAction* showAction = new QAction("&Open settings", this);
-     connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
-     menu->addAction(showAction);
+    QAction* showAction = new QAction("&Open settings", this);
+    connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
+    menu->addAction(showAction);
 #endif
 
     QAction* quitPrevious = new QAction("&Quit", this);
     connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked(); });
+    menu->addAction(quitPrevious);
 
+#ifndef _WIN32
     QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
     connect(quitPure, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
-
-    menu->addAction(quitPrevious);
-    menu->addAction(quitPure);
+     menu->addAction(quitPure);
+#endif
 
     return menu;
 }
@@ -322,6 +323,10 @@ void MainWindow::toggleSliders(bool is_auto)
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
     scrBr = value;
+#ifdef _WIN32
+    setGDIBrightness(scrBr, cfg[Temp]);
+#else
     x11->setXF86Brightness(scrBr, cfg[Temp]);
+#endif
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }

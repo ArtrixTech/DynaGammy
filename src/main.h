@@ -2,7 +2,7 @@
 #define MAIN_H
 
 #define dbg
-#define dbgcfg
+//#define dbgcfg
 
 #include <string>
 #include <array>
