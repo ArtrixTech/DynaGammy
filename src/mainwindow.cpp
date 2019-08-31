@@ -297,31 +297,11 @@ void MainWindow::toggleSliders(bool auto_br)
     if(auto_br)
     {
         ui->manBrSlider->hide();
-
-        ui->text1->show();
-        ui->text2->show();
-        ui->text3->show();
-        ui->minBrLabel->show();
-        ui->minBrSlider->show();
-        ui->maxBrLabel->show();
-        ui->maxBrSlider->show();
-        ui->offsetLabel->show();
-        ui->offsetSlider->show();
     }
     else
     {
         ui->manBrSlider->setValue(scrBr);
         ui->manBrSlider->show();
-
-        ui->text1->hide();
-        ui->text2->hide();
-        ui->text3->hide();
-        ui->minBrLabel->hide();
-        ui->minBrSlider->hide();
-        ui->maxBrLabel->hide();
-        ui->maxBrSlider->hide();
-        ui->offsetLabel->hide();
-        ui->offsetSlider->hide();
     }
 }
 
