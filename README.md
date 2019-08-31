@@ -1,6 +1,9 @@
 # Gammy
 
-Adjusts pixel brightness based on screen contents. It dims the screen if it's too bright (according to user settings) and viceversa.
+is a GUI tool for adjusting pixel brightness automatically (or manually) and temperature (manual only for now).
+
+It can dim the screen if its content is too bright, or brighten it otherwise.
+This can help your eyes adjust when switching between dark and light windows, especially at night or in suboptimal lighting conditions.
 
 ## Installation
 
@@ -19,8 +22,8 @@ Unpack the [latest releases](https://github.com/Fushko/gammy/releases) .zip file
 #### Requirements
 
 ##### apt-get (or other package manager equivalent):
-- build-essential 
-- libgl1-mesa-dev 
+- build-essential
+- libgl1-mesa-dev
 - qt5-default
 
 #### Build and run
