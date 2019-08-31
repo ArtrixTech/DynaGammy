@@ -13,8 +13,6 @@ X11::X11()
     std::cout << "Initializing XDisplay ";
     #endif
 
-    //Seems to be the only thing needed to avoid a XIO fatal error so far.
-    //More testing needed.
     XInitThreads();
 
     dsp = XOpenDisplay(nullptr);
@@ -32,8 +30,6 @@ X11::X11()
 
     /**Query XF86Vidmode extension */
     {
-        XInitExtension(dsp, "XF86VidMode");
-
         int ev_base, err_base;
 
         if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base))
