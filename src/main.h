@@ -2,13 +2,14 @@
 #define MAIN_H
 
 #define dbg
+//#define dbgcfg
 
 #include <string>
 #include <array>
 
 constexpr unsigned char min_brightness_limit = 64; //Below 127, SetDeviceGammaRamp doesn't work without the registry edit
 constexpr unsigned char default_brightness = 255;
-constexpr int           cfg_count = 7;
+constexpr int           cfg_count = 8;
 constexpr auto          appname = "Gammy";
 const std::string       settings_filename = "gammysettings.cfg";
 
@@ -20,6 +21,7 @@ constexpr std::array<const char*, cfg_count> cfg_str = {
     "speed=",
     "threshold=",
     "updateRate=",
+    "auto="
 };
 
 extern std::array<int, cfg_count> cfg;
@@ -31,7 +33,8 @@ enum settings {
     Temp,
     Speed,
     Threshold,
-    Polling_rate
+    Polling_rate,
+    isAuto
 };
 
 extern int scrBr;

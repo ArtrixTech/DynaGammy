@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include <condition_variable>
 
 #ifndef _WIN32
 #include "x11.h"
@@ -17,19 +18,24 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr, std::condition_variable* p = nullptr);
 
 #ifndef _WIN32
-    explicit MainWindow(X11* x11);
+    explicit MainWindow(X11* x11, std::condition_variable* p = nullptr);
 #endif
 
     ~MainWindow();
 
-    bool quit;
-    bool set_previous_gamma;
+    bool quit = false;
+    bool set_previous_gamma = true;
+    bool ignore_closeEvent = true;
 
     void updateBrLabel();
     void updatePollingSlider(int, int);
+
+    bool run = true;
+    bool* force = nullptr;
+    std::condition_variable* pausethr = nullptr;
 
 private slots:
     void init();
@@ -46,17 +52,23 @@ private slots:
     void on_closeButton_clicked();
     void on_hideButton_clicked();
 
+    void on_autoCheck_stateChanged(int arg1);
+
+    void on_manBrSlider_valueChanged(int value);
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;
-    QMenu* trayIconMenu {};
     QMenu* createMenu();
+    void toggleSliders(bool show);
 
+#ifdef _WIN32
     QPoint mouse;
     void mousePressEvent(QMouseEvent*);
     void mouseMoveEvent(QMouseEvent*);
     void mouseReleaseEvent(QMouseEvent*);
     bool windowPressed = false;
+#endif
 
     void closeEvent(QCloseEvent *);
 

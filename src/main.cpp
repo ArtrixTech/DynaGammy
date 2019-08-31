@@ -50,15 +50,16 @@ std::array<int, cfg_count> cfg =
     1,      // Temp
     3,      // Speed
     32,     // Threshold
-    100     // Polling_Rate
+    100,    // Polling_Rate
+    1       // isAuto
 };
 
 #ifdef _WIN32
 const HDC screenDC = GetDC(nullptr);
 const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-const uint64_t screenRes = w * h;
-const uint64_t bufLen = screenRes * 4;
+const uint64_t screen_res = w * h;
+const uint64_t len = screen_res * 4;
 #else
 static bool* sig_received {}; //Points to wnd.quit
 #endif
@@ -132,7 +133,7 @@ void adjustBrightness(Args &args)
 
         if (scrBr < args.target_br) sleeptime /= 3;
 
-        while (scrBr != args.target_br && c == args.callcnt)
+        while (c == args.callcnt && args.w->run)
         {
             if (scrBr < args.target_br)
             {
@@ -143,22 +144,23 @@ void adjustBrightness(Args &args)
             if(!args.w->quit)
             {
                 #ifdef _WIN32
-                setGDIBrightness(scrBr, cfg[Temp].second);
+                setGDIBrightness(scrBr, cfg[Temp]);
                 #else
                 args.x11->setXF86Brightness(scrBr, cfg[Temp]);
                 #endif
             }
 
-            if(args.w->isVisible()) args.w->updateBrLabel();
-
-            if (scrBr == cfg[MinBr] || scrBr == cfg[MaxBr])
+            if (scrBr == cfg[MinBr] || scrBr == cfg[MaxBr] || scrBr == args.target_br)
             {
                 args.target_br = scrBr;
                 break;
             }
 
+            if(args.w->isVisible()) args.w->updateBrLabel();
+
             std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
         }
+
 
         old_c = c;
 
@@ -168,7 +170,7 @@ void adjustBrightness(Args &args)
     }
 }
 
-void app(MainWindow* wnd, Args &args)
+void app(Args &args)
 {
     #ifdef dbg
     std::cout << "Starting screenshots\n";
@@ -179,7 +181,8 @@ void app(MainWindow* wnd, Args &args)
     int old_max    = default_brightness;
     int old_offset = default_brightness;
 
-    bool forceChange = false;
+    bool force = false;
+    args.w->force = &force;
 
     #ifdef _WIN32
     DXGIDupl dx;
@@ -189,7 +192,7 @@ void app(MainWindow* wnd, Args &args)
     {
         polling_rate_min = 1000;
         polling_rate_max = 5000;
-        wnd->updatePollingSlider(polling_rate_min, polling_rate_max);
+        args.w->updatePollingSlider(polling_rate_min, polling_rate_max);
     }
     #else
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
@@ -202,9 +205,19 @@ void app(MainWindow* wnd, Args &args)
     std::vector<uint8_t> buf(len);
 
     std::once_flag f;
+    std::mutex m;
 
-    while (!wnd->quit)
+    while (!args.w->quit)
     {
+        {
+            std::unique_lock<std::mutex> lock(m);
+
+            args.w->pausethr->wait(lock, [&]
+            {
+                 return args.w->run;
+            });
+        }
+
 #ifdef _WIN32
         if (useDXGI)
         {
@@ -221,13 +234,12 @@ void app(MainWindow* wnd, Args &args)
         args.x11->getX11Snapshot(buf.data());
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
-
         args.img_br = calcBrightness(buf.data(), screen_res);
         args.img_delta += abs(old_imgBr - args.img_br);
 
         std::call_once(f, [&](){ args.img_delta = 0; });
 
-        if (args.img_delta > cfg[Threshold] || forceChange)
+        if (args.img_delta > cfg[Threshold] || force)
         {
             args.target_br = default_brightness - args.img_br + cfg[Offset];
 
@@ -254,12 +266,12 @@ void app(MainWindow* wnd, Args &args)
             }
             else args.img_delta = 0;
 
-            forceChange = false;
+            force = false;
         }
 
         if (cfg[MinBr] != old_min || cfg[MaxBr] != old_max || cfg[Offset] != old_offset)
         {
-            forceChange = true;
+            force = true;
         }
 
         old_imgBr  = args.img_br;
@@ -271,7 +283,7 @@ void app(MainWindow* wnd, Args &args)
 #ifdef _WIN32
     setGDIBrightness(default_brightness, 1);
 #else
-    args.x11->setInitialGamma(wnd->set_previous_gamma);
+    args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif
 
     ++args.callcnt;
@@ -308,13 +320,14 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
+    std::condition_variable pausethr;
+
 #ifdef _WIN32
-    MainWindow wnd;
+    MainWindow wnd(nullptr, &pausethr);
 #else
-    MainWindow wnd(&x11);
+    MainWindow wnd(&x11, &pausethr);
     sig_received = &wnd.quit;
 #endif
-    //wnd.show();
 
     Args args;
     args.w = &wnd;
@@ -324,7 +337,7 @@ int main(int argc, char *argv[])
 #endif
 
     std::thread t1(adjustBrightness, std::ref(args));
-    std::thread t2(app, &wnd, std::ref(args));
+    std::thread t2(app, std::ref(args));
 
     a.exec();
     t1.join();
@@ -375,7 +388,7 @@ void readConfig()
     size_t c = 0;
     for (std::string line; std::getline(file, line);)
     {
-        #ifdef dbg
+        #ifdef dbgcfg
         std::cout << line << '\n';
         #endif
 
@@ -542,12 +555,12 @@ void getGDISnapshot(uint8_t* buf)
     bminfoheader.biPlanes = 1;
     bminfoheader.biBitCount = 32;
     bminfoheader.biCompression = BI_RGB;
-    bminfoheader.biSizeImage = bufLen;
+    bminfoheader.biSizeImage = len;
     bminfoheader.biClrUsed = 0;
     bminfoheader.biClrImportant = 0;
 
     GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
-    Sleep(cfg[Polling_rate].second);
+    Sleep(cfg[Polling_rate]);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);

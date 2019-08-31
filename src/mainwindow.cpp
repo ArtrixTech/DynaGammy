@@ -23,27 +23,25 @@
 #include "mainwindow.h"
 
 #ifndef _WIN32
-MainWindow::MainWindow(X11* x11) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(X11* x11, std::condition_variable* p) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    ui->setupUi(this);
-    quit = false;
-
+    this->pausethr = p;
     this->x11 = x11;
 
     init();
 }
 #endif
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(QWidget* parent, std::condition_variable* p) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    ui->setupUi(this);
-    quit = false;
+    this->pausethr = p;
 
     init();
 }
 
 void MainWindow::init()
 {
+    ui->setupUi(this);
     readConfig();
 
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
@@ -61,7 +59,7 @@ void MainWindow::init()
         ui->hideButton->hide();
     #endif
 
-        //this->setWindowOpacity(0.95);
+        ui->manBrSlider->hide();
     }
 
     /*Move window to bottom right */
@@ -80,6 +78,7 @@ void MainWindow::init()
 #ifdef dbg
             std::cout << "Qt: System tray unavailable.\n";
 #endif
+            ignore_closeEvent = false;
             MainWindow::show();
         }
 
@@ -113,6 +112,16 @@ void MainWindow::init()
         ui->thresholdSlider->setValue(cfg[Threshold]);
         ui->pollingSlider->setValue(cfg[Polling_rate]);
     }
+
+    /*Set auto check */
+    {
+        ui->autoCheck->setChecked(cfg[isAuto]);
+
+        run = cfg[isAuto];
+        pausethr->notify_one();
+
+        toggleSliders(cfg[isAuto]);
+    }
 }
 
 void MainWindow::updatePollingSlider(int min, int max)
@@ -137,12 +146,12 @@ void MainWindow::updatePollingSlider(int min, int max)
 QMenu* MainWindow::createMenu()
 {
     auto menu = new QMenu(this);
+
 #ifdef _WIN32
     QAction* startupAction = new QAction("&Run at startup", this);
     startupAction->setCheckable(true);
-    menu->addAction(startupAction);
-
     connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
+    menu->addAction(startupAction);
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
@@ -152,19 +161,20 @@ QMenu* MainWindow::createMenu()
     }
     else startupAction->setChecked(false);
 #else
-     QAction* showAction = new QAction("&Open settings", this);
-     connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
-     menu->addAction(showAction);
+    QAction* showAction = new QAction("&Open settings", this);
+    connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
+    menu->addAction(showAction);
 #endif
 
     QAction* quitPrevious = new QAction("&Quit", this);
-    connect(quitPrevious, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = true; on_closeButton_clicked(); });
+    connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked(); });
+    menu->addAction(quitPrevious);
 
+#ifndef _WIN32
     QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
     connect(quitPure, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
-
-    menu->addAction(quitPrevious);
-    menu->addAction(quitPure);
+     menu->addAction(quitPure);
+#endif
 
     return menu;
 }
@@ -182,12 +192,13 @@ void MainWindow::updateBrLabel() {
     ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
 
+#ifdef _WIN32
 void MainWindow::mousePressEvent(QMouseEvent* e)
 {
    mouse = e->pos();
-#ifdef _WIN32
+
    windowPressed = true;
-#endif
+
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent* e)
@@ -202,6 +213,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent* e)
        move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
    }
 }
+#endif
 
 void MainWindow::on_hideButton_clicked()
 {
@@ -214,13 +226,16 @@ void MainWindow::on_closeButton_clicked()
     trayIcon->hide();
     updateConfig();
 
+    run = true;
+    pausethr->notify_one();
+
     MainWindow::quit = true;
 }
 
 void MainWindow::closeEvent(QCloseEvent* e)
 {
     MainWindow::hide();
-    e->ignore();
+    if(ignore_closeEvent) e->ignore();
 }
 
 //___________________________________________________________
@@ -272,4 +287,46 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+#include <condition_variable>
+void MainWindow::on_autoCheck_stateChanged(int state)
+{
+    if(state == 2)
+    {
+        cfg[isAuto] = 1;
+        run = true;
+        if(force) *force = true;
+    }
+    else
+    {
+        cfg[isAuto] = 0;
+        run = false;
+    }
+
+    toggleSliders(run);
+    pausethr->notify_one();
+}
+
+void MainWindow::toggleSliders(bool is_auto)
+{
+    if(is_auto)
+    {
+        ui->manBrSlider->hide();
+    }
+    else
+    {
+        ui->manBrSlider->setValue(scrBr);
+        ui->manBrSlider->show();
+    }
+}
+
+void MainWindow::on_manBrSlider_valueChanged(int value)
+{
+    scrBr = value;
+#ifdef _WIN32
+    setGDIBrightness(scrBr, cfg[Temp]);
+#else
+    x11->setXF86Brightness(scrBr, cfg[Temp]);
+#endif
+    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
 }
