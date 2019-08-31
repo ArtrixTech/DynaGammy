@@ -294,6 +294,7 @@ void MainWindow::on_autoCheck_stateChanged(int state)
     {
         cfg[isAuto] = 1;
         run = true;
+        if(force) *force = true;
     }
     else
     {
@@ -302,7 +303,7 @@ void MainWindow::on_autoCheck_stateChanged(int state)
     }
 
     toggleSliders(run);
-    if(pausethr) pausethr->notify_one();
+    pausethr->notify_one();
 }
 
 void MainWindow::toggleSliders(bool is_auto)

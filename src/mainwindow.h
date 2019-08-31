@@ -34,6 +34,7 @@ public:
     void updatePollingSlider(int, int);
 
     bool run = true;
+    bool* force = nullptr;
     std::condition_variable* pausethr = nullptr;
 
 private slots:

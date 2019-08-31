@@ -150,16 +150,17 @@ void adjustBrightness(Args &args)
                 #endif
             }
 
-            if(args.w->isVisible()) args.w->updateBrLabel();
-
             if (scrBr == cfg[MinBr] || scrBr == cfg[MaxBr] || scrBr == args.target_br)
             {
                 args.target_br = scrBr;
                 break;
             }
 
+            if(args.w->isVisible()) args.w->updateBrLabel();
+
             std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
         }
+
 
         old_c = c;
 
@@ -180,7 +181,8 @@ void app(Args &args)
     int old_max    = default_brightness;
     int old_offset = default_brightness;
 
-    bool forceChange = false;
+    bool force = false;
+    args.w->force = &force;
 
     #ifdef _WIN32
     DXGIDupl dx;
@@ -209,11 +211,10 @@ void app(Args &args)
     {
         {
             std::unique_lock<std::mutex> lock(m);
+
             args.w->pausethr->wait(lock, [&]
             {
-                 forceChange = args.w->run;
-                 args.cvr.notify_one();
-                 return forceChange;
+                 return args.w->run;
             });
         }
 
@@ -238,7 +239,7 @@ void app(Args &args)
 
         std::call_once(f, [&](){ args.img_delta = 0; });
 
-        if (args.img_delta > cfg[Threshold] || forceChange)
+        if (args.img_delta > cfg[Threshold] || force)
         {
             args.target_br = default_brightness - args.img_br + cfg[Offset];
 
@@ -265,12 +266,12 @@ void app(Args &args)
             }
             else args.img_delta = 0;
 
-            forceChange = false;
+            force = false;
         }
 
         if (cfg[MinBr] != old_min || cfg[MaxBr] != old_max || cfg[Offset] != old_offset)
         {
-            forceChange = true;
+            force = true;
         }
 
         old_imgBr  = args.img_br;
