@@ -35,10 +35,10 @@ unix
     LIBS += -lX11 -lXxf86vm
 }
 
-RCC_DIR = res
-UI_DIR = res
-MOC_DIR = res/tmp
-OBJECTS_DIR = res/tmp
+RCC_DIR = $$PWD/res
+UI_DIR = $$PWD/res
+MOC_DIR = $$PWD/res/tmp
+OBJECTS_DIR = $$PWD/res/tmp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
