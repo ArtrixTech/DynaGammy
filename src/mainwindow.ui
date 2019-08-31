@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>335</width>
-    <height>483</height>
+    <height>340</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
   <property name="maximumSize">
    <size>
     <width>335</width>
-    <height>483</height>
+    <height>520</height>
    </size>
   </property>
   <property name="palette">
@@ -1143,7 +1143,7 @@ font-size: 17px;
       <x>-4</x>
       <y>65</y>
       <width>341</width>
-      <height>382</height>
+      <height>426</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="containerLayout">
@@ -1162,18 +1162,12 @@ font-size: 17px;
         <string notr="true">QSlider::groove:horizontal 
 {
 	background-color: rgb(128, 128, 128);
+	background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb(127, 127, 127), stop:1 rgb(192, 192, 192));
    	height:4px;
 	margin-bottom: 0px;
 	border-radius:2px;
 }
-QSlider::handle:horizontal
-{
-	background-color: rgb(235, 225, 255);
-    width:  7px;
- 	margin: -7px 0px;
-    border-radius: 9px;
-	border: 6px solid transparent
-}</string>
+</string>
        </property>
        <property name="minimum">
         <number>64</number>
@@ -1391,7 +1385,13 @@ QSlider::handle:horizontal
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="tempVL">
+      <layout class="QVBoxLayout" name="tempVL" stretch="0,0">
+       <property name="spacing">
+        <number>6</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetFixedSize</enum>
+       </property>
        <item>
         <layout class="QHBoxLayout" name="tempHL">
          <item>
@@ -1425,6 +1425,13 @@ QSlider::handle:horizontal
        </item>
        <item>
         <widget class="QSlider" name="tempSlider">
+         <property name="styleSheet">
+          <string notr="true">QSlider::groove:horizontal 
+{
+
+background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb(35, 112, 145), stop:1 rgb(215, 112, 25));
+}</string>
+         </property>
          <property name="minimum">
           <number>1</number>
          </property>
