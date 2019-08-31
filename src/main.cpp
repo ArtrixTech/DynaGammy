@@ -132,7 +132,7 @@ void adjustBrightness(Args &args)
 
         if (scrBr < args.target_br) sleeptime /= 3;
 
-        while (scrBr != args.target_br && c == args.callcnt)
+        while (c == args.callcnt && args.w->run)
         {
             if (scrBr < args.target_br)
             {
@@ -151,7 +151,7 @@ void adjustBrightness(Args &args)
 
             if(args.w->isVisible()) args.w->updateBrLabel();
 
-            if (scrBr == cfg[MinBr] || scrBr == cfg[MaxBr])
+            if (scrBr == cfg[MinBr] || scrBr == cfg[MaxBr] || scrBr == args.target_br)
             {
                 args.target_br = scrBr;
                 break;
@@ -211,7 +211,12 @@ void app(Args &args)
     {
         {
             std::unique_lock<std::mutex> lock(m);
-            pausethr.wait(lock, [&]{return args.w->run;});
+            pausethr.wait(lock, [&]
+            {
+                 forceChange = args.w->run;
+                 args.cvr.notify_one();
+                 return forceChange;
+            });
         }
 
 #ifdef _WIN32
@@ -230,7 +235,6 @@ void app(Args &args)
         args.x11->getX11Snapshot(buf.data());
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
-
         args.img_br = calcBrightness(buf.data(), screen_res);
         args.img_delta += abs(old_imgBr - args.img_br);
 
