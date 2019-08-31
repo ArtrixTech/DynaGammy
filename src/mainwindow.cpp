@@ -279,12 +279,7 @@ MainWindow::~MainWindow()
 #include <condition_variable>
 void MainWindow::on_autoCheck_stateChanged(int state)
 {
-    enum {
-        disabled = 0,
-        enabled = 2
-    };
-
-    if(state == enabled)
+    if(state == 2)
     {
         run = true;
     }
