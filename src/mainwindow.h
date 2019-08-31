@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include <condition_variable>
 
 #ifndef _WIN32
 #include "x11.h"
@@ -28,11 +29,12 @@ public:
     bool quit = false;
     bool set_previous_gamma = true;
     bool ignore_closeEvent = true;
-    bool run = true;
 
     void updateBrLabel();
     void updatePollingSlider(int, int);
 
+    bool run = true;
+    std::condition_variable* pausethr = nullptr;
 private slots:
     void init();
     void iconActivated(QSystemTrayIcon::ActivationReason reason);

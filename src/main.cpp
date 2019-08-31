@@ -168,8 +168,6 @@ void adjustBrightness(Args &args)
     }
 }
 
-std::condition_variable pausethr;
-
 void app(Args &args)
 {
     #ifdef dbg
@@ -205,6 +203,8 @@ void app(Args &args)
 
     std::once_flag f;
 
+    std::condition_variable pausethr;
+    args.w->pausethr = &pausethr;
     std::mutex m;
 
     while (!args.w->quit)

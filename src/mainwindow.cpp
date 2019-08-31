@@ -215,7 +215,7 @@ void MainWindow::on_closeButton_clicked()
     updateConfig();
 
     run = true;
-    pausethr.notify_one();
+    pausethr->notify_one();
 
     MainWindow::quit = true;
 }
@@ -289,7 +289,7 @@ void MainWindow::on_autoCheck_stateChanged(int state)
     }
 
     toggleSliders(run);
-    pausethr.notify_one();
+    pausethr->notify_one();
 }
 
 void MainWindow::toggleSliders(bool auto_br)
