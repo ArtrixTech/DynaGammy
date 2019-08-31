@@ -19,8 +19,7 @@ SOURCES += src/main.cpp src/mainwindow.cpp
 HEADERS += src/main.h src/mainwindow.h
 FORMS   += src/mainwindow.ui
 
-win32
-{
+win32:{
     SOURCES += src/dxgidupl.cpp
     HEADERS += src/dxgidupl.h \
                    winres.h winres.rc
@@ -28,18 +27,10 @@ win32
     RESOURCES += res.qrc
 }
 
-unix #Doesn't work
-{
+unix:{
     HEADERS += src/x11.h
     SOURCES += src/x11.cpp
     LIBS += -lX11 -lXxf86vm
-}
-
-win32-msvc*
-{
-    HEADERS -= src/x11.h
-    SOURCES -= src/x11.cpp
-    LIBS -= -lX11 -lXxf86vm
 }
 
 RCC_DIR = $$PWD/res
