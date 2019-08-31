@@ -28,11 +28,18 @@ win32
     RESOURCES += res.qrc
 }
 
-unix
+unix #Doesn't work
 {
     HEADERS += src/x11.h
     SOURCES += src/x11.cpp
     LIBS += -lX11 -lXxf86vm
+}
+
+win32-msvc*
+{
+    HEADERS -= src/x11.h
+    SOURCES -= src/x11.cpp
+    LIBS -= -lX11 -lXxf86vm
 }
 
 RCC_DIR = $$PWD/res
