@@ -18,10 +18,10 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr, std::condition_variable* p = nullptr);
 
 #ifndef _WIN32
-    explicit MainWindow(X11* x11);
+    explicit MainWindow(X11* x11, std::condition_variable* p = nullptr);
 #endif
 
     ~MainWindow();
@@ -35,6 +35,7 @@ public:
 
     bool run = true;
     std::condition_variable* pausethr = nullptr;
+
 private slots:
     void init();
     void iconActivated(QSystemTrayIcon::ActivationReason reason);

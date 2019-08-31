@@ -50,7 +50,8 @@ std::array<int, cfg_count> cfg =
     1,      // Temp
     3,      // Speed
     32,     // Threshold
-    100     // Polling_Rate
+    100,    // Polling_Rate
+    1       // isAuto
 };
 
 #ifdef _WIN32
@@ -202,16 +203,13 @@ void app(Args &args)
     std::vector<uint8_t> buf(len);
 
     std::once_flag f;
-
-    std::condition_variable pausethr;
-    args.w->pausethr = &pausethr;
     std::mutex m;
 
     while (!args.w->quit)
     {
         {
             std::unique_lock<std::mutex> lock(m);
-            pausethr.wait(lock, [&]
+            args.w->pausethr->wait(lock, [&]
             {
                  forceChange = args.w->run;
                  args.cvr.notify_one();
@@ -321,13 +319,14 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
+    std::condition_variable pausethr;
+
 #ifdef _WIN32
-    MainWindow wnd;
+    MainWindow wnd(&pausethr);
 #else
-    MainWindow wnd(&x11);
+    MainWindow wnd(&x11, &pausethr);
     sig_received = &wnd.quit;
 #endif
-    //wnd.show();
 
     Args args;
     args.w = &wnd;

@@ -23,25 +23,26 @@
 #include "mainwindow.h"
 
 #ifndef _WIN32
-MainWindow::MainWindow(X11* x11) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(X11* x11, std::condition_variable* p) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    ui->setupUi(this);
+    this->pausethr = p;
     this->x11 = x11;
+
     init();
 }
 #endif
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(QWidget* parent, std::condition_variable* p) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    ui->setupUi(this);
+    this->pausethr = p;
+
     init();
 }
 
 void MainWindow::init()
 {
+    ui->setupUi(this);
     readConfig();
-
-    ui->autoCheck->setChecked(true);
 
     auto appIcon = QIcon(":res/icons/32x32ball.ico");
 
@@ -110,6 +111,16 @@ void MainWindow::init()
         ui->tempSlider->setValue(cfg[Temp]);
         ui->thresholdSlider->setValue(cfg[Threshold]);
         ui->pollingSlider->setValue(cfg[Polling_rate]);
+    }
+
+    /*Set auto check */
+    {
+        ui->autoCheck->setChecked(cfg[isAuto]);
+
+        run = cfg[isAuto];
+        pausethr->notify_one();
+
+        toggleSliders(cfg[isAuto]);
     }
 }
 
@@ -281,20 +292,22 @@ void MainWindow::on_autoCheck_stateChanged(int state)
 {
     if(state == 2)
     {
+        cfg[isAuto] = 1;
         run = true;
     }
     else
     {
+        cfg[isAuto] = 0;
         run = false;
     }
 
     toggleSliders(run);
-    pausethr->notify_one();
+    if(pausethr) pausethr->notify_one();
 }
 
-void MainWindow::toggleSliders(bool auto_br)
+void MainWindow::toggleSliders(bool is_auto)
 {
-    if(auto_br)
+    if(is_auto)
     {
         ui->manBrSlider->hide();
     }
