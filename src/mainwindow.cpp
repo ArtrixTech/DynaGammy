@@ -5,20 +5,21 @@
 
 #include "ui_mainwindow.h"
 #include "main.h"
+#include "utils.h"
 
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
-#include <array>
 #include <QScreen>
 #include <QSystemTrayIcon>
 #include <QToolTip>
 #include <QHelpEvent>
 #include <QAction>
 #include <QMenu>
+
 #include <iostream>
-#include <fstream>
+#include <condition_variable>
 
 #include "mainwindow.h"
 
@@ -44,7 +45,7 @@ void MainWindow::init()
     ui->setupUi(this);
     readConfig();
 
-    auto appIcon = QIcon(":res/icons/32x32ball.ico");
+    auto appIcon = QIcon(":res/icons/16x16ball.ico");
 
     /*Set window properties */
     {
@@ -83,7 +84,6 @@ void MainWindow::init()
         }
 
         this->trayIcon->setIcon(appIcon);
-        this->trayIcon->setVisible(true);
 
         auto menu = this->createMenu();
         this->trayIcon->setContextMenu(menu);
@@ -94,7 +94,7 @@ void MainWindow::init()
 
     /*Set slider properties*/
     {
-        ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+        ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
 
         ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr]));
         ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr]));
@@ -161,7 +161,7 @@ QMenu* MainWindow::createMenu()
     }
     else startupAction->setChecked(false);
 #else
-    QAction* showAction = new QAction("&Open settings", this);
+    QAction* showAction = new QAction("&Open Gammy", this);
     connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
     menu->addAction(showAction);
 #endif
@@ -189,7 +189,7 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 }
 
 void MainWindow::updateBrLabel() {
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+    ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
 }
 
 #ifdef _WIN32
@@ -270,7 +270,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #ifdef _WIN32
     setGDIBrightness(scrBr, val);
 #else
-    x11->setXF86Brightness(scrBr, val);
+    x11->setXF86Brightness(scr_br, val);
 #endif
 }
 
@@ -288,7 +288,7 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-#include <condition_variable>
+
 void MainWindow::on_autoCheck_stateChanged(int state)
 {
     if(state == 2)
@@ -315,18 +315,18 @@ void MainWindow::toggleSliders(bool is_auto)
     }
     else
     {
-        ui->manBrSlider->setValue(scrBr);
+        ui->manBrSlider->setValue(scr_br);
         ui->manBrSlider->show();
     }
 }
 
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
-    scrBr = value;
+    scr_br = value;
 #ifdef _WIN32
     setGDIBrightness(scrBr, cfg[Temp]);
 #else
-    x11->setXF86Brightness(scrBr, cfg[Temp]);
+    x11->setXF86Brightness(scr_br, cfg[Temp]);
 #endif
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scrBr));
+    ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
 }

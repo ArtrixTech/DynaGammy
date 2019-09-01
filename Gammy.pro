@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+#QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 message(Qt version: $$[QT_VERSION])
@@ -12,11 +12,10 @@ message(Qt version: $$[QT_VERSION])
 TARGET = gammy
 TEMPLATE = app
 
-CONFIG += c++11
-CONFIG += c++17
+CONFIG += c++11 c++17
 
-SOURCES += src/main.cpp src/mainwindow.cpp
-HEADERS += src/main.h src/mainwindow.h
+HEADERS += src/main.h src/mainwindow.h src/utils.h
+SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp
 FORMS   += src/mainwindow.ui
 
 win32:{

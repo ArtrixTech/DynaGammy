@@ -1,10 +1,15 @@
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #ifndef _WIN32
 #include "x11.h"
 #include "main.h"
 #include <iostream>
 #include <thread>
-#include <X11/Xutil.h>
 #include <cstring>
+#include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
 
 X11::X11()

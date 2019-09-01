@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #ifdef _WIN32
 #ifndef DXGIDUPL_H
 #define DXGIDUPL_H
