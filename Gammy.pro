@@ -24,7 +24,6 @@ win32:{
     HEADERS += src/dxgidupl.h \
                    winres.h winres.rc
     RC_FILE = winres.rc
-    RESOURCES += res.qrc
 }
 
 unix:{
@@ -32,6 +31,8 @@ unix:{
     SOURCES += src/x11.cpp
     LIBS += -lX11 -lXxf86vm
 }
+
+RESOURCES += res.qrc
 
 RCC_DIR = $$PWD/res
 UI_DIR = $$PWD/res
