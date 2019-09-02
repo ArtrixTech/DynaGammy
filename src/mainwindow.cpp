@@ -94,13 +94,16 @@ void MainWindow::init()
 
     /*Set slider properties*/
     {
+        ui->toggleLimit->setChecked(cfg[toggleLimit]);
+        setBrSlidersRange(cfg[toggleLimit]);
+
         ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
 
-        ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr]));
-        ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr]));
-        ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset]));
+        ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr] * 100 / 255));
+        ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr] * 100 / 255));
+        ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset] * 100 / 255));
         ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed]));
-        ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp]));
+        //ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp]));
         ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold]));
         ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg[Polling_rate]));
 
@@ -248,7 +251,7 @@ void MainWindow::on_minBrSlider_valueChanged(int val)
 
     cfg[MinBr] = val;
 
-    ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr] * 100 / 255));
+    ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
@@ -257,14 +260,14 @@ void MainWindow::on_maxBrSlider_valueChanged(int val)
 
     cfg[MaxBr] = val;
 
-    ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr] * 100 / 255));
+    ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
     cfg[Offset] = val;
 
-    ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset] * 100 / 255));
+    ui->offsetLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
@@ -338,4 +341,29 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
 #endif
 
     MainWindow::updateBrLabel();
+}
+
+void MainWindow::on_toggleLimit_clicked(bool checked)
+{
+    cfg[toggleLimit] = checked;
+
+    setBrSlidersRange(cfg[toggleLimit]);
+}
+
+void MainWindow::setBrSlidersRange(bool inc)
+{
+    if(inc)
+    {
+        ui->manBrSlider->setRange(64, 306);
+        ui->minBrSlider->setRange(64, 306);
+        ui->maxBrSlider->setRange(64, 306);
+        ui->offsetSlider->setRange(0, 306);
+    }
+    else
+    {
+        ui->manBrSlider->setRange(64, 255);
+        ui->minBrSlider->setRange(64, 255);
+        ui->maxBrSlider->setRange(64, 255);
+        ui->offsetSlider->setRange(0, 255);
+    }
 }

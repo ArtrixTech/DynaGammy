@@ -12,6 +12,7 @@
 
 #ifndef _WIN32
 #include "x11.h"
+#undef Bool
 #endif
 
 namespace Ui {
@@ -61,11 +62,14 @@ private slots:
 
     void on_manBrSlider_valueChanged(int value);
 
+    void on_toggleLimit_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;
     QMenu* createMenu();
     void toggleSliders(bool show);
+    void setBrSlidersRange(bool);
 
 #ifdef _WIN32
     QPoint mouse;

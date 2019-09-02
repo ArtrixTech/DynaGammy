@@ -8,7 +8,7 @@
 #include <string>
 #include <array>
 
-constexpr int cfg_count = 8;
+constexpr int cfg_count = 9;
 
 constexpr std::array<const char*, cfg_count> cfg_str = {
     "minBrightness=",
@@ -18,7 +18,8 @@ constexpr std::array<const char*, cfg_count> cfg_str = {
     "speed=",
     "threshold=",
     "updateRate=",
-    "auto="
+    "auto=",
+    "toggleLimit="
 };
 
 extern std::array<int, cfg_count> cfg;
@@ -31,7 +32,8 @@ enum {
     Speed,
     Threshold,
     Polling_rate,
-    isAuto
+    isAuto,
+    toggleLimit
 };
 
 int calcBrightness(uint8_t* buf, uint64_t screen_res);

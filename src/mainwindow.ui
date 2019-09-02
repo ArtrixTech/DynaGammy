@@ -593,7 +593,7 @@ font-size: 17px;
         </font>
        </property>
        <property name="text">
-        <string>255</string>
+        <string notr="true">100</string>
        </property>
       </widget>
      </item>
@@ -1180,7 +1180,7 @@ font-size: 17px;
         <number>64</number>
        </property>
        <property name="maximum">
-        <number>300</number>
+        <number>306</number>
        </property>
        <property name="value">
         <number>255</number>
@@ -1228,6 +1228,16 @@ font-size: 17px;
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="toggleLimit">
+           <property name="text">
+            <string>Toggle limit</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="hSpacer1">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -1257,7 +1267,7 @@ font-size: 17px;
           <number>64</number>
          </property>
          <property name="maximum">
-          <number>306</number>
+          <number>255</number>
          </property>
          <property name="value">
           <number>255</number>
@@ -1333,7 +1343,7 @@ font-size: 17px;
           <number>64</number>
          </property>
          <property name="maximum">
-          <number>306</number>
+          <number>255</number>
          </property>
          <property name="value">
           <number>255</number>
@@ -1403,7 +1413,7 @@ font-size: 17px;
        <item>
         <widget class="QSlider" name="offsetSlider">
          <property name="maximum">
-          <number>306</number>
+          <number>255</number>
          </property>
          <property name="value">
           <number>255</number>
@@ -1434,6 +1444,9 @@ font-size: 17px;
          </item>
          <item>
           <widget class="QLabel" name="tempLabel">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="text">
             <string/>
            </property>
