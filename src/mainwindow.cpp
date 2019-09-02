@@ -188,8 +188,10 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
-void MainWindow::updateBrLabel() {
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
+void MainWindow::updateBrLabel()
+{
+    int val = scr_br * 100 / 255;
+    ui->statusLabel->setText(QStringLiteral("%1").arg(val));
 }
 
 #ifdef _WIN32
@@ -245,6 +247,8 @@ void MainWindow::on_minBrSlider_valueChanged(int val)
     if(val > cfg[MaxBr]) val = cfg[MaxBr];
 
     cfg[MinBr] = val;
+
+    ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr] * 100 / 255));
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
@@ -252,11 +256,15 @@ void MainWindow::on_maxBrSlider_valueChanged(int val)
     if(val < cfg[MinBr]) val = cfg[MinBr];
 
     cfg[MaxBr] = val;
+
+    ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr] * 100 / 255));
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
     cfg[Offset] = val;
+
+    ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset] * 100 / 255));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
@@ -324,9 +332,10 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
 {
     scr_br = value;
 #ifdef _WIN32
-    setGDIBrightness(scrBr, cfg[Temp]);
+    setGDIBrightness(scr_br, cfg[Temp]);
 #else
     x11->setXF86Brightness(scr_br, cfg[Temp]);
 #endif
-    ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
+
+    MainWindow::updateBrLabel();
 }

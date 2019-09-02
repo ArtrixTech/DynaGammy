@@ -109,13 +109,9 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
     uint16_t* g = &ramp[1 * ramp_sz];
     uint16_t* b = &ramp[2 * ramp_sz];
 
-    double slope = 1. * 32 / 255;
-
     double gdiv = 1.;
     double bdiv = 1.;
     double tval = temp;
-
-    double output = slope * amount;
 
     if(temp > 1)
     {
@@ -123,9 +119,14 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
         gdiv += (tval / 270);
     }
 
-    for (uint16_t i = 0; i < ramp_sz; i++)
+    double slope = 1. * 32 / 255;
+    double output = slope * amount;
+
+    for (int32_t i = 0; i < ramp_sz; ++i)
     {
-        double val = i * output;
+        int32_t val = int32_t(i * output);
+
+        if(val > UINT16_MAX) val = UINT16_MAX;
 
         r[i] = uint16_t(val);
         g[i] = uint16_t(val / gdiv);
@@ -135,10 +136,6 @@ void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
 
 void X11::setXF86Brightness(int scrBr, int temp)
 {
-    if (scrBr > default_brightness) {
-        return;
-    }
-
     std::vector<uint16_t> ramp_v(3 * size_t(ramp_sz) * sizeof(uint16_t));
 
     uint16_t* ramp = ramp_v.data();
