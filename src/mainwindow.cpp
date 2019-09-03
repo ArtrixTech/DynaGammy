@@ -354,10 +354,7 @@ void MainWindow::setBrSlidersRange(bool inc)
 {
     int br_limit = default_brightness;
 
-    if(inc)
-    {
-        br_limit = 383; //150%;
-    }
+    if(inc) br_limit *= 2;
 
     ui->manBrSlider->setRange(64, br_limit);
     ui->minBrSlider->setRange(64, br_limit);
