@@ -5,5 +5,7 @@
         <file>icons/32x32ball.ico</file>
         <file>icons/Close-24.png</file>
         <file>icons/Minus-24.png</file>
+        <file>icons/Lock-Open-32.png</file>
+        <file>icons/Lock-32.png</file>
     </qresource>
 </RCC>
