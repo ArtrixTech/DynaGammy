@@ -94,7 +94,7 @@ void MainWindow::init()
 
     /*Set slider properties*/
     {
-        ui->toggleLimit->setChecked(cfg[toggleLimit]);
+        ui->extendBr->setChecked(cfg[toggleLimit]);
         setBrSlidersRange(cfg[toggleLimit]);
 
         ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
@@ -247,20 +247,20 @@ void MainWindow::closeEvent(QCloseEvent* e)
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
+    ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
+
     if(val > cfg[MaxBr]) val = cfg[MaxBr];
 
     cfg[MinBr] = val;
-
-    ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
+    ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
+
     if(val < cfg[MinBr]) val = cfg[MinBr];
 
     cfg[MaxBr] = val;
-
-    ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
@@ -343,7 +343,7 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
     MainWindow::updateBrLabel();
 }
 
-void MainWindow::on_toggleLimit_clicked(bool checked)
+void MainWindow::on_extendBr_clicked(bool checked)
 {
     cfg[toggleLimit] = checked;
 
@@ -352,18 +352,15 @@ void MainWindow::on_toggleLimit_clicked(bool checked)
 
 void MainWindow::setBrSlidersRange(bool inc)
 {
+    int br_limit = default_brightness;
+
     if(inc)
     {
-        ui->manBrSlider->setRange(64, 306);
-        ui->minBrSlider->setRange(64, 306);
-        ui->maxBrSlider->setRange(64, 306);
-        ui->offsetSlider->setRange(0, 306);
+        br_limit = 383; //150%;
     }
-    else
-    {
-        ui->manBrSlider->setRange(64, 255);
-        ui->minBrSlider->setRange(64, 255);
-        ui->maxBrSlider->setRange(64, 255);
-        ui->offsetSlider->setRange(0, 255);
-    }
+
+    ui->manBrSlider->setRange(64, br_limit);
+    ui->minBrSlider->setRange(64, br_limit);
+    ui->maxBrSlider->setRange(64, br_limit);
+    ui->offsetSlider->setRange(0, br_limit);
 }

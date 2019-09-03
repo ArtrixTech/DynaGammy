@@ -62,7 +62,7 @@ private slots:
 
     void on_manBrSlider_valueChanged(int value);
 
-    void on_toggleLimit_clicked(bool checked);
+    void on_extendBr_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;
