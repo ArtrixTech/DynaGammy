@@ -115,7 +115,6 @@ void adjustBrightness(Args &args)
             std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
         }
 
-
         old_c = c;
 
 #ifdef dbgthr
@@ -160,6 +159,8 @@ void app(Args &args)
 
     std::once_flag f;
     std::mutex m;
+
+    std::thread t1(adjustBrightness, std::ref(args));
 
     while (!args.w->quit)
     {
@@ -242,11 +243,13 @@ void app(Args &args)
 #endif
 
     ++args.callcnt;
-    #ifdef dbgthr
-        std::cout << "app: notifying to quit (" << args.callcnt << ")\n";
-    #endif
     args.cvr.notify_one();
 
+#ifdef dbgthr
+    std::cout << "app: notified children to quit (" << args.callcnt << ")\n";
+#endif
+
+    t1.join();
     QApplication::quit();
 }
 
@@ -292,12 +295,10 @@ int main(int argc, char *argv[])
     args.x11 = &x11;
 #endif
 
-    std::thread t1(adjustBrightness, std::ref(args));
-    std::thread t2(app, std::ref(args));
+    std::thread t1(app, std::ref(args));
 
     a.exec();
     t1.join();
-    t2.join();
 
     QApplication::quit();
 }
