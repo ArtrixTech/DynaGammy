@@ -89,25 +89,17 @@ void adjustBrightness(Args &args)
 
         while (c == args.callcnt && args.w->run)
         {
-            if (scr_br < args.target_br)
-            {
-                ++scr_br;
-            }
-            else --scr_br;
+            if     (scr_br < args.target_br) ++scr_br;
+            else if(scr_br > args.target_br) --scr_br;
+            else break;
 
             if(!args.w->quit)
             {
                 #ifdef _WIN32
-                setGDIBrightness(scrBr, cfg[Temp]);
+                setGDIBrightness(scr_br, cfg[Temp]);
                 #else
                 args.x11->setXF86Brightness(scr_br, cfg[Temp]);
                 #endif
-            }
-
-            if (scr_br == cfg[MinBr] || scr_br == cfg[MaxBr] || scr_br == args.target_br)
-            {
-                args.target_br = scr_br;
-                break;
             }
 
             if(args.w->isVisible()) args.w->updateBrLabel();
@@ -209,7 +201,7 @@ void app(Args &args)
             }
 
 #ifdef dbgbr
-            std::cout << scrBr << " -> " << args.target_br << " | " << args.img_delta << '\n';
+            std::cout << scr_br << " -> " << args.target_br << " | " << args.img_delta << '\n';
 #endif
 
             if(args.target_br != scr_br)
