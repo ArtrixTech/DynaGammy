@@ -52,6 +52,8 @@ void MainWindow::init()
         this->setWindowTitle("Gammy");
         this->setWindowIcon(appIcon);
 
+        resize(335, 333);
+
     #ifdef _WIN32
        this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
     #else
