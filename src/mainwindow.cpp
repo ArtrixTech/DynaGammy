@@ -249,7 +249,11 @@ void MainWindow::on_minBrSlider_valueChanged(int val)
 {
     ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 
-    if(val > cfg[MaxBr]) val = cfg[MaxBr];
+    if(val > cfg[MaxBr])
+    {
+        cfg[MaxBr] = val;
+        ui->maxBrSlider->setValue(cfg[MinBr]);
+    }
 
     cfg[MinBr] = val;
 }
@@ -258,7 +262,11 @@ void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
     ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 
-    if(val < cfg[MinBr]) val = cfg[MinBr];
+    if(val < cfg[MinBr])
+    {
+        cfg[MinBr] = val;
+        ui->minBrSlider->setValue(cfg[MinBr]);
+    }
 
     cfg[MaxBr] = val;
 }
@@ -279,7 +287,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 {
     cfg[Temp] = val;
 #ifdef _WIN32
-    setGDIBrightness(scrBr, val);
+    setGDIBrightness(scr_br, val);
 #else
     x11->setXF86Brightness(scr_br, val);
 #endif
