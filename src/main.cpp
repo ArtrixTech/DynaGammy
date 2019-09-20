@@ -182,6 +182,7 @@ void app(Args &args)
         args.x11->getX11Snapshot(buf.data());
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
+
         args.img_br = calcBrightness(buf.data(), screen_res);
         args.img_delta += abs(old_imgBr - args.img_br);
 
@@ -191,13 +192,12 @@ void app(Args &args)
         {
             args.target_br = default_brightness - args.img_br + cfg[Offset];
 
-            if (args.target_br > cfg[MaxBr])
-            {
-                 args.target_br = cfg[MaxBr];
+            if (args.target_br > cfg[MaxBr]) {
+                args.target_br = cfg[MaxBr];
             }
-            else if (args.target_br < cfg[MinBr])
-            {
-                 args.target_br = cfg[MinBr];
+            else
+            if (args.target_br < cfg[MinBr]) {
+                args.target_br = cfg[MinBr];
             }
 
 #ifdef dbgbr
@@ -207,9 +207,11 @@ void app(Args &args)
             if(args.target_br != scr_br)
             {
                 ++args.callcnt;
-    #ifdef dbgthr
+
+                #ifdef dbgthr
                 std::cout << "app: ready (" << args.callcnt << ")\n";
-    #endif
+                #endif
+
                 args.cvr.notify_one();
             }
             else args.img_delta = 0;
