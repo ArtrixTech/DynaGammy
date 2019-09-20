@@ -36,9 +36,8 @@ int	polling_rate_min = 10;
 int	polling_rate_max = 500;
 
 #ifdef _WIN32
-const HDC screenDC = GetDC(nullptr);
-const int w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
-const int h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
+const uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
+const uint64_t h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
 const uint64_t screen_res = w * h;
 const uint64_t len = screen_res * 4;
 #else
@@ -175,8 +174,8 @@ void app(Args &args)
         }
         else
         {
-            getGDISnapshot(buf.data(), len);
-            Sleep(cfg[Polling_rate]));
+            getGDISnapshot(buf.data(), w, h);
+            Sleep(cfg[Polling_rate]);
         }
 #else
         args.x11->getX11Snapshot(buf.data());

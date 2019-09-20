@@ -5,11 +5,12 @@
 
 #ifdef _WIN32
 #include "main.h"
-#include "DXGIDupl.h"
+#include "dxgidupl.h"
 #include <vector>
 #include <thread>
 #include <chrono>
 #include <iostream>
+#include "utils.h"
 
 DXGIDupl::DXGIDupl() {}
 

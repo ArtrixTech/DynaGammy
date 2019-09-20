@@ -184,7 +184,9 @@ std::string getHomePath(bool add_cfg)
     return path;
 }
 #else
-void getGDISnapshot(uint8_t* buf, uint64_t len)
+static const HDC screenDC = GetDC(nullptr);
+
+void getGDISnapshot(uint8_t* buf, const uint64_t w, const uint64_t h)
 {
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
     HDC memoryDC = CreateCompatibleDC(screenDC);
@@ -193,8 +195,10 @@ void getGDISnapshot(uint8_t* buf, uint64_t len)
 
     BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
 
-    BITMAPINFOHEADER bminfoheader;
-    ::ZeroMemory(&bminfoheader, sizeof(BITMAPINFOHEADER));
+    static uint64_t len = w * h * 4;
+
+    static BITMAPINFOHEADER bminfoheader;
+    ZeroMemory(&bminfoheader, sizeof(BITMAPINFOHEADER));
     bminfoheader.biSize = sizeof(BITMAPINFOHEADER);
     bminfoheader.biWidth = w;
     bminfoheader.biHeight = -h;
@@ -359,7 +363,7 @@ std::wstring getExecutablePath(bool add_cfg)
     GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
     std::wstring path(buf);
 
-    std::wstring appname = L"Gammy.exe";
+    std::wstring appname = L"gammy.exe";
     path.erase(path.find(appname), appname.length());
 
     if(add_cfg) path += L"gammysettings.cfg";

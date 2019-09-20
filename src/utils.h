@@ -43,9 +43,10 @@ void updateConfig();
 
 #ifdef _WIN32
 
-void getGDISnapshot(uint8_t* buf);
+void getGDISnapshot(uint8_t* buf, uint64_t w, uint64_t h);
 void setGDIBrightness(unsigned short brightness, int temp);
 
+void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);
 

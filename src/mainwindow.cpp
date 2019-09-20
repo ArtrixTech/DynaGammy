@@ -56,6 +56,7 @@ void MainWindow::init()
 
     #ifdef _WIN32
        this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+       ui->extendBr->hide();
     #else
         this->setWindowFlags(Qt::Dialog);
         ui->closeButton->hide();
