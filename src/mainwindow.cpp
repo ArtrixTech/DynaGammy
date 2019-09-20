@@ -244,15 +244,15 @@ void MainWindow::closeEvent(QCloseEvent* e)
 }
 
 //___________________________________________________________
+#include <math.h>
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
-{
+{   
     ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 
     if(val > cfg[MaxBr])
     {
-        cfg[MaxBr] = val;
-        ui->maxBrSlider->setValue(cfg[MinBr]);
+        ui->maxBrSlider->setValue(cfg[MaxBr] = val);
     }
 
     cfg[MinBr] = val;
@@ -264,8 +264,7 @@ void MainWindow::on_maxBrSlider_valueChanged(int val)
 
     if(val < cfg[MinBr])
     {
-        cfg[MinBr] = val;
-        ui->minBrSlider->setValue(cfg[MinBr]);
+        ui->minBrSlider->setValue(cfg[MinBr] = val);
     }
 
     cfg[MaxBr] = val;
