@@ -121,10 +121,10 @@ void app(Args &args)
     std::cout << "Starting screenshots\n";
     #endif
 
-    int old_imgBr  = default_brightness;
-    int old_min    = default_brightness;
-    int old_max    = default_brightness;
-    int old_offset = default_brightness;
+    int old_imgBr  = 0,
+        old_min    = 0,
+        old_max    = 0,
+        old_offset = 0;
 
     bool force = false;
     args.w->force = &force;
