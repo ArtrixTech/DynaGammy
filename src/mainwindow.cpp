@@ -244,7 +244,6 @@ void MainWindow::closeEvent(QCloseEvent* e)
 }
 
 //___________________________________________________________
-#include <math.h>
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {   
