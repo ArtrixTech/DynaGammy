@@ -7,7 +7,9 @@
 #define MAIN_H
 
 #define dbg
+//#define dbgthr
 //#define dbgcfg
+//#define dbgbr
 
 constexpr int default_brightness = 255;
 
