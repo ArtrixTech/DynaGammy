@@ -15,9 +15,9 @@
 
 std::array<int, cfg_count> cfg =
 {
-    176,    // MinBr
+    192,    // MinBr
     255,    // MaxBr
-    70,     // Offset
+    78,     // Offset
     1,      // Temp
     3,      // Speed
     32,     // Threshold
