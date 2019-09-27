@@ -41,7 +41,9 @@ const uint64_t h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YV
 const uint64_t screen_res = w * h;
 const uint64_t len = screen_res * 4;
 #else
-static bool* sig_received {}; //Points to wnd.quit
+//To be used in unix signal handler
+static bool *run_ptr, *quit_ptr;
+static std::condition_variable *cvr_ptr;
 #endif
 
 struct Args
@@ -274,12 +276,14 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     std::condition_variable pausethr;
+    cvr_ptr = &pausethr;
 
 #ifdef _WIN32
     MainWindow wnd(nullptr, &pausethr);
 #else
     MainWindow wnd(&x11, &pausethr);
-    sig_received = &wnd.quit;
+    quit_ptr = &wnd.quit;
+    run_ptr = &wnd.run;
 #endif
 
     Args args;
@@ -327,13 +331,12 @@ void sig_handler(int signo)
 
     saveConfig();
 
-    if(sig_received)
+    if(run_ptr && quit_ptr && cvr_ptr)
     {
-        *sig_received = true;
+        *run_ptr = true;
+        *quit_ptr = true;
+        cvr_ptr->notify_one();
     }
-    else
-    {
-        _exit(0);
-    }
+    else _exit(0);
 }
 #endif

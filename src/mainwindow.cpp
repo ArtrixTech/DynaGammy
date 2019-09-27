@@ -214,14 +214,14 @@ void MainWindow::on_closeButton_clicked()
     QCloseEvent e;
     e.setAccepted(true);
     emit closeEvent(&e);
+
+    trayIcon->hide();
 }
 
 void MainWindow::closeEvent(QCloseEvent* e)
 {
-    saveConfig();
-
     MainWindow::hide();
-    trayIcon->hide();
+    saveConfig();
 
     if(ignore_closeEvent) e->ignore();
 }
