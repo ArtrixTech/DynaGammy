@@ -173,13 +173,13 @@ QMenu* MainWindow::createMenu()
 #endif
 
     QAction* quitPrevious = new QAction("&Quit", this);
-    connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked(); });
+    connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked();});
     menu->addAction(quitPrevious);
 
 #ifndef _WIN32
     QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
-    connect(quitPure, &QAction::triggered, this, [=]{MainWindow::set_previous_gamma = false; on_closeButton_clicked(); });
-     menu->addAction(quitPure);
+    connect(quitPure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
+    menu->addAction(quitPure);
 #endif
 
     return menu;
@@ -199,29 +199,6 @@ void MainWindow::updateBrLabel()
     int val = scr_br * 100 / 255;
     ui->statusLabel->setText(QStringLiteral("%1").arg(val));
 }
-
-#ifdef _WIN32
-void MainWindow::mousePressEvent(QMouseEvent* e)
-{
-   mouse = e->pos();
-
-   windowPressed = true;
-
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent* e)
-{
-   windowPressed = false;
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent* e)
-{
-   if (windowPressed)
-   {
-       move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
-   }
-}
-#endif
 
 void MainWindow::on_hideButton_clicked()
 {
@@ -371,3 +348,25 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->maxBrSlider->setRange(64, br_limit);
     ui->offsetSlider->setRange(0, br_limit);
 }
+
+#ifdef _WIN32
+void MainWindow::mousePressEvent(QMouseEvent* e)
+{
+   mouse = e->pos();
+
+   windowPressed = true;
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent* e)
+{
+   windowPressed = false;
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent* e)
+{
+   if (windowPressed)
+   {
+       move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
+   }
+}
+#endif

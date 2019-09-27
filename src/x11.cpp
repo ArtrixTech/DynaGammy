@@ -69,10 +69,10 @@ X11::X11()
 
         init_ramp.resize(3 * size_t(ramp_sz) * sizeof(uint16_t));
 
-        uint16_t* d = init_ramp.data();
-        uint16_t* r = &d[0 * ramp_sz];
-        uint16_t* g = &d[1 * ramp_sz];
-        uint16_t* b = &d[2 * ramp_sz];
+        uint16_t *d = init_ramp.data(),
+                 *r = &d[0 * ramp_sz],
+                 *g = &d[1 * ramp_sz],
+                 *b = &d[2 * ramp_sz];
 
         if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
@@ -161,8 +161,8 @@ void X11::setInitialGamma(bool set_previous)
             std::cout << "Setting previous gamma\n";
         #endif
 
-        //Sets the gamma to how it was before the program started
-        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+        size_t r = size_t(ramp_sz);
+        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0], &init_ramp[r], &init_ramp[2 * r]);
     }
     else
     {

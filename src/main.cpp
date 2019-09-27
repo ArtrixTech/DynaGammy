@@ -325,7 +325,7 @@ void sig_handler(int signo)
         }
     }
 
-    updateConfig();
+    saveConfig();
 
     if(sig_received)
     {

@@ -39,7 +39,7 @@ enum {
 int calcBrightness(uint8_t* buf, uint64_t screen_res);
 
 void readConfig();
-void updateConfig();
+void saveConfig();
 
 #ifdef _WIN32
 

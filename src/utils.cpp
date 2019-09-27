@@ -56,7 +56,7 @@ void readConfig()
         std::cout << "Config empty.\n";
         #endif
 
-        updateConfig();
+        saveConfig();
         return;
     }
 
@@ -81,7 +81,7 @@ void readConfig()
     file.close();
 }
 
-void updateConfig()
+void saveConfig()
 {
 #ifdef dbg
     std::cout << "Saving config... ";
@@ -115,6 +115,10 @@ void updateConfig()
         int val = cfg[i];
 
         std::string line (s + std::to_string(val));
+
+        #ifdef dbgcfg
+        std::cout << line << '\n';
+        #endif
 
         file << line << '\n';
     }
