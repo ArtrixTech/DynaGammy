@@ -1532,10 +1532,10 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
 }</string>
          </property>
          <property name="minimum">
-          <number>1</number>
+          <number>0</number>
          </property>
          <property name="maximum">
-          <number>100</number>
+          <number>255</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
