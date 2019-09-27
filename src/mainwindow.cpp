@@ -218,6 +218,8 @@ void MainWindow::on_closeButton_clicked()
 
 void MainWindow::closeEvent(QCloseEvent* e)
 {
+    saveConfig();
+
     MainWindow::hide();
     trayIcon->hide();
 
