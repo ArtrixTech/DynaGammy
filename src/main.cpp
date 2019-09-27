@@ -100,6 +100,7 @@ void adjustBrightness(Args &args)
                 args.x11->setXF86Brightness(scr_br, cfg[Temp]);
                 #endif
             }
+            else break;
 
             if(args.w->isVisible()) args.w->updateBrLabel();
 

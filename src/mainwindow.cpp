@@ -230,19 +230,20 @@ void MainWindow::on_hideButton_clicked()
 
 void MainWindow::on_closeButton_clicked()
 {
-    MainWindow::hide();
-    trayIcon->hide();
-    updateConfig();
-
     run = true;
+    quit = true;
     pausethr->notify_one();
 
-    MainWindow::quit = true;
+    QCloseEvent e;
+    e.setAccepted(true);
+    emit closeEvent(&e);
 }
 
 void MainWindow::closeEvent(QCloseEvent* e)
 {
     MainWindow::hide();
+    trayIcon->hide();
+
     if(ignore_closeEvent) e->ignore();
 }
 
