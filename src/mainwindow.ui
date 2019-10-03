@@ -1736,5 +1736,54 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
  <resources>
   <include location="../res.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>speedSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>speedLabel</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>286</x>
+     <y>364</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>86</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>thresholdSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>thresholdLabel</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>269</x>
+     <y>416</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>109</x>
+     <y>391</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pollingSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>pollingLabel</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>252</x>
+     <y>472</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>170</x>
+     <y>447</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
