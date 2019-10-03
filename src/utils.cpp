@@ -84,7 +84,7 @@ void readConfig()
 void saveConfig()
 {
 #ifdef dbg
-    std::cout << "Saving config... ";
+    std::cout << "Saving config...\n";
 #endif
 
 #ifdef _WIN32
@@ -105,7 +105,9 @@ void saveConfig()
 
     if(!file.good() || !file.is_open())
     {
-        std::cout << "Unable to save settings file.\n";
+#ifdef dbg
+        std::cout << "Unable to open config file.\n";
+#endif
         return;
     }
 
@@ -182,7 +184,7 @@ std::string getHomePath(bool add_cfg)
     }
 
 #ifdef dbg
-    std::cout << "Path: " << path << '\n';
+    std::cout << "Config path: " << path << '\n';
 #endif
 
     return path;
