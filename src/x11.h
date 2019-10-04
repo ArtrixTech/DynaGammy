@@ -24,7 +24,7 @@ class X11
 
     unsigned w, h;
 
-    void fillRamp(uint16_t*& ramp, int amount, int temp);
+    void fillRamp(uint16_t* ramp, int amount, int temp);
 
 public:
     X11();

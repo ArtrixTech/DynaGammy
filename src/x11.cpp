@@ -103,11 +103,11 @@ void X11::getX11Snapshot(uint8_t* buf)
     XDestroyImage(img);
 }
 
-void X11::fillRamp(uint16_t*& ramp, int amount, int temp)
+void X11::fillRamp(uint16_t *ramp, int amount, int temp)
 {
-    uint16_t* r = &ramp[0 * ramp_sz];
-    uint16_t* g = &ramp[1 * ramp_sz];
-    uint16_t* b = &ramp[2 * ramp_sz];
+    uint16_t *r = &ramp[0 * ramp_sz],
+             *g = &ramp[1 * ramp_sz],
+             *b = &ramp[2 * ramp_sz];
 
     double gdiv = 1.;
     double bdiv = 1.;
@@ -138,7 +138,7 @@ void X11::setXF86Brightness(int scrBr, int temp)
 {
     std::vector<uint16_t> ramp_v(3 * size_t(ramp_sz) * sizeof(uint16_t));
 
-    uint16_t* ramp = ramp_v.data();
+    uint16_t *ramp = ramp_v.data();
     fillRamp(ramp, scrBr, temp);
 
     bool r = XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
