@@ -41,6 +41,13 @@ int calcBrightness(uint8_t* buf, uint64_t screen_res);
 void readConfig();
 void saveConfig();
 
+template <class T>
+T convertToRange(T old_val, int old_min, int old_max, int new_min, int new_max)
+{
+    T val = (((old_val - old_min) * (new_max - new_min)) / old_max - old_min) + new_min;
+
+    return val;
+}
 #ifdef _WIN32
 
 void getGDISnapshot(uint8_t* buf, uint64_t w, uint64_t h);
