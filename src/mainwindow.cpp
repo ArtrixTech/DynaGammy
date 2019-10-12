@@ -100,13 +100,17 @@ void MainWindow::init()
         ui->extendBr->setChecked(cfg[toggleLimit]);
         setBrSlidersRange(cfg[toggleLimit]);
 
-        ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br));
+        ui->statusLabel->setText(QStringLiteral("%1").arg(convertToRange(scr_br, 0, 255, 0, 100)));
+        ui->minBrLabel->setText(QStringLiteral("%1").arg(convertToRange(cfg[MinBr], 0, 255, 0, 100)));
+        ui->maxBrLabel->setText(QStringLiteral("%1").arg(convertToRange(cfg[MaxBr], 0, 255, 0, 100)));
+        ui->offsetLabel->setText(QStringLiteral("%1").arg(convertToRange(cfg[Offset], 0, 255, 0, 100)));
 
-        ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg[MinBr] * 100 / 255));
-        ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg[MaxBr] * 100 / 255));
-        ui->offsetLabel->setText(QStringLiteral("%1").arg(cfg[Offset] * 100 / 255));
         ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed]));
-        //ui->tempLabel->setText(QStringLiteral("%1").arg(cfg[Temp]));
+
+        ui->tempSlider->setRange(0, temp_steps);
+        ui->tempLabel->setText(QStringLiteral("%1").arg
+                               (convertToRange(temp_steps - cfg[Temp], 0, temp_steps, min_temp_kelvin, max_temp_kelvin)));
+
         ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold]));
         ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg[Polling_rate]));
 
@@ -267,11 +271,15 @@ void MainWindow::on_speedSlider_valueChanged(int val)
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
     cfg[Temp] = val;
+
 #ifdef _WIN32
     setGDIBrightness(scr_br, val);
 #else
     x11->setXF86Gamma(scr_br, val);
 #endif
+
+    int temp_kelvin = convertToRange(temp_steps - val, 0, temp_steps, min_temp_kelvin, max_temp_kelvin);
+    ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
