@@ -33,7 +33,7 @@ public:
     unsigned getHeight();
 
     void getX11Snapshot(uint8_t* buf);
-    void setXF86Brightness(int scrBr, int temp);
+    void setXF86Gamma(int scrBr, int temp);
     void setInitialGamma(bool set_previous);
 
     ~X11();

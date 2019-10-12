@@ -270,7 +270,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #ifdef _WIN32
     setGDIBrightness(scr_br, val);
 #else
-    x11->setXF86Brightness(scr_br, val);
+    x11->setXF86Gamma(scr_br, val);
 #endif
 }
 
@@ -326,7 +326,7 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
 #ifdef _WIN32
     setGDIBrightness(scr_br, cfg[Temp]);
 #else
-    x11->setXF86Brightness(scr_br, cfg[Temp]);
+    x11->setXF86Gamma(scr_br, cfg[Temp]);
 #endif
 
     MainWindow::updateBrLabel();

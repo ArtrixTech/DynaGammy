@@ -103,7 +103,7 @@ void X11::getX11Snapshot(uint8_t* buf)
     XDestroyImage(img);
 }
 
-void X11::fillRamp(uint16_t *ramp, int amount, int temp)
+void X11::fillRamp(uint16_t *ramp, int brightness, int temp)
 {
     uint16_t *r = &ramp[0 * ramp_sz],
              *g = &ramp[1 * ramp_sz],
@@ -134,12 +134,12 @@ void X11::fillRamp(uint16_t *ramp, int amount, int temp)
     }
 }
 
-void X11::setXF86Brightness(int scrBr, int temp)
+void X11::setXF86Gamma(int scr_br, int temp)
 {
     std::vector<uint16_t> ramp_v(3 * size_t(ramp_sz) * sizeof(uint16_t));
 
     uint16_t *ramp = ramp_v.data();
-    fillRamp(ramp, scrBr, temp);
+    fillRamp(ramp, scr_br, temp);
 
     bool r = XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
 
@@ -169,7 +169,7 @@ void X11::setInitialGamma(bool set_previous)
         #ifdef dbg
             std::cout << "Setting pure gamma\n";
         #endif
-        X11::setXF86Brightness(default_brightness, 1);
+        X11::setXF86Gamma(default_brightness, 1);
     }
   
     XCloseDisplay(d);

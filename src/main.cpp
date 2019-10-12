@@ -99,7 +99,7 @@ void adjustBrightness(Args &args)
                 #ifdef _WIN32
                 setGDIBrightness(scr_br, cfg[Temp]);
                 #else
-                args.x11->setXF86Brightness(scr_br, cfg[Temp]);
+                args.x11->setXF86Gamma(scr_br, cfg[Temp]);
                 #endif
             }
             else break;
@@ -145,7 +145,7 @@ void app(Args &args)
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
     const uint64_t len = screen_res * 4;
 
-    args.x11->setXF86Brightness(scr_br, cfg[Temp]);
+    args.x11->setXF86Gamma(scr_br, cfg[Temp]);
     #endif
 
     //Buffer to store screen pixels
