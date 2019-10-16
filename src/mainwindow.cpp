@@ -6,6 +6,7 @@
 #include "ui_mainwindow.h"
 #include "main.h"
 #include "utils.h"
+#include <math.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -279,6 +280,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 #endif
 
     int temp_kelvin = convertToRange(temp_steps - val, 0, temp_steps, min_temp_kelvin, max_temp_kelvin);
+    temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
     ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }
 
