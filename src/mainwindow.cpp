@@ -101,20 +101,7 @@ void MainWindow::init()
         ui->extendBr->setChecked(cfg[toggleLimit]);
         setBrSlidersRange(cfg[toggleLimit]);
 
-        ui->statusLabel->setText(QStringLiteral("%1").arg(convertToRange(scr_br, 0, 255, 0, 100)));
-        ui->minBrLabel->setText(QStringLiteral("%1").arg(convertToRange(cfg[MinBr], 0, 255, 0, 100)));
-        ui->maxBrLabel->setText(QStringLiteral("%1").arg(convertToRange(cfg[MaxBr], 0, 255, 0, 100)));
-        ui->offsetLabel->setText(QStringLiteral("%1").arg(convertToRange(cfg[Offset], 0, 255, 0, 100)));
-
-        ui->speedLabel->setText(QStringLiteral("%1").arg(cfg[Speed]));
-
-        ui->tempSlider->setRange(0, temp_steps);
-        ui->tempLabel->setText(QStringLiteral("%1").arg
-                               (convertToRange(temp_steps - cfg[Temp], 0, temp_steps, min_temp_kelvin, max_temp_kelvin)));
-
-        ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg[Threshold]));
-        ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg[Polling_rate]));
-
+        ui->tempSlider->setRange(0, temp_arr_entries * temp_mult);
         ui->minBrSlider->setValue(cfg[MinBr]);
         ui->maxBrSlider->setValue(cfg[MaxBr]);
         ui->offsetSlider->setValue(cfg[Offset]);
@@ -279,8 +266,9 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     x11->setXF86Gamma(scr_br, val);
 #endif
 
-    int temp_kelvin = convertToRange(temp_steps - val, 0, temp_steps, min_temp_kelvin, max_temp_kelvin);
+    int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
     temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
+
     ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }
 

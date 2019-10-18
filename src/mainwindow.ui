@@ -1503,7 +1503,7 @@ background-color:rgb(20,22,35);
             <bool>true</bool>
            </property>
            <property name="text">
-            <string/>
+            <string>6500</string>
            </property>
           </widget>
          </item>

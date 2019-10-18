@@ -24,7 +24,7 @@ class X11
 
     unsigned w, h;
 
-    void fillRamp(uint16_t* ramp, int amount, int temp);
+    void fillRamp(uint16_t *ramp, int brightness, int temp);
 
 public:
     X11();
@@ -32,7 +32,7 @@ public:
     unsigned getWidth();
     unsigned getHeight();
 
-    void getX11Snapshot(uint8_t* buf);
+    void getX11Snapshot(uint8_t *buf);
     void setXF86Gamma(int scrBr, int temp);
     void setInitialGamma(bool set_previous);
 
