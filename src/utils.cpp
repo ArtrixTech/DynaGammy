@@ -18,7 +18,7 @@ std::array<int, cfg_count> cfg =
     192,    // MinBr
     255,    // MaxBr
     78,     // Offset
-    1,      // Temp
+    0,      // Temp
     3,      // Speed
     32,     // Threshold
     100,    // Polling_Rate
