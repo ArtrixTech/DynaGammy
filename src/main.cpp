@@ -29,6 +29,9 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <iomanip>
+#include <chrono>
+#include <ctime>
 
 int scr_br = default_brightness; //Current screen brightness
 
@@ -117,6 +120,26 @@ void adjustBrightness(Args &args)
     }
 }
 
+void adjustTemperature(Args &args)
+{
+    using std::chrono::system_clock;
+
+    std::time_t tt = system_clock::to_time_t (system_clock::now());
+
+    struct std::tm *ptm = std::localtime(&tt);
+
+    auto cur_time = std::put_time(ptm, "%X");
+    std::cout << "Current time: " << cur_time << '\n';
+    std::cout << "Waiting for the next 30 secs...\n";
+
+    //++ptm->tm_min;
+    ptm->tm_sec += 30;
+    std::this_thread::sleep_until(system_clock::from_time_t(mktime(ptm)));
+
+
+    std::cout << cur_time << " reached!\n";
+}
+
 void app(Args &args)
 {
     #ifdef dbg
@@ -155,7 +178,8 @@ void app(Args &args)
     std::mutex m;
 
     std::thread t1(adjustBrightness, std::ref(args));
-
+    std::thread t2(adjustTemperature, std::ref(args));
+    t2.join();
     while (!args.w->quit)
     {
         {
