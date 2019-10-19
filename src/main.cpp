@@ -276,7 +276,9 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     std::condition_variable pausethr;
+#ifndef _WIN32
     cvr_ptr = &pausethr;
+#endif
 
 #ifdef _WIN32
     MainWindow wnd(nullptr, &pausethr);

@@ -231,15 +231,21 @@ void setGDIBrightness(WORD brightness, int temp)
     }
 
     WORD gammaArr[3][256];
+    double green {1.0};
+    double blue  {1.0};
 
-    float gdiv = 1;
-    float bdiv = 1;
-    float val = temp;
+    size_t tick = size_t(temp / temp_mult);
 
-    if(temp > 1)
+    if(temp > 0)
     {
-        bdiv += (val / 100);
-        gdiv += (val / 270);
+        if(tick > temp_arr_entries) tick = temp_arr_entries;
+        else if(tick < 1) tick = 1;
+
+        size_t gpos = (temp_arr_entries - tick) * 3 + 1;
+        size_t bpos = (temp_arr_entries - tick) * 3 + 2;
+
+        green = ingo_thies_table.at(gpos);
+        blue  = ingo_thies_table.at(bpos);
     }
 
     for (WORD i = 0; i < 256; ++i)
@@ -247,8 +253,8 @@ void setGDIBrightness(WORD brightness, int temp)
         WORD gammaVal = i * brightness;
 
         gammaArr[0][i] = WORD (gammaVal);
-        gammaArr[1][i] = WORD (gammaVal / gdiv);
-        gammaArr[2][i] = WORD (gammaVal / bdiv);
+        gammaArr[1][i] = WORD (gammaVal * green);
+        gammaArr[2][i] = WORD (gammaVal * blue);
     }
 
     SetDeviceGammaRamp(screenDC, gammaArr);
