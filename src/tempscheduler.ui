@@ -14,13 +14,6 @@
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
-    <widget class="QSpinBox" name="spinBox">
-     <property name="minimum">
-      <number>2000</number>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="3">
     <widget class="QLabel" name="label_6">
      <property name="text">
@@ -36,7 +29,18 @@
     </widget>
    </item>
    <item row="3" column="0" colspan="2">
-    <widget class="QTimeEdit" name="timeEdit"/>
+    <widget class="QTimeEdit" name="timeEdit">
+     <property name="timeSpec">
+      <enum>Qt::LocalTime</enum>
+     </property>
+     <property name="time">
+      <time>
+       <hour>18</hour>
+       <minute>0</minute>
+       <second>0</second>
+      </time>
+     </property>
+    </widget>
    </item>
    <item row="5" column="2" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -70,10 +74,21 @@
      <property name="maximum">
       <number>6500</number>
      </property>
+     <property name="singleStep">
+      <number>100</number>
+     </property>
     </widget>
    </item>
    <item row="3" column="2" colspan="2">
-    <widget class="QTimeEdit" name="timeEdit_2"/>
+    <widget class="QTimeEdit" name="timeEdit_2">
+     <property name="time">
+      <time>
+       <hour>6</hour>
+       <minute>0</minute>
+       <second>0</second>
+      </time>
+     </property>
+    </widget>
    </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label_3">
@@ -101,6 +116,22 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="1" column="0">
+    <widget class="QSpinBox" name="spinBox">
+     <property name="minimum">
+      <number>2000</number>
+     </property>
+     <property name="maximum">
+      <number>6500</number>
+     </property>
+     <property name="singleStep">
+      <number>100</number>
+     </property>
+     <property name="value">
+      <number>6500</number>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
