@@ -512,7 +512,7 @@ QSlider::handle:horizontal
 	border: 6px solid transparent
 }
 QLabel {
-font-family:&quot;Noto Sans&quot;, &quot;Ubuntu&quot;, &quot;Segoe UI&quot;, sans-serif;
+font-family:&quot;Ubuntu&quot;, &quot;Segoe UI&quot;, sans-serif;
 font-size: 13px;
 color:white;
 }
@@ -567,7 +567,7 @@ font-size: 17px;
        </property>
        <property name="font">
         <font>
-         <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+         <family>Ubuntu,Segoe UI,sans-serif</family>
          <pointsize>-1</pointsize>
         </font>
        </property>
@@ -586,7 +586,7 @@ font-size: 17px;
        </property>
        <property name="font">
         <font>
-         <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+         <family>Ubuntu,Segoe UI,sans-serif</family>
          <pointsize>-1</pointsize>
          <weight>50</weight>
          <bold>false</bold>
@@ -1198,7 +1198,7 @@ font-size: 17px;
           <widget class="QLabel" name="text1">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1211,7 +1211,7 @@ font-size: 17px;
           <widget class="QLabel" name="minBrLabel">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1283,7 +1283,7 @@ font-size: 17px;
           <widget class="QLabel" name="text2">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1314,7 +1314,7 @@ font-size: 17px;
            </property>
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1421,7 +1421,7 @@ background-color:rgb(20,22,35);
           <widget class="QLabel" name="text3">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1434,7 +1434,7 @@ background-color:rgb(20,22,35);
           <widget class="QLabel" name="offsetLabel">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1610,7 +1610,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           <widget class="QLabel" name="label_6">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1623,7 +1623,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           <widget class="QLabel" name="thresholdLabel">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1676,7 +1676,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           <widget class="QLabel" name="label_7">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
@@ -1689,7 +1689,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           <widget class="QLabel" name="pollingLabel">
            <property name="font">
             <font>
-             <family>Noto Sans,Ubuntu,Segoe UI,sans-serif</family>
+             <family>Ubuntu,Segoe UI,sans-serif</family>
              <pointsize>-1</pointsize>
             </font>
            </property>
