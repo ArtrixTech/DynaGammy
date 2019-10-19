@@ -14,9 +14,12 @@ TEMPLATE = app
 
 CONFIG += c++11 c++17
 
-HEADERS += src/main.h src/mainwindow.h src/utils.h
-SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp
-FORMS   += src/mainwindow.ui
+HEADERS += src/main.h src/mainwindow.h src/utils.h \
+    src/tempscheduler.h
+SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
+    src/tempscheduler.cpp
+FORMS   += src/mainwindow.ui \
+    src/tempscheduler.ui
 
 win32:{
     SOURCES += src/dxgidupl.cpp

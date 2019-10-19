@@ -64,6 +64,8 @@ private slots:
 
     void on_extendBr_clicked(bool checked);
 
+    void on_autoTempCheck_toggled(bool checked);
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon* trayIcon;

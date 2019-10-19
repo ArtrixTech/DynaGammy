@@ -23,6 +23,7 @@
 #include <condition_variable>
 
 #include "mainwindow.h"
+#include "tempscheduler.h"
 
 #ifndef _WIN32
 MainWindow::MainWindow(X11* x11, std::condition_variable* p) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
@@ -370,3 +371,12 @@ void MainWindow::mouseMoveEvent(QMouseEvent* e)
    }
 }
 #endif
+
+void MainWindow::on_autoTempCheck_toggled(bool checked)
+{
+    if(checked)
+    {
+        TempScheduler ts;
+        ts.exec();
+    }
+}

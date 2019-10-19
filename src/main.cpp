@@ -124,7 +124,7 @@ void adjustTemperature(Args &args)
 {
     using std::chrono::system_clock;
 
-    std::time_t tt = system_clock::to_time_t (system_clock::now());
+    std::time_t tt = system_clock::to_time_t(system_clock::now());
 
     struct std::tm *ptm = std::localtime(&tt);
 
@@ -133,10 +133,9 @@ void adjustTemperature(Args &args)
     std::cout << "Waiting for the next 30 secs...\n";
 
     //++ptm->tm_min;
-    ptm->tm_sec += 30;
+    ptm->tm_sec += 3;
+
     std::this_thread::sleep_until(system_clock::from_time_t(mktime(ptm)));
-
-
     std::cout << cur_time << " reached!\n";
 }
 
@@ -179,7 +178,7 @@ void app(Args &args)
 
     std::thread t1(adjustBrightness, std::ref(args));
     std::thread t2(adjustTemperature, std::ref(args));
-    t2.join();
+
     while (!args.w->quit)
     {
         {
@@ -270,6 +269,7 @@ void app(Args &args)
 #endif
 
     t1.join();
+    t2.join();
     QApplication::quit();
 }
 
