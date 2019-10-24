@@ -6,12 +6,25 @@
 #ifdef _WIN32
 #include <Windows.h>
 #endif
+
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
 #include "utils.h"
+
+std::array<int, cfg_count> cfg
+{
+    192,    // MinBr
+    255,    // MaxBr
+    78,     // Offset
+    0,      // Temp
+    3,      // Speed
+    32,     // Threshold
+    100,    // Polling_Rate
+    1       // isAuto
+};
 
 void setColors(int temp, std::array<double, 3> &c)
 {
@@ -55,18 +68,6 @@ int calcBrightness(const std::vector<uint8_t> &buf)
 
     return brightness;
 }
-
-std::array<int, cfg_count> cfg =
-{
-    192,    // MinBr
-    255,    // MaxBr
-    78,     // Offset
-    0,      // Temp
-    3,      // Speed
-    32,     // Threshold
-    100,    // Polling_Rate
-    1       // isAuto
-};
 
 void readConfig()
 {

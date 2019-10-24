@@ -9,12 +9,13 @@
 #include <array>
 #include <vector>
 
-constexpr int default_brightness = 255;
+constexpr int   default_brightness = 255,
+                cfg_count = 9,
 
-constexpr int   min_temp_kelvin = 2000,
+                min_temp_kelvin = 2000,
                 max_temp_kelvin = 6500,
                 temp_arr_entries = 46,
-                temp_mult = 60, //min: 3
+                temp_mult = 3, //min: 3
                 temp_steps = temp_arr_entries * 3;
 
 /*
@@ -71,12 +72,6 @@ constexpr std::array<double, temp_steps> ingo_thies_table =
     1.00000000,  1.00000000,  1.00000000 /* 6500K */
 };
 
-void setColors(int temp, std::array<double, 3> &c);
-int calcBrightness(const std::vector<uint8_t> &buf);
-
-/* Config */
-constexpr int cfg_count = 9;
-
 constexpr std::array<const char*, cfg_count> cfg_str =
 {
     "minBrightness=",
@@ -104,9 +99,13 @@ enum {
     toggleLimit
 };
 
+void setColors(int temp, std::array<double, 3> &c);
+
+int calcBrightness(const std::vector<uint8_t> &buf);
+
 void readConfig();
+
 void saveConfig();
-/****/
 
 template <class T>
 T convertToRange(T old_val, int old_min, int old_max, int new_min, int new_max)
