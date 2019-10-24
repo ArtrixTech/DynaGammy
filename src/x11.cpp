@@ -98,7 +98,7 @@ void X11::fillRamp(uint16_t *ramp, int brightness, int temp)
          *g = &ramp[1 * ramp_sz],
          *b = &ramp[2 * ramp_sz];
 
-    std::array c{1.0, 1.0, 1.0};
+    std::array<double, 3> c{1.0, 1.0, 1.0};
 
     setColors(temp, c);
 
