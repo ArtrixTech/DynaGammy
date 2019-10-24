@@ -24,7 +24,7 @@ class X11
 
     unsigned w, h;
 
-    void fillRamp(uint16_t *ramp, int brightness, int temp);
+    void fillRamp(std::vector<uint16_t> &ramp, int brightness, int temp);
 
 public:
     X11();
