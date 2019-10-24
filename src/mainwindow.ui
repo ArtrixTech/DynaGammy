@@ -484,10 +484,6 @@
   <property name="windowTitle">
    <string>Gammy</string>
   </property>
-  <property name="windowIcon">
-   <iconset resource="../res.qrc">
-    <normaloff>:/res/icons/16x16ball.ico</normaloff>:/res/icons/16x16ball.ico</iconset>
-  </property>
   <property name="windowOpacity">
    <double>100.000000000000000</double>
   </property>

@@ -46,12 +46,12 @@ void MainWindow::init()
     ui->setupUi(this);
     readConfig();
 
-    auto appIcon = QIcon(":res/icons/16x16ball.ico");
+    QIcon icon = QIcon(":res/icons/128x128ball.ico");
 
     /*Set window properties */
     {
         this->setWindowTitle("Gammy");
-        this->setWindowIcon(appIcon);
+        this->setWindowIcon(icon);
 
         resize(335, 333);
 
@@ -87,7 +87,7 @@ void MainWindow::init()
             MainWindow::show();
         }
 
-        this->trayIcon->setIcon(appIcon);
+        this->trayIcon->setIcon(icon);
 
         auto menu = this->createMenu();
         this->trayIcon->setContextMenu(menu);
@@ -321,6 +321,7 @@ void MainWindow::toggleSliders(bool is_auto)
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
     scr_br = value;
+
 #ifdef _WIN32
     setGDIBrightness(scr_br, cfg[Temp]);
 #else
