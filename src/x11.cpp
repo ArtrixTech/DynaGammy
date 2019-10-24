@@ -10,6 +10,7 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
 #include "utils.h"
+#include "math.h"
 
 X11::X11()
 {
@@ -102,11 +103,17 @@ void X11::fillRamp(uint16_t *ramp, int brightness, int temp)
 
     setColors(temp, c);
 
-    double br = brightness / 255. * 32;
+    int exp;
+
+    ramp_sz == 2048 ? exp = 3:
+    ramp_sz == 1024 ? exp = 2:
+                      exp = 1;
+
+    double br = ramp_sz / pow(4, exp) * (brightness / 255.);
 
     for (int32_t i = 0; i < ramp_sz; ++i)
     {
-        int32_t val = int32_t(i * br);
+        double val = i * br;
 
         if(val > UINT16_MAX) val = UINT16_MAX;
 
