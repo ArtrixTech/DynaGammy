@@ -5,9 +5,7 @@
 
 #ifndef _WIN32
 #include "x11.h"
-#include "main.h"
 #include <iostream>
-#include <thread>
 #include <cstring>
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
@@ -85,22 +83,13 @@ X11::X11()
     }
 }
 
-unsigned X11::getWidth() {
-    return w;
-}
-
-unsigned X11::getHeight() {
-    return h;
-}
-
-void X11::getX11Snapshot(uint8_t *buf)
+void X11::getX11Snapshot(std::vector<uint8_t> &buf) noexcept
 {
-    XImage *img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
-    size_t len = size_t(img->bytes_per_line * img->height);
+    const auto img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
 
-    memcpy(buf, img->data, len);
+    memcpy(buf.data(), reinterpret_cast<uint8_t*>(img->data), buf.size());
 
-    XDestroyImage(img);
+    img->f.destroy_image(img);
 }
 
 void X11::fillRamp(uint16_t *ramp, int brightness, int temp)
@@ -109,24 +98,11 @@ void X11::fillRamp(uint16_t *ramp, int brightness, int temp)
          *g = &ramp[1 * ramp_sz],
          *b = &ramp[2 * ramp_sz];
 
-    double green {1.0};
-    double blue  {1.0};
+    std::array c{1.0, 1.0, 1.0};
 
-    size_t tick = size_t(temp / temp_mult);
+    setColors(temp, c);
 
-    if(temp > 0)
-    {
-        if(tick > temp_arr_entries) tick = temp_arr_entries;
-        else if(tick < 1) tick = 1;
-
-        size_t gpos = (temp_arr_entries - tick) * 3 + 1;
-        size_t bpos = (temp_arr_entries - tick) * 3 + 2;
-
-        green = ingo_thies_table.at(gpos);
-        blue  = ingo_thies_table.at(bpos);
-    }
-
-    auto br = convertToRange(double(brightness), 0, 255, 0, 32);
+    double br = brightness / 255. * 32;
 
     for (int32_t i = 0; i < ramp_sz; ++i)
     {
@@ -134,27 +110,19 @@ void X11::fillRamp(uint16_t *ramp, int brightness, int temp)
 
         if(val > UINT16_MAX) val = UINT16_MAX;
 
-        r[i] = uint16_t(val);
-        g[i] = uint16_t(val * green);
-        b[i] = uint16_t(val * blue);
+        r[i] = uint16_t(val * c[0]);
+        g[i] = uint16_t(val * c[1]);
+        b[i] = uint16_t(val * c[2]);
     }
 }
 
 void X11::setXF86Gamma(int scr_br, int temp)
 {
-    std::vector<uint16_t> ramp_v(3 * size_t(ramp_sz) * sizeof(uint16_t));
+    std::vector<uint16_t> r (3 * size_t(ramp_sz) * sizeof(uint16_t));
 
-    uint16_t *ramp = ramp_v.data();
-    fillRamp(ramp, scr_br, temp);
+    fillRamp(r.data(), scr_br, temp);
 
-    bool r = XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0*ramp_sz], &ramp[1*ramp_sz], &ramp[2*ramp_sz]);
-
-#ifdef dbg
-    if(!r)
-    {
-       std::cout << "XF86VidModeSetGammaRamp failed.\n";
-    }
-#endif
+    XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &r[0*ramp_sz], &r[1*ramp_sz], &r[2*ramp_sz]);
 }
 
 void X11::setInitialGamma(bool set_previous)
@@ -175,10 +143,20 @@ void X11::setInitialGamma(bool set_previous)
         #ifdef dbg
             std::cout << "Setting pure gamma\n";
         #endif
-        X11::setXF86Gamma(default_brightness, 1);
+        X11::setXF86Gamma(255, 0);
     }
   
     XCloseDisplay(d);
+}
+
+uint32_t X11::getWidth()
+{
+    return w;
+}
+
+uint32_t X11::getHeight()
+{
+    return h;
 }
 
 X11::~X11()

@@ -7,6 +7,9 @@
 #define UTILS_H
 #include <string>
 #include <array>
+#include <vector>
+
+constexpr int default_brightness = 255;
 
 constexpr int   min_temp_kelvin = 2000,
                 max_temp_kelvin = 6500,
@@ -14,8 +17,9 @@ constexpr int   min_temp_kelvin = 2000,
                 temp_mult = 60, //min: 3
                 temp_steps = temp_arr_entries * 3;
 
-/*Color ramp by Ingo Thies, from Redshift
-**https://github.com/jonls/redshift/blob/master/README-colorramp
+/*
+ * Color ramp by Ingo Thies, from Redshift
+ * https://github.com/jonls/redshift/blob/master/README-colorramp
 */
 constexpr std::array<double, temp_steps> ingo_thies_table =
 {
@@ -67,8 +71,12 @@ constexpr std::array<double, temp_steps> ingo_thies_table =
     1.00000000,  1.00000000,  1.00000000 /* 6500K */
 };
 
-/** Config*/
+void setColors(int temp, std::array<double, 3> &c);
+int calcBrightness(const std::vector<uint8_t> &buf);
+
+/* Config */
 constexpr int cfg_count = 9;
+
 constexpr std::array<const char*, cfg_count> cfg_str =
 {
     "minBrightness=",
@@ -81,7 +89,9 @@ constexpr std::array<const char*, cfg_count> cfg_str =
     "auto=",
     "toggleLimit="
 };
+
 extern std::array<int, cfg_count> cfg;
+
 enum {
     MinBr,
     MaxBr,
@@ -93,12 +103,10 @@ enum {
     isAuto,
     toggleLimit
 };
-/****/
-
-int calcBrightness(uint8_t* buf, uint64_t screen_res);
 
 void readConfig();
 void saveConfig();
+/****/
 
 template <class T>
 T convertToRange(T old_val, int old_min, int old_max, int new_min, int new_max)
@@ -107,18 +115,19 @@ T convertToRange(T old_val, int old_min, int old_max, int new_min, int new_max)
 
     return val;
 }
-#ifdef _WIN32
+
+#ifndef _WIN32
+std::string getHomePath(bool add_cfg);
+#else
 
 void getGDISnapshot(uint8_t* buf, uint64_t w, uint64_t h);
-void setGDIBrightness(unsigned short brightness, int temp);
+void setGDIGamma(unsigned short brightness, int temp);
 
 void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);
 
 std::wstring getExecutablePath(bool add_cfg);
-#else
-std::string getHomePath(bool add_cfg);
 #endif
 
 #endif // UTILS_H

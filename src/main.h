@@ -11,8 +11,6 @@
 //#define dbgcfg
 //#define dbgbr
 
-constexpr int default_brightness = 255;
-
 extern int scr_br;
 extern int polling_rate_min, polling_rate_max;
 

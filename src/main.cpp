@@ -97,7 +97,7 @@ void adjustBrightness(Args &args)
             if(!args.w->quit)
             {
                 #ifdef _WIN32
-                setGDIBrightness(scr_br, cfg[Temp]);
+                setGDIGamma(scr_br, cfg[Temp]);
                 #else
                 args.x11->setXF86Gamma(scr_br, cfg[Temp]);
                 #endif
@@ -152,20 +152,18 @@ void app(Args &args)
     std::vector<uint8_t> buf(len);
 
     std::once_flag f;
-    std::mutex m;
 
     std::thread t1(adjustBrightness, std::ref(args));
 
+    std::mutex m;
+    std::unique_lock<std::mutex> lock(m);
+
     while (!args.w->quit)
     {
+        args.w->pausethr->wait(lock, [&]
         {
-            std::unique_lock<std::mutex> lock(m);
-
-            args.w->pausethr->wait(lock, [&]
-            {
-                 return args.w->run;
-            });
-        }
+             return args.w->run;
+        });
 
 #ifdef _WIN32
         if (useDXGI)
@@ -181,11 +179,11 @@ void app(Args &args)
             Sleep(cfg[Polling_rate]);
         }
 #else
-        args.x11->getX11Snapshot(buf.data());
+        args.x11->getX11Snapshot(buf);
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
 
-        args.img_br = calcBrightness(buf.data(), screen_res);
+        args.img_br     = calcBrightness(buf);
         args.img_delta += abs(old_imgBr - args.img_br);
 
         std::call_once(f, [&](){ args.img_delta = 0; });
@@ -233,7 +231,7 @@ void app(Args &args)
     }
 
 #ifdef _WIN32
-    setGDIBrightness(default_brightness, 1);
+    setGDIGamma(default_brightness, 1);
 #else
     args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif

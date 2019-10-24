@@ -261,7 +261,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     cfg[Temp] = val;
 
 #ifdef _WIN32
-    setGDIBrightness(scr_br, val);
+    setGDIGamma(scr_br, val);
 #else
     x11->setXF86Gamma(scr_br, val);
 #endif
