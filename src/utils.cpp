@@ -17,7 +17,6 @@ void setColors(int temp, std::array<double, 3> &c)
 {
     size_t tick = size_t(temp / temp_mult);
 
-    std::cout << tick << '\n';
     if(tick > temp_arr_entries) tick = temp_arr_entries;
     else if(tick < 1) tick = 1;
 
