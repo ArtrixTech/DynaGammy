@@ -10,20 +10,64 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "main.h"
+#include <vector>
+
 #include "utils.h"
 
-std::array<int, cfg_count> cfg =
+std::array<int, cfg_count> cfg
 {
     192,    // MinBr
     255,    // MaxBr
     78,     // Offset
-    1,      // Temp
+    0,      // Temp
     3,      // Speed
     32,     // Threshold
     100,    // Polling_Rate
     1       // isAuto
 };
+
+void setColors(int temp, std::array<double, 3> &c)
+{
+    size_t tick = size_t(temp / temp_mult);
+
+    if(tick > temp_arr_entries) tick = temp_arr_entries;
+    else if(tick < 1) tick = 1;
+
+    size_t rpos = (temp_arr_entries - tick) * 3 + 0,
+           gpos = (temp_arr_entries - tick) * 3 + 1,
+           bpos = (temp_arr_entries - tick) * 3 + 2;
+
+    c[0] = ingo_thies_table[rpos];
+    c[1] = ingo_thies_table[gpos];
+    c[2] = ingo_thies_table[bpos];
+};
+
+int calcBrightness(const std::vector<uint8_t> &buf)
+{
+    uint64_t r{}, g{}, b{};
+
+    static const uint64_t len = buf.size();
+
+    //Remove the last 4 bits to avoid going out of bounds
+    for (auto i = len - 4; i > 0; i -= 4)
+    {
+        r += buf[i + 2];
+        g += buf[i + 1];
+        b += buf[i];
+    }
+
+    /*
+     * The proper way would be to calculate perceived lightness as explained here: stackoverflow.com/a/56678483
+     * But that's too heavy. We calculate luminance only, which still gives okay results.
+     * Here it's converted to a 0-255 range by the RGB sums.
+    */
+
+    const static auto screen_res = len / 4;
+
+    int brightness = (r * 0.2126 + g * 0.7152 + b * 0.0722) / screen_res;
+
+    return brightness;
+}
 
 void readConfig()
 {
@@ -128,33 +172,6 @@ void saveConfig()
     file.close();
 }
 
-int calcBrightness(uint8_t* buf, uint64_t screen_res)
-{
-    uint64_t r_sum = 0;
-    uint64_t g_sum = 0;
-    uint64_t b_sum = 0;
-
-    static uint64_t len = screen_res * 4; //4 bits per pixel
-
-    for (uint64_t i = len - 4; i > 0; i -= 4)
-    {
-        r_sum += buf[i + 2];
-        g_sum += buf[i + 1];
-        b_sum += buf[i];
-    }
-
-    int luma = int((r_sum * 0.2126f + g_sum * 0.7152f + b_sum * 0.0722f) / screen_res);
-
-#ifdef dbgluma
-    std::cout << "\nRed: " << r_sum << '\n';
-    std::cout << "Green: " << g_sum << '\n';
-    std::cout << "Blue: " << b_sum << '\n';
-    std::cout << "Luma:" << luma << '\n';
-#endif
-
-    return luma;
-}
-
 #ifndef _WIN32
 std::string getHomePath(bool add_cfg)
 {
@@ -190,10 +207,25 @@ std::string getHomePath(bool add_cfg)
     return path;
 }
 #else
+
 static const HDC screenDC = GetDC(nullptr);
 
-void getGDISnapshot(uint8_t* buf, const uint64_t w, const uint64_t h)
+void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
 {
+    static uint64_t len = w * h * 4;
+
+    static BITMAPINFOHEADER info;
+    ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
+    info.biSize = sizeof(BITMAPINFOHEADER);
+    info.biWidth = w;
+    info.biHeight = -h;
+    info.biPlanes = 1;
+    info.biBitCount = 32;
+    info.biCompression = BI_RGB;
+    info.biSizeImage = len;
+    info.biClrUsed = 0;
+    info.biClrImportant = 0;
+
     HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
     HDC memoryDC = CreateCompatibleDC(screenDC);
 
@@ -201,21 +233,7 @@ void getGDISnapshot(uint8_t* buf, const uint64_t w, const uint64_t h)
 
     BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
 
-    static uint64_t len = w * h * 4;
-
-    static BITMAPINFOHEADER bminfoheader;
-    ZeroMemory(&bminfoheader, sizeof(BITMAPINFOHEADER));
-    bminfoheader.biSize = sizeof(BITMAPINFOHEADER);
-    bminfoheader.biWidth = w;
-    bminfoheader.biHeight = -h;
-    bminfoheader.biPlanes = 1;
-    bminfoheader.biBitCount = 32;
-    bminfoheader.biCompression = BI_RGB;
-    bminfoheader.biSizeImage = len;
-    bminfoheader.biClrUsed = 0;
-    bminfoheader.biClrImportant = 0;
-
-    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
+    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&info), DIB_RGB_COLORS);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);
@@ -223,32 +241,25 @@ void getGDISnapshot(uint8_t* buf, const uint64_t w, const uint64_t h)
     DeleteDC(memoryDC);
 }
 
-void setGDIBrightness(WORD brightness, int temp)
+void setGDIGamma(WORD brightness, int temp)
 {
-
     if (brightness > default_brightness) {
         return;
     }
 
+    std::array c{1.0, 1.0, 1.0};
+
+    setColors(temp, c);
+
     WORD gammaArr[3][256];
-
-    float gdiv = 1;
-    float bdiv = 1;
-    float val = temp;
-
-    if(temp > 1)
-    {
-        bdiv += (val / 100);
-        gdiv += (val / 270);
-    }
 
     for (WORD i = 0; i < 256; ++i)
     {
         WORD gammaVal = i * brightness;
 
-        gammaArr[0][i] = WORD (gammaVal);
-        gammaArr[1][i] = WORD (gammaVal / gdiv);
-        gammaArr[2][i] = WORD (gammaVal / bdiv);
+        gammaArr[0][i] = WORD (gammaVal * c[0]);
+        gammaArr[1][i] = WORD (gammaVal * c[1]);
+        gammaArr[2][i] = WORD (gammaVal * c[2]);
     }
 
     SetDeviceGammaRamp(screenDC, gammaArr);

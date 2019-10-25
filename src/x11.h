@@ -24,15 +24,15 @@ class X11
 
     unsigned w, h;
 
-    void fillRamp(uint16_t *ramp, int brightness, int temp);
+    void fillRamp(std::vector<uint16_t> &ramp, int brightness, int temp);
 
 public:
     X11();
 
-    unsigned getWidth();
-    unsigned getHeight();
+    uint32_t getWidth();
+    uint32_t getHeight();
 
-    void getX11Snapshot(uint8_t *buf);
+    void getX11Snapshot(std::vector<uint8_t> &buf) noexcept;
     void setXF86Gamma(int scrBr, int temp);
     void setInitialGamma(bool set_previous);
 

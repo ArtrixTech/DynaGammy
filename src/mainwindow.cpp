@@ -47,34 +47,32 @@ void MainWindow::init()
     ui->setupUi(this);
     readConfig();
 
-    auto appIcon = QIcon(":res/icons/16x16ball.ico");
+    QIcon icon = QIcon(":res/icons/128x128ball.ico");
 
     /*Set window properties */
     {
         this->setWindowTitle("Gammy");
-        this->setWindowIcon(appIcon);
-
+        this->setWindowIcon(icon);
         resize(335, 333);
 
-    #ifdef _WIN32
-       this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
-       ui->extendBr->hide();
-    #else
-        this->setWindowFlags(Qt::Dialog);
+        QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
+
+        this->setWindowFlags(Qt::Dialog |
+                             Qt::WindowStaysOnTopHint);
+
+        //Deprecated buttons, to be removed altogether
         ui->closeButton->hide();
         ui->hideButton->hide();
-    #endif
+
+#ifdef _WIN32
+        ui->extendBr->hide();
+#endif
 
         ui->manBrSlider->hide();
-    }
 
-    /*Move window to bottom right */
-    {
-        QScreen *screen = QGuiApplication::primaryScreen();
-        QRect screenGeometry = screen->availableGeometry();
-        int h = screenGeometry.height();
-        int w = screenGeometry.width();
-        this->move(w - this->width(), h - this->height());
+        // Move window to bottom right
+        QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
+        move(scr.width() - this->width(), scr.height() - this->height());
     }
 
     /*Create tray icon */
@@ -88,9 +86,9 @@ void MainWindow::init()
             MainWindow::show();
         }
 
-        this->trayIcon->setIcon(appIcon);
+        this->trayIcon->setIcon(icon);
 
-        auto menu = this->createMenu();
+        QMenu *menu = createMenu();
         this->trayIcon->setContextMenu(menu);
         this->trayIcon->setToolTip(QString("Gammy"));
         this->trayIcon->show();
@@ -112,7 +110,7 @@ void MainWindow::init()
         ui->pollingSlider->setValue(cfg[Polling_rate]);
     }
 
-    /*Set auto check */
+    /*Set auto brightness toggle */
     {
         ui->autoCheck->setChecked(cfg[isAuto]);
 
@@ -144,35 +142,50 @@ void MainWindow::updatePollingSlider(int min, int max)
 
 QMenu* MainWindow::createMenu()
 {
-    auto menu = new QMenu(this);
+    QMenu *menu = new QMenu(this);
 
 #ifdef _WIN32
-    QAction* startupAction = new QAction("&Run at startup", this);
-    startupAction->setCheckable(true);
-    connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
-    menu->addAction(startupAction);
+    QAction *run_startup = new QAction("&Run at startup", this);
+    run_startup->setCheckable(true);
+
+    connect(run_startup, &QAction::triggered, [=]{toggleRegkey(run_startup->isChecked());});
+    menu->addAction(run_startup);
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
-    if (s == ERROR_SUCCESS)
-    {
-        startupAction->setChecked(true);
-    }
-    else startupAction->setChecked(false);
+    s == ERROR_SUCCESS ? run_startup->setChecked(true):
+                         run_startup->setChecked(false);
 #else
-    QAction* showAction = new QAction("&Open Gammy", this);
-    connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
-    menu->addAction(showAction);
-#endif
+    QAction *show_wnd = new QAction("&Show Gammy", this);
 
-    QAction* quitPrevious = new QAction("&Quit", this);
-    connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked();});
-    menu->addAction(quitPrevious);
+    auto show_on_top = [&]()
+    {
+        if(this->isHidden())
+        {
+            setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
+
+            //Move the window to bottom right again.
+            //For some reason it moves up otherwise.
+            QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
+            move(scr.width() - this->width(), scr.height() - this->height());
+
+            show();
+        };
+    };
+
+    connect(show_wnd, &QAction::triggered, this, show_on_top);
+    menu->addAction(show_wnd);
+#endif
+    menu->addSeparator();
+
+    QAction *quit_prev = new QAction("&Quit", this);
+    connect(quit_prev, &QAction::triggered, this, [=]{on_closeButton_clicked();});
+    menu->addAction(quit_prev);
 
 #ifndef _WIN32
-    QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
-    connect(quitPure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
-    menu->addAction(quitPure);
+    QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
+    connect(quit_pure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
+    menu->addAction(quit_pure);
 #endif
 
     return menu;
@@ -262,7 +275,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     cfg[Temp] = val;
 
 #ifdef _WIN32
-    setGDIBrightness(scr_br, val);
+    setGDIGamma(scr_br, val);
 #else
     x11->setXF86Gamma(scr_br, val);
 #endif
@@ -322,8 +335,9 @@ void MainWindow::toggleSliders(bool is_auto)
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
     scr_br = value;
+
 #ifdef _WIN32
-    setGDIBrightness(scr_br, cfg[Temp]);
+    setGDIGamma(scr_br, cfg[Temp]);
 #else
     x11->setXF86Gamma(scr_br, cfg[Temp]);
 #endif
@@ -349,28 +363,6 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->maxBrSlider->setRange(64, br_limit);
     ui->offsetSlider->setRange(0, br_limit);
 }
-
-#ifdef _WIN32
-void MainWindow::mousePressEvent(QMouseEvent* e)
-{
-   mouse = e->pos();
-
-   windowPressed = true;
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent* e)
-{
-   windowPressed = false;
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent* e)
-{
-   if (windowPressed)
-   {
-       move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
-   }
-}
-#endif
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
