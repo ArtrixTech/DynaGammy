@@ -55,25 +55,20 @@ void MainWindow::init()
 
         resize(335, 333);
 
-    #ifdef _WIN32
-       this->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+        this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
+
+#ifdef _WIN32
        ui->extendBr->hide();
-    #else
-        this->setWindowFlags(Qt::Dialog);
+#else
         ui->closeButton->hide();
         ui->hideButton->hide();
-    #endif
+#endif
 
         ui->manBrSlider->hide();
-    }
 
-    /*Move window to bottom right */
-    {
-        QScreen *screen = QGuiApplication::primaryScreen();
-        QRect screenGeometry = screen->availableGeometry();
-        int h = screenGeometry.height();
-        int w = screenGeometry.width();
-        this->move(w - this->width(), h - this->height());
+        // Move window to bottom right
+        QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
+        move(scr.width() - this->width(), scr.height() - this->height());
     }
 
     /*Create tray icon */
@@ -111,7 +106,7 @@ void MainWindow::init()
         ui->pollingSlider->setValue(cfg[Polling_rate]);
     }
 
-    /*Set auto check */
+    /*Set auto brightness toggle */
     {
         ui->autoCheck->setChecked(cfg[isAuto]);
 
@@ -159,8 +154,24 @@ QMenu* MainWindow::createMenu()
     }
     else startupAction->setChecked(false);
 #else
-    QAction* showAction = new QAction("&Open Gammy", this);
-    connect(showAction, &QAction::triggered, this, [=]{updateBrLabel(); MainWindow::show();});
+    QAction *showAction = new QAction("&Show", this);
+
+    auto show_on_top = [&]()
+    {
+        if(this->isHidden())
+        {
+            setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
+
+            //Move the window to bottom right again.
+            //For some reason it moves up otherwise.
+            QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
+            move(scr.width() - this->width(), scr.height() - this->height());
+
+            show();
+        };
+    };
+
+    connect(showAction, &QAction::triggered, this, show_on_top);
     menu->addAction(showAction);
 #endif
 
