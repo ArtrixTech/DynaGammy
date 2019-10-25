@@ -215,7 +215,7 @@ void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
     static uint64_t len = w * h * 4;
 
     static BITMAPINFOHEADER info;
-    ZeroMemory(&bminfoheader, sizeof(BITMAPINFOHEADER));
+    ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
     info.biSize = sizeof(BITMAPINFOHEADER);
     info.biWidth = w;
     info.biHeight = -h;
@@ -233,7 +233,7 @@ void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
 
     BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
 
-    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&bminfoheader), DIB_RGB_COLORS);
+    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&info), DIB_RGB_COLORS);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);

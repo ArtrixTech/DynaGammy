@@ -149,8 +149,8 @@ QMenu* MainWindow::createMenu()
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
-    s == ERROR_SUCCESS ? startupAction->setChecked(true):
-                         startupAction->setChecked(false);
+    s == ERROR_SUCCESS ? run_startup->setChecked(true):
+                         run_startup->setChecked(false);
 #else
     QAction *show_wnd = new QAction("&Show Gammy", this);
 
@@ -333,7 +333,7 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
     scr_br = value;
 
 #ifdef _WIN32
-    setGDIBrightness(scr_br, cfg[Temp]);
+    setGDIGamma(scr_br, cfg[Temp]);
 #else
     x11->setXF86Gamma(scr_br, cfg[Temp]);
 #endif
