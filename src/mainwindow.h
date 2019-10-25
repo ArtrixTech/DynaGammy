@@ -70,15 +70,6 @@ private:
     QMenu* createMenu();
     void toggleSliders(bool show);
     void setBrSlidersRange(bool);
-
-#ifdef _WIN32
-    QPoint mouse;
-    void mousePressEvent(QMouseEvent*);
-    void mouseMoveEvent(QMouseEvent*);
-    void mouseReleaseEvent(QMouseEvent*);
-    bool windowPressed = false;
-#endif
-
     void closeEvent(QCloseEvent *);
 
     #ifndef _WIN32

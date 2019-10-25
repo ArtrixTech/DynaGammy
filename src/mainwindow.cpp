@@ -362,25 +362,3 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->maxBrSlider->setRange(64, br_limit);
     ui->offsetSlider->setRange(0, br_limit);
 }
-
-#ifdef _WIN32
-void MainWindow::mousePressEvent(QMouseEvent* e)
-{
-   mouse = e->pos();
-
-   windowPressed = true;
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent* e)
-{
-   windowPressed = false;
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent* e)
-{
-   if (windowPressed)
-   {
-       move(e->globalX() - mouse.x(), e->globalY() - mouse.y());
-   }
-}
-#endif
