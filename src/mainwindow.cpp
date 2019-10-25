@@ -84,7 +84,7 @@ void MainWindow::init()
 
         this->trayIcon->setIcon(icon);
 
-        auto menu = this->createMenu();
+        QMenu *menu = createMenu();
         this->trayIcon->setContextMenu(menu);
         this->trayIcon->setToolTip(QString("Gammy"));
         this->trayIcon->show();
@@ -138,23 +138,21 @@ void MainWindow::updatePollingSlider(int min, int max)
 
 QMenu* MainWindow::createMenu()
 {
-    auto menu = new QMenu(this);
+    QMenu *menu = new QMenu(this);
 
 #ifdef _WIN32
-    QAction* startupAction = new QAction("&Run at startup", this);
-    startupAction->setCheckable(true);
-    connect(startupAction, &QAction::triggered, [=]{toggleRegkey(startupAction->isChecked());});
-    menu->addAction(startupAction);
+    QAction *run_startup = new QAction("&Run at startup", this);
+    run_startup->setCheckable(true);
+
+    connect(run_startup, &QAction::triggered, [=]{toggleRegkey(run_startup->isChecked());});
+    menu->addAction(run_startup);
 
     LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
 
-    if (s == ERROR_SUCCESS)
-    {
-        startupAction->setChecked(true);
-    }
-    else startupAction->setChecked(false);
+    s == ERROR_SUCCESS ? startupAction->setChecked(true):
+                         startupAction->setChecked(false);
 #else
-    QAction *showAction = new QAction("&Show", this);
+    QAction *show_wnd = new QAction("&Show Gammy", this);
 
     auto show_on_top = [&]()
     {
@@ -171,18 +169,19 @@ QMenu* MainWindow::createMenu()
         };
     };
 
-    connect(showAction, &QAction::triggered, this, show_on_top);
-    menu->addAction(showAction);
+    connect(show_wnd, &QAction::triggered, this, show_on_top);
+    menu->addAction(show_wnd);
 #endif
+    menu->addSeparator();
 
-    QAction* quitPrevious = new QAction("&Quit", this);
-    connect(quitPrevious, &QAction::triggered, this, [=]{on_closeButton_clicked();});
-    menu->addAction(quitPrevious);
+    QAction *quit_prev = new QAction("&Quit", this);
+    connect(quit_prev, &QAction::triggered, this, [=]{on_closeButton_clicked();});
+    menu->addAction(quit_prev);
 
 #ifndef _WIN32
-    QAction* quitPure = new QAction("&Quit (set pure gamma)", this);
-    connect(quitPure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
-    menu->addAction(quitPure);
+    QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
+    connect(quit_pure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
+    menu->addAction(quit_pure);
 #endif
 
     return menu;
