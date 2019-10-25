@@ -52,16 +52,19 @@ void MainWindow::init()
     {
         this->setWindowTitle("Gammy");
         this->setWindowIcon(icon);
-
         resize(335, 333);
 
-        this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
+        QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
 
-#ifdef _WIN32
-       ui->extendBr->hide();
-#else
+        this->setWindowFlags(Qt::Dialog |
+                             Qt::WindowStaysOnTopHint);
+
+        //Deprecated buttons, to be removed altogether
         ui->closeButton->hide();
         ui->hideButton->hide();
+
+#ifdef _WIN32
+        ui->extendBr->hide();
 #endif
 
         ui->manBrSlider->hide();
