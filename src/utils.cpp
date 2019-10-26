@@ -85,9 +85,9 @@ void readConfig()
 
     if(!file.is_open())
     {
-        #ifdef dbg
+#ifdef dbg
         std::cout << "Unable to open settings file.\n";
-        #endif
+#endif
         return;
     }
 
@@ -96,9 +96,9 @@ void readConfig()
 
     if(empty)
     {
-        #ifdef dbg
+#ifdef dbg
         std::cout << "Config empty.\n";
-        #endif
+#endif
 
         saveConfig();
         return;
@@ -109,9 +109,9 @@ void readConfig()
     size_t c = 0;
     for (std::string line; std::getline(file, line);)
     {
-        #ifdef dbgcfg
+#ifdef dbgcfg
         std::cout << line << '\n';
-        #endif
+#endif
 
         if(!line.empty())
         {
@@ -162,9 +162,9 @@ void saveConfig()
 
         std::string line (s + std::to_string(val));
 
-        #ifdef dbgcfg
+#ifdef dbgcfg
         std::cout << line << '\n';
-        #endif
+#endif
 
         file << line << '\n';
     }
@@ -339,36 +339,36 @@ void toggleRegkey(bool isChecked)
 
         if (s == ERROR_SUCCESS)
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "RegKey opened.\n";
-            #endif
+#endif
 
             s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
 
-            #ifdef dbg
+#ifdef dbg
                 if (s == ERROR_SUCCESS) {
                     std::cout << "RegValue set.\n";
                 }
                 else {
                     std::cout << "Error when setting RegValue.\n";
                 }
-            #endif
+#endif
         }
-        #ifdef dbg
+#ifdef dbg
         else {
             std::cout << "Error when opening RegKey.\n";
         }
-        #endif
+#endif
     }
     else {
         s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
 
-        #ifdef dbg
+#ifdef dbg
             if (s == ERROR_SUCCESS)
                 std::cout << "RegValue deleted.\n";
             else
                 std::cout << "RegValue deletion failed.\n";
-        #endif
+#endif
     }
 
     if(hKey) RegCloseKey(hKey);

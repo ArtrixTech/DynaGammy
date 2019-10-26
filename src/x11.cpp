@@ -85,9 +85,8 @@ X11::X11()
         if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
 #ifdef dbg
-            std::cout << "Failed to get XF86 gamma ramp.\n";
+            std::cout << "Failed to get initial gamma ramp.\n";
 #endif
-            return;
         }
     }
 }
@@ -149,8 +148,7 @@ void X11::setInitialGamma(bool set_previous)
             std::cout << "Setting previous gamma\n";
 #endif
 
-        size_t r = size_t(ramp_sz);
-        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0], &init_ramp[r], &init_ramp[2 * r]);
+        XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
     }
     else
     {

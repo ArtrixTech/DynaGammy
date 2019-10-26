@@ -13,9 +13,9 @@
 
 class X11
 {
-    Display* dsp;
+    Display *dsp;
 
-    Screen* scr;
+    Screen *scr;
     Window root;
 
     int ramp_sz;

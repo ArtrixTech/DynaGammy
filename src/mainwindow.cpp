@@ -25,7 +25,8 @@
 #include "mainwindow.h"
 
 #ifndef _WIN32
-MainWindow::MainWindow(X11* x11, std::condition_variable* p) : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(X11 *x11, std::condition_variable *p)
+    : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     this->pausethr = p;
     this->x11 = x11;
@@ -34,7 +35,8 @@ MainWindow::MainWindow(X11* x11, std::condition_variable* p) : ui(new Ui::MainWi
 }
 #endif
 
-MainWindow::MainWindow(QWidget* parent, std::condition_variable* p) : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(QWidget *parent, std::condition_variable *p)
+    : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     this->pausethr = p;
 
@@ -118,25 +120,6 @@ void MainWindow::init()
 
         toggleSliders(cfg[isAuto]);
     }
-}
-
-void MainWindow::updatePollingSlider(int min, int max)
-{
-   const auto poll = cfg[Polling_rate];
-
-   ui->pollingSlider->setRange(min, max);
-
-   if(poll < min)
-   {
-       cfg[Polling_rate] = min;
-   }
-   else if(poll > max)
-   {
-       cfg[Polling_rate] = max;
-   }
-
-   ui->pollingLabel->setText(QString::number(poll));
-   ui->pollingSlider->setValue(poll);
 }
 
 QMenu* MainWindow::createMenu()
@@ -295,11 +278,6 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
     cfg[Polling_rate] = val;
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
 void MainWindow::on_autoCheck_stateChanged(int state)
 {
     if(state == 2)
@@ -361,4 +339,27 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->minBrSlider->setRange(64, br_limit);
     ui->maxBrSlider->setRange(64, br_limit);
     ui->offsetSlider->setRange(0, br_limit);
+}
+
+void MainWindow::updatePollingSlider(int min, int max)
+{
+   const auto poll = cfg[Polling_rate];
+
+   ui->pollingSlider->setRange(min, max);
+
+   if(poll < min) {
+       cfg[Polling_rate] = min;
+   }
+   else
+   if(poll > max) {
+       cfg[Polling_rate] = max;
+   }
+
+   ui->pollingLabel->setText(QString::number(poll));
+   ui->pollingSlider->setValue(poll);
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
 }

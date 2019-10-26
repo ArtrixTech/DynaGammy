@@ -24,10 +24,10 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr, std::condition_variable* p = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr, std::condition_variable *p = nullptr);
 
 #ifndef _WIN32
-    explicit MainWindow(X11* x11, std::condition_variable* p = nullptr);
+    explicit MainWindow(X11 *x11, std::condition_variable *p = nullptr);
 #endif
 
     ~MainWindow();
@@ -40,8 +40,8 @@ public:
     void updatePollingSlider(int, int);
 
     bool run = true;
-    bool* force = nullptr;
-    std::condition_variable* pausethr = nullptr;
+    bool *force = nullptr;
+    std::condition_variable *pausethr = nullptr;
 
 private slots:
     void init();
@@ -66,14 +66,14 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QSystemTrayIcon* trayIcon;
+    QSystemTrayIcon *trayIcon;
     QMenu* createMenu();
     void toggleSliders(bool show);
     void setBrSlidersRange(bool);
     void closeEvent(QCloseEvent *);
 
     #ifndef _WIN32
-        X11* x11;
+        X11 *x11;
     #endif
 };
 

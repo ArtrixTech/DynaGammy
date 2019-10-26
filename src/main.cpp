@@ -119,9 +119,9 @@ void adjustBrightness(Args &args)
 
 void app(Args &args)
 {
-    #ifdef dbg
+#ifdef dbg
     std::cout << "Starting screenshots\n";
-    #endif
+#endif
 
     int old_imgBr  = 0,
         old_min    = 0,
@@ -131,7 +131,7 @@ void app(Args &args)
     bool force = false;
     args.w->force = &force;
 
-    #ifdef _WIN32
+#ifdef _WIN32
     DXGIDupl dx;
     bool useDXGI = dx.initDXGI();
 
@@ -141,12 +141,12 @@ void app(Args &args)
         polling_rate_max = 5000;
         args.w->updatePollingSlider(polling_rate_min, polling_rate_max);
     }
-    #else
+#else
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
     const uint64_t len = screen_res * 4;
 
     args.x11->setXF86Gamma(scr_br, cfg[Temp]);
-    #endif
+#endif
 
     //Buffer to store screen pixels
     std::vector<uint8_t> buf(len);
@@ -208,9 +208,9 @@ void app(Args &args)
             {
                 ++args.callcnt;
 
-                #ifdef dbgthr
+#ifdef dbgthr
                 std::cout << "app: ready (" << args.callcnt << ")\n";
-                #endif
+#endif
 
                 args.cvr.notify_one();
             }
@@ -252,13 +252,13 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
     checkInstance();
 
-    #ifdef dbg
+#ifdef dbg
     FILE *f1, *f2, *f3;
     AllocConsole();
     freopen_s(&f1, "CONIN$", "r", stdin);
     freopen_s(&f2, "CONOUT$", "w", stdout);
     freopen_s(&f3, "CONOUT$", "w", stderr);
-    #endif
+#endif
 
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
@@ -274,6 +274,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     std::condition_variable pausethr;
+
 #ifndef _WIN32
     cvr_ptr = &pausethr;
 #endif
@@ -308,23 +309,23 @@ void sig_handler(int signo)
     {
         case SIGINT:
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "Received SIGINT.\n";
-            #endif
+#endif
             break;
         }
         case SIGTERM:
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "Received SIGTERM.\n";
-            #endif
+#endif
             break;
         }
         case SIGQUIT:
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "Received SIGQUIT.\n";
-            #endif
+#endif
             break;
         }
     }

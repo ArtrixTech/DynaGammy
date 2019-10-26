@@ -14,11 +14,11 @@
 
 class DXGIDupl
 {
-    ID3D11Device*			d3d_device;
-    ID3D11DeviceContext*	d3d_context;
-    IDXGIOutput1*			output1;
-    IDXGIOutputDuplication* duplication;
-    D3D11_TEXTURE2D_DESC	tex_desc;
+    ID3D11Device            *d3d_device;
+    ID3D11DeviceContext     *d3d_context;
+    IDXGIOutput1            *output1;
+    IDXGIOutputDuplication  *duplication;
+    D3D11_TEXTURE2D_DESC    tex_desc;
 
     size_t bufLen;
 
@@ -26,7 +26,7 @@ public:
     DXGIDupl();
 
     bool initDXGI();
-    bool getDXGISnapshot(uint8_t* buf) noexcept;
+    bool getDXGISnapshot(uint8_t *buf) noexcept;
     void restartDXGI();
 
     ~DXGIDupl();
