@@ -16,18 +16,18 @@ DXGIDupl::DXGIDupl() {}
 
 bool DXGIDupl::initDXGI()
 {
-    #ifdef dbg
+#ifdef dbg
     std::cout << "Initializing DXGI...\n";
-    #endif
+#endif
 
     IDXGIOutput *output;
     IDXGIAdapter1 *pAdapter;
-    std::vector<IDXGIOutput*> vOutputs; //Monitors vector
-    std::vector<IDXGIAdapter1*> vAdapters; //GPUs vector
+    std::vector<IDXGIOutput*> vOutputs; // Monitors vector
+    std::vector<IDXGIAdapter1*> vAdapters; // GPUs vector
 
     HRESULT hr;
 
-    //Retrieve a IDXGIFactory to enumerate the adapters
+    // Retrieve a IDXGIFactory to enumerate the adapters
     {
         IDXGIFactory1 *pFactory = nullptr;
         hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory));
@@ -51,7 +51,7 @@ bool DXGIDupl::initDXGI()
         pFactory->Release();
 
 #ifdef dbg
-        //Get GPU info
+        // Get GPU info
         DXGI_ADAPTER_DESC1 desc;
 
         for (UINT i = 0; i < vAdapters.size(); ++i)
@@ -70,7 +70,7 @@ bool DXGIDupl::initDXGI()
 #endif
     }
 
-    //Get the monitors attached to the GPUs
+    // Get the monitors attached to the GPUs
     {
         UINT j;
 
@@ -99,7 +99,7 @@ bool DXGIDupl::initDXGI()
         }
 
 #ifdef dbg
-            //Print monitor info.
+            // Print monitor info.
             DXGI_OUTPUT_DESC desc;
 
             for (size_t i = 0; i < vOutputs.size(); ++i)
@@ -118,7 +118,7 @@ bool DXGIDupl::initDXGI()
 #endif
     }
 
-    //Create a Direct3D device to access the OutputDuplication interface
+    // Create a Direct3D device to access the OutputDuplication interface
     {
         D3D_FEATURE_LEVEL d3d_feature_level;
         IDXGIAdapter1 *d3d_adapter;
@@ -178,7 +178,7 @@ bool DXGIDupl::initDXGI()
         }
     }
 
-    //Choose what monitor to use
+    // Choose what monitor to use
     {
         UINT use_monitor = 0;
         output = vOutputs[use_monitor];
@@ -204,7 +204,7 @@ bool DXGIDupl::initDXGI()
         }
     }
 
-    //Set texture properties
+    // Set texture properties
     {
         DXGI_OUTPUT_DESC desc;
         hr = output->GetDesc(&desc);
@@ -234,7 +234,7 @@ bool DXGIDupl::initDXGI()
         tex_desc.MiscFlags = 0;
     }
 
-    //Initialize output duplication
+    // Initialize output duplication
     {
         hr = output->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
 
@@ -274,9 +274,9 @@ bool DXGIDupl::getDXGISnapshot(uint8_t *buf) noexcept
 {
     HRESULT hr;
 
-    ID3D11Texture2D* tex;
+    ID3D11Texture2D *tex;
     DXGI_OUTDUPL_FRAME_INFO frame_info;
-    IDXGIResource* desktop_resource;
+    IDXGIResource *desktop_resource;
 
     hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_resource);
 
@@ -284,7 +284,7 @@ bool DXGIDupl::getDXGISnapshot(uint8_t *buf) noexcept
     {
         case S_OK:
         {
-            //Get the texture interface
+            // Get the texture interface
             hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&tex));
 
             desktop_resource->Release();

@@ -8,6 +8,12 @@
 #include <string>
 #include <array>
 #include <vector>
+#include <condition_variable>
+
+//#define dbg
+//#define dbgcfg
+
+typedef std::condition_variable convar;
 
 constexpr int   default_brightness = 255,
                 cfg_count = 9,

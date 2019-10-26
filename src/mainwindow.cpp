@@ -20,25 +20,25 @@
 #include <QMenu>
 
 #include <iostream>
-#include <condition_variable>
 
 #include "mainwindow.h"
 
 #ifndef _WIN32
-MainWindow::MainWindow(X11 *x11, std::condition_variable *p)
+
+MainWindow::MainWindow(X11 *x11, convar *auto_cv)
     : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    this->pausethr = p;
+    this->auto_cv = auto_cv;
     this->x11 = x11;
 
     init();
 }
 #endif
 
-MainWindow::MainWindow(QWidget *parent, std::condition_variable *p)
+MainWindow::MainWindow(QWidget *parent, convar *auto_cv)
     : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    this->pausethr = p;
+    this->auto_cv = auto_cv;
 
     init();
 }
@@ -50,7 +50,7 @@ void MainWindow::init()
 
     QIcon icon = QIcon(":res/icons/128x128ball.ico");
 
-    /*Set window properties */
+    // Set window properties
     {
         this->setWindowTitle("Gammy");
         this->setWindowIcon(icon);
@@ -61,7 +61,7 @@ void MainWindow::init()
         this->setWindowFlags(Qt::Dialog |
                              Qt::WindowStaysOnTopHint);
 
-        //Deprecated buttons, to be removed altogether
+        // Deprecated buttons, to be removed altogether
         ui->closeButton->hide();
         ui->hideButton->hide();
 
@@ -76,7 +76,7 @@ void MainWindow::init()
         move(scr.width() - this->width(), scr.height() - this->height());
     }
 
-    /*Create tray icon */
+    // Create tray icon
     {
         if (!QSystemTrayIcon::isSystemTrayAvailable())
         {
@@ -96,7 +96,7 @@ void MainWindow::init()
         connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
     }
 
-    /*Set slider properties*/
+    // Set slider properties
     {
         ui->extendBr->setChecked(cfg[toggleLimit]);
         setBrSlidersRange(cfg[toggleLimit]);
@@ -111,12 +111,12 @@ void MainWindow::init()
         ui->pollingSlider->setValue(cfg[Polling_rate]);
     }
 
-    /*Set auto brightness toggle */
+    // Set auto brightness toggle
     {
         ui->autoCheck->setChecked(cfg[isAuto]);
 
         run = cfg[isAuto];
-        pausethr->notify_one();
+        auto_cv->notify_one();
 
         toggleSliders(cfg[isAuto]);
     }
@@ -198,7 +198,7 @@ void MainWindow::on_closeButton_clicked()
 {
     run = true;
     quit = true;
-    pausethr->notify_one();
+    auto_cv->notify_one();
 
     QCloseEvent e;
     e.setAccepted(true);
@@ -263,7 +263,10 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     x11->setXF86Gamma(scr_br, val);
 #endif
 
-    int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
+    int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val,
+                                     0, temp_arr_entries * temp_mult,
+                                     min_temp_kelvin, max_temp_kelvin);
+
     temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
 
     ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
@@ -294,7 +297,7 @@ void MainWindow::on_autoCheck_stateChanged(int state)
     }
 
     toggleSliders(run);
-    pausethr->notify_one();
+    auto_cv->notify_one();
 }
 
 void MainWindow::toggleSliders(bool is_auto)
@@ -344,7 +347,7 @@ void MainWindow::setBrSlidersRange(bool inc)
 
 void MainWindow::updatePollingSlider(int min, int max)
 {
-   const auto poll = cfg[Polling_rate];
+   const int poll = cfg[Polling_rate];
 
    ui->pollingSlider->setRange(min, max);
 

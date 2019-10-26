@@ -8,10 +8,10 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include <condition_variable>
 
 #ifndef _WIN32
 #include "x11.h"
+#include "utils.h"
 #undef Bool
 #endif
 
@@ -24,10 +24,10 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr, std::condition_variable *p = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr, convar *auto_cv = nullptr);
 
 #ifndef _WIN32
-    explicit MainWindow(X11 *x11, std::condition_variable *p = nullptr);
+    explicit MainWindow(X11 *x11, convar *auto_cv = nullptr);
 #endif
 
     ~MainWindow();
@@ -41,7 +41,7 @@ public:
 
     bool run = true;
     bool *force = nullptr;
-    std::condition_variable *pausethr = nullptr;
+    convar *auto_cv = nullptr;
 
 private slots:
     void init();

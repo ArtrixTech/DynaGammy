@@ -48,7 +48,7 @@ int calcBrightness(const std::vector<uint8_t> &buf)
 
     static const uint64_t len = buf.size();
 
-    //Remove the last 4 bits to avoid going out of bounds
+    // Remove the last 4 bits to avoid going out of bounds
     for (auto i = len - 4; i > 0; i -= 4)
     {
         r += buf[i + 2];
@@ -175,8 +175,8 @@ void saveConfig()
 #ifndef _WIN32
 std::string getHomePath(bool add_cfg)
 {
-    const char* xdg_cfg_home;
-    const char* home;
+    const char *xdg_cfg_home;
+    const char *home;
 
     std::string path;
     std::string cfg_filename = "gammy";

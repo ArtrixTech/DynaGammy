@@ -6,9 +6,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-//#define dbg
 //#define dbgthr
-//#define dbgcfg
 //#define dbgbr
 
 extern int scr_br;

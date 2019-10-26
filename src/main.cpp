@@ -30,52 +30,49 @@
 #include <mutex>
 #include <condition_variable>
 
-int scr_br = default_brightness; //Current screen brightness
+int scr_br = default_brightness; // Current screen brightness
 
 int	polling_rate_min = 10;
 int	polling_rate_max = 500;
 
 #ifdef _WIN32
-const uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
-const uint64_t h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-const uint64_t screen_res = w * h;
-const uint64_t len = screen_res * 4;
+const uint64_t  w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
+                h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
+                screen_res = w * h,
+                len = screen_res * 4;
 #else
-//To be used in unix signal handler
+
+// To be used in unix signal handler
 static bool *run_ptr, *quit_ptr;
-static std::condition_variable *cvr_ptr;
+static convar *cv_ptr;
 #endif
 
 struct Args
 {
-    int img_br = 0;
-    int target_br = 0;
-    int img_delta = 0;
-    size_t callcnt = 0;
-
-    std::mutex mtx;
-    std::condition_variable cvr;
-    MainWindow* w = nullptr;
-
+    convar  adjustbr_cv;
 #ifndef _WIN32
-    X11* x11 = nullptr;
+    X11         *x11 {};
 #endif
+    MainWindow    *w {};
+    int64_t callcnt = 0;
+    int img_br      = 0;
+    int target_br   = 0;
+    int img_delta   = 0;
 };
 
 void adjustBrightness(Args &args)
 {
-    size_t c = 0;
-    size_t old_c = 0;
+    int64_t c = 0, prev_c = 0;
+
+    std::mutex m;
+    std::unique_lock<std::mutex> lock(m);
 
     while(!args.w->quit)
     {
-        {
 #ifdef dbgthr
-            std::cout << "adjustBrightness: waiting (" << c << ")\n";
+        std::cout << "adjustBrightness: waiting (" << c << ")\n";
 #endif
-            std::unique_lock<std::mutex> lock(args.mtx);
-            args.cvr.wait(lock, [&]{return args.callcnt > old_c;});
-        }
+        args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
         c = args.callcnt;
 
@@ -96,11 +93,11 @@ void adjustBrightness(Args &args)
 
             if(!args.w->quit)
             {
-                #ifdef _WIN32
+#ifdef _WIN32
                 setGDIGamma(scr_br, cfg[Temp]);
-                #else
+#else
                 args.x11->setXF86Gamma(scr_br, cfg[Temp]);
-                #endif
+#endif
             }
             else break;
 
@@ -109,7 +106,7 @@ void adjustBrightness(Args &args)
             std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
         }
 
-        old_c = c;
+        prev_c = c;
 
 #ifdef dbgthr
         std::cout << "adjustBrightness: complete (" << c << ")\n";
@@ -123,10 +120,10 @@ void app(Args &args)
     std::cout << "Starting screenshots\n";
 #endif
 
-    int old_imgBr  = 0,
-        old_min    = 0,
-        old_max    = 0,
-        old_offset = 0;
+    int prev_imgBr  = 0,
+        prev_min    = 0,
+        prev_max    = 0,
+        prev_offset = 0;
 
     bool force = false;
     args.w->force = &force;
@@ -137,9 +134,7 @@ void app(Args &args)
 
     if (!useDXGI)
     {
-        polling_rate_min = 1000;
-        polling_rate_max = 5000;
-        args.w->updatePollingSlider(polling_rate_min, polling_rate_max);
+        args.w->updatePollingSlider(polling_rate_min = 1000, polling_rate_max = 5000);
     }
 #else
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
@@ -148,19 +143,18 @@ void app(Args &args)
     args.x11->setXF86Gamma(scr_br, cfg[Temp]);
 #endif
 
-    //Buffer to store screen pixels
+    // Buffer to store screen pixels
     std::vector<uint8_t> buf(len);
-
-    std::once_flag f;
 
     std::thread t1(adjustBrightness, std::ref(args));
 
+    std::once_flag f;
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
 
     while (!args.w->quit)
     {
-        args.w->pausethr->wait(lock, [&]
+        args.w->auto_cv->wait(lock, [&]
         {
              return args.w->run;
         });
@@ -180,11 +174,12 @@ void app(Args &args)
         }
 #else
         args.x11->getX11Snapshot(buf);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
 #endif
 
         args.img_br     = calcBrightness(buf);
-        args.img_delta += abs(old_imgBr - args.img_br);
+        args.img_delta += abs(prev_imgBr - args.img_br);
 
         std::call_once(f, [&](){ args.img_delta = 0; });
 
@@ -207,27 +202,25 @@ void app(Args &args)
             if(args.target_br != scr_br)
             {
                 ++args.callcnt;
-
 #ifdef dbgthr
                 std::cout << "app: ready (" << args.callcnt << ")\n";
 #endif
-
-                args.cvr.notify_one();
+                args.adjustbr_cv.notify_one();
             }
             else args.img_delta = 0;
 
             force = false;
         }
 
-        if (cfg[MinBr] != old_min || cfg[MaxBr] != old_max || cfg[Offset] != old_offset)
+        if (cfg[MinBr] != prev_min || cfg[MaxBr] != prev_max || cfg[Offset] != prev_offset)
         {
             force = true;
         }
 
-        old_imgBr  = args.img_br;
-        old_min    = cfg[MinBr];
-        old_max    = cfg[MaxBr];
-        old_offset = cfg[Offset];
+        prev_imgBr  = args.img_br;
+        prev_min    = cfg[MinBr];
+        prev_max    = cfg[MaxBr];
+        prev_offset = cfg[Offset];
     }
 
 #ifdef _WIN32
@@ -237,7 +230,7 @@ void app(Args &args)
 #endif
 
     ++args.callcnt;
-    args.cvr.notify_one();
+    args.adjustbr_cv.notify_one();
 
 #ifdef dbgthr
     std::cout << "app: notified children to quit (" << args.callcnt << ")\n";
@@ -273,28 +266,23 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    std::condition_variable pausethr;
-
-#ifndef _WIN32
-    cvr_ptr = &pausethr;
-#endif
+    Args thread_args;
+    convar auto_cv;
 
 #ifdef _WIN32
-    MainWindow wnd(nullptr, &pausethr);
+    MainWindow wnd(nullptr, &auto_cv);
 #else
-    MainWindow wnd(&x11, &pausethr);
+    MainWindow wnd(&x11, &auto_cv);
+
+    cv_ptr = &auto_cv;
     quit_ptr = &wnd.quit;
     run_ptr = &wnd.run;
+    thread_args.x11 = &x11;
 #endif
 
-    Args args;
-    args.w = &wnd;
+    thread_args.w = &wnd;
 
-#ifndef _WIN32
-    args.x11 = &x11;
-#endif
-
-    std::thread t1(app, std::ref(args));
+    std::thread t1(app, std::ref(thread_args));
 
     a.exec();
     t1.join();
@@ -332,11 +320,11 @@ void sig_handler(int signo)
 
     saveConfig();
 
-    if(run_ptr && quit_ptr && cvr_ptr)
+    if(run_ptr && quit_ptr && cv_ptr)
     {
         *run_ptr = true;
         *quit_ptr = true;
-        cvr_ptr->notify_one();
+        cv_ptr->notify_one();
     }
     else _exit(0);
 }
