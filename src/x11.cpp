@@ -14,9 +14,9 @@
 
 X11::X11()
 {
-    #ifdef dbg
+#ifdef dbg
     std::cout << "Initializing XDisplay ";
-    #endif
+#endif
 
     XInitThreads();
 
@@ -25,9 +25,9 @@ X11::X11()
     scr = DefaultScreenOfDisplay(dsp);
     scr_num = XDefaultScreen(dsp);
 
-    #ifdef dbg
+#ifdef dbg
     std::cout << "(scr " << scr_num << ")\n";
-    #endif
+#endif
 
     root = DefaultRootWindow(dsp);
     w = unsigned(scr->width);
@@ -39,9 +39,9 @@ X11::X11()
 
         if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base))
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "Failed to query XF86VidMode extension.\n";
-            #endif
+#endif
             return;
         }
 
@@ -52,19 +52,27 @@ X11::X11()
             return;
         }
 
-        #ifdef dbg
+#ifdef dbg
         std::cout << "XF86VidMode ver: " << major_ver << "." << minor_ver << "\n";
-        #endif
+#endif
    }
 
     /**Get initial gamma ramp and size */
     {
         if (!XF86VidModeGetGammaRampSize(dsp, scr_num, &ramp_sz))
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "Failed to get XF86 gamma ramp size.\n";
-            #endif
+#endif
             return;
+        }
+
+        if(ramp_sz == 0)
+        {
+#ifdef dbg
+            std::cout << "Invalid gamma ramp size.\n";
+#endif
+            exit(EXIT_FAILURE);
         }
 
         init_ramp.resize(3 * size_t(ramp_sz) * sizeof(uint16_t));
@@ -76,9 +84,9 @@ X11::X11()
 
         if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
-            #ifdef dbg
+#ifdef dbg
             std::cout << "Failed to get XF86 gamma ramp.\n";
-            #endif
+#endif
             return;
         }
     }
@@ -137,18 +145,18 @@ void X11::setInitialGamma(bool set_previous)
 
     if(set_previous)
     {
-        #ifdef dbg
+#ifdef dbg
             std::cout << "Setting previous gamma\n";
-        #endif
+#endif
 
         size_t r = size_t(ramp_sz);
         XF86VidModeSetGammaRamp(d, scr_num, ramp_sz, &init_ramp[0], &init_ramp[r], &init_ramp[2 * r]);
     }
     else
     {
-        #ifdef dbg
+#ifdef dbg
             std::cout << "Setting pure gamma\n";
-        #endif
+#endif
         X11::setXF86Gamma(255, 0);
     }
   
