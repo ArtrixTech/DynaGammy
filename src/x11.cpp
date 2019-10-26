@@ -103,17 +103,16 @@ void X11::fillRamp(std::vector<uint16_t> &ramp, int brightness, int temp)
 
     setColors(temp, c);
 
-    int exp;
-
-    ramp_sz == 2048 ? exp = 3:
-    ramp_sz == 1024 ? exp = 2:
-                      exp = 1;
-
-    double br = ramp_sz / pow(4, exp) * (brightness / 255.);
+    /*
+     * This equals 32 when ramp_sz = 2048, 64 when 1024, etc.
+     * Assuming ramp_sz = 2048 and pure state (default brightness/temp)
+     * each color channel looks like:
+     * {0, 32, 64, 96, ... UINT16_MAX - 32} */
+    const int pure_ramp_steps = (UINT16_MAX + 1) / ramp_sz;
 
     for (int32_t i = 0; i < ramp_sz; ++i)
     {
-        double val = i * br;
+        double val = i * pure_ramp_steps * (brightness / 255.);
 
         if(val > UINT16_MAX) val = UINT16_MAX;
 
