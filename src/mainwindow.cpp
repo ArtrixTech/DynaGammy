@@ -152,6 +152,7 @@ QMenu* MainWindow::createMenu()
             move(scr.width() - this->width(), scr.height() - this->height());
 
             show();
+            updateBrLabel();
         };
     };
 
