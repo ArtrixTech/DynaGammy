@@ -20,7 +20,9 @@ class X11
 
     int ramp_sz;
     int scr_num;
+
     std::vector<uint16_t> init_ramp;
+    bool initial_ramp_exists = true;
 
     unsigned w, h;
 

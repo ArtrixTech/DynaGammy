@@ -87,6 +87,7 @@ X11::X11()
 #ifdef dbg
             std::cout << "Failed to get initial gamma ramp.\n";
 #endif
+            initial_ramp_exists = false;
         }
     }
 }
@@ -140,9 +141,9 @@ void X11::setXF86Gamma(int scr_br, int temp)
 
 void X11::setInitialGamma(bool set_previous)
 {
-    Display* d = XOpenDisplay(nullptr);
+    Display *d = XOpenDisplay(nullptr);
 
-    if(set_previous)
+    if(set_previous && initial_ramp_exists)
     {
 #ifdef dbg
             std::cout << "Setting previous gamma\n";
