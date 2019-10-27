@@ -30,18 +30,10 @@
 #include <mutex>
 #include <condition_variable>
 
-int scr_br = default_brightness; // Current screen brightness
+// Reflects the current screen brightness
+int scr_br = default_brightness;
 
-int	polling_rate_min = 10;
-int	polling_rate_max = 500;
-
-#ifdef _WIN32
-const uint64_t  w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
-                h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
-                screen_res = w * h,
-                len = screen_res * 4;
-#else
-
+#ifndef _WIN32
 // To be used in unix signal handler
 static bool *run_ptr, *quit_ptr;
 static convar *cv_ptr;
@@ -129,13 +121,15 @@ void app(Args &args)
     args.w->force = &force;
 
 #ifdef _WIN32
+    const uint64_t  w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
+                    h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
+                    len = w * h * 4;
+
     DXGIDupl dx;
+
     bool useDXGI = dx.initDXGI();
 
-    if (!useDXGI)
-    {
-        args.w->updatePollingSlider(polling_rate_min = 1000, polling_rate_max = 5000);
-    }
+    if (!useDXGI) args.w->updatePollingSlider(1000, 5000);
 #else
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
     const uint64_t len = screen_res * 4;

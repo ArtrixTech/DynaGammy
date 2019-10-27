@@ -10,7 +10,6 @@
 //#define dbgbr
 
 extern int scr_br;
-extern int polling_rate_min, polling_rate_max;
 
 #ifndef _WIN32
 void sig_handler(int signo);

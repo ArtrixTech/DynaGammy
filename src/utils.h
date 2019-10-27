@@ -10,7 +10,7 @@
 #include <vector>
 #include <condition_variable>
 
-#define dbg
+//#define dbg
 //#define dbgcfg
 
 typedef std::condition_variable convar;
