@@ -169,7 +169,7 @@ void app(Args &args)
         }
         else
         {
-            getGDISnapshot(buf.data(), w, h);
+            getGDISnapshot(buf);
             Sleep(cfg[Polling_rate]);
         }
 #else

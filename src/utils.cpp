@@ -210,9 +210,10 @@ std::string getHomePath(bool add_cfg)
 
 static const HDC screenDC = GetDC(nullptr);
 
-void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
+void getGDISnapshot(std::vector<uint8_t> &buf)
 {
-    static uint64_t len = w * h * 4;
+    const static uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
+                          h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
 
     static BITMAPINFOHEADER info;
     ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
@@ -222,7 +223,7 @@ void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
     info.biPlanes = 1;
     info.biBitCount = 32;
     info.biCompression = BI_RGB;
-    info.biSizeImage = len;
+    info.biSizeImage = buf.size();
     info.biClrUsed = 0;
     info.biClrImportant = 0;
 
@@ -233,7 +234,7 @@ void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
 
     BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
 
-    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&info), DIB_RGB_COLORS);
+    GetDIBits(memoryDC, hBitmap, 0, h, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);

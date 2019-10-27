@@ -10,7 +10,7 @@
 #include <vector>
 #include <condition_variable>
 
-//#define dbg
+#define dbg
 //#define dbgcfg
 
 typedef std::condition_variable convar;
@@ -125,7 +125,7 @@ T convertToRange(T old_val, int old_min, int old_max, int new_min, int new_max)
 std::string getHomePath(bool add_cfg);
 #else
 
-void getGDISnapshot(uint8_t* buf, uint64_t w, uint64_t h);
+void getGDISnapshot(std::vector<uint8_t> &buf);
 void setGDIGamma(unsigned short brightness, int temp);
 
 void checkInstance();
