@@ -117,7 +117,7 @@ void adjustBrightness(Args &args)
 void app(Args &args)
 {
 #ifdef dbg
-    std::cout << "Starting screenshots\n";
+    std::cout << "Initializing screenshot loop\n";
 #endif
 
     int prev_imgBr  = 0,
@@ -224,7 +224,7 @@ void app(Args &args)
     }
 
 #ifdef _WIN32
-    setGDIGamma(default_brightness, 1);
+    setGDIGamma(default_brightness, 0);
 #else
     args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif
