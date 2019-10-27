@@ -162,7 +162,7 @@ void app(Args &args)
 #ifdef _WIN32
         if (useDXGI)
         {
-            while (!dx.getDXGISnapshot(buf.data()))
+            while (!dx.getDXGISnapshot(buf))
             {
                 dx.restartDXGI();
             }

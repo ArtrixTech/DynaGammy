@@ -6,7 +6,6 @@
 #ifdef _WIN32
 #include "main.h"
 #include "dxgidupl.h"
-#include <vector>
 #include <thread>
 #include <chrono>
 #include <iostream>
@@ -270,7 +269,7 @@ bool DXGIDupl::initDXGI()
     return true;
 }
 
-bool DXGIDupl::getDXGISnapshot(uint8_t *buf) noexcept
+bool DXGIDupl::getDXGISnapshot(std::vector<uint8_t> &buf) noexcept
 {
     HRESULT hr;
 
@@ -349,12 +348,7 @@ bool DXGIDupl::getDXGISnapshot(uint8_t *buf) noexcept
     staging_tex->Release();
     d3d_context->Release();
 
-#ifdef dbg
-    //std::cout << "depthPitch = " << map.DepthPitch << '\n';
-#endif
-
-    //buf = reinterpret_cast<uint8_t*>(map.pData); //750 Ti: stable, Intel HD 2000: can crash when reading the buffer in calcBrightness
-    memcpy(buf, map.pData, bufLen); //750 Ti: stable, Intel HD 2000: can cause a crash when copying
+    memcpy(buf.data(), reinterpret_cast<uint8_t*>(map.pData), buf.size());
 
     return true;
 }

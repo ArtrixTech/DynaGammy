@@ -11,6 +11,7 @@
 #include <dxgi1_2.h>
 #include <d3d11.h>
 #include <stdint.h>
+#include <vector>
 
 class DXGIDupl
 {
@@ -26,7 +27,7 @@ public:
     DXGIDupl();
 
     bool initDXGI();
-    bool getDXGISnapshot(uint8_t *buf) noexcept;
+    bool getDXGISnapshot(std::vector<uint8_t> &buf) noexcept;
     void restartDXGI();
 
     ~DXGIDupl();
