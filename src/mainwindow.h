@@ -11,9 +11,10 @@
 
 #ifndef _WIN32
 #include "x11.h"
-#include "utils.h"
 #undef Bool
 #endif
+
+#include "utils.h"
 
 namespace Ui {
 class MainWindow;
