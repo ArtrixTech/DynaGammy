@@ -10,7 +10,8 @@
 #include <vector>
 
 #include <plog/Log.h>
-#include <plog/Appenders/ConsoleAppender.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Appenders/RollingFileAppender.h>
 
 /**
  * Copyright (C) 2019 Francesco Fusco. All rights reserved.

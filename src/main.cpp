@@ -99,9 +99,9 @@ void adjustBrightness(Args &args)
         }
 
         prev_c = c;
-
-        LOGD << "Complete (" + std::to_string(c) + ")";
     }
+
+       LOGD << "Complete (" + std::to_string(c) + ")";
 }
 
 void recordScreen(Args &args)
@@ -191,13 +191,13 @@ void recordScreen(Args &args)
                 args.target_br = cfg[MinBr];
             }
 
-            LOGD << std::string("Changing brightness: "+std::to_string(scr_br)+" -> "+std::to_string(args.target_br)+" | "+std::to_string(args.img_delta));
+            LOGD << scr_br << " -> " << args.target_br << " delta: " << args.img_delta;
 
             if(args.target_br != scr_br)
             {
                 ++args.callcnt;
 
-                LOGD << std::string("ready (" + std::to_string(args.callcnt) + ")");
+                LOGD << "ready (" << args.callcnt << ')';
 
                 args.adjustbr_cv.notify_one();
             }
@@ -236,7 +236,8 @@ void recordScreen(Args &args)
 
 int main(int argc, char *argv[])
 {
-    static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
+    //static plog::RollingFileAppender<plog::CsvFormatter> file_appender;
+    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
     readConfig();
 
@@ -245,7 +246,7 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
     checkInstance();
 
-    if(cfg[Debug] == plog::debug)
+    if(cfg[Debug] >= plog::debug)
     {
         FILE *f1, *f2, *f3;
         AllocConsole();

@@ -12,11 +12,11 @@
 
 X11::X11()
 {
-    LOGV << "Initializing XThreads\n";
+    LOGD << "Initializing XThreads...";
 
     XInitThreads();
 
-    LOGV << "Initializing XDisplay ";
+    LOGD << "Initializing XDisplay...";
 
     dsp     = XOpenDisplay(nullptr);
     root    = DefaultRootWindow(dsp);
@@ -24,7 +24,7 @@ X11::X11()
     scr     = DefaultScreenOfDisplay(dsp);
     scr_num = XDefaultScreen(dsp);
 
-    LOGV << "(scr " << scr_num << ")\n";
+    LOGD << "XDisplay initialized on screen " << scr_num;
 
     w = uint32_t(scr->width);
     h = uint32_t(scr->height);
@@ -35,30 +35,30 @@ X11::X11()
 
         if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base))
         {
-            LOGW << "Failed to query XF86VidMode extension.\n";
+            LOGW << "Failed to query XF86VidMode extension";
         }
 
         int major_ver, minor_ver;
 
         if (!XF86VidModeQueryVersion(dsp, &major_ver, &minor_ver))
         {
-            LOGW << "Failed to query XF86VidMode version.\n";
+            LOGW << "Failed to query XF86VidMode version";
         }
 
-        LOGV << "XF86VidMode ver: " + std::to_string(major_ver) + "." + std::to_string(minor_ver);
+        LOGD << "XF86VidMode ver: " << major_ver << '.' << minor_ver;
    }
 
     // Get initial gamma ramp and size
     {
         if (!XF86VidModeGetGammaRampSize(dsp, scr_num, &ramp_sz))
         {
-            LOGF << "Failed to get XF86 gamma ramp size.\n";
+            LOGF << "Failed to get XF86 gamma ramp size";
             exit(EXIT_FAILURE);
         }
 
         if(ramp_sz == 0)
         {
-            LOGF << "Invalid gamma ramp size.\n";
+            LOGF << "Invalid gamma ramp size";
             exit(EXIT_FAILURE);
         }
 
@@ -71,7 +71,7 @@ X11::X11()
 
         if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
-            LOGE << "Failed to get initial gamma ramp.\n";
+            LOGE << "Failed to get initial gamma ramp";
             initial_ramp_exists = false;
         }
     }
