@@ -62,13 +62,13 @@ void adjustBrightness(Args &args)
 
     while(!args.w->quit)
     {
-        LOGV << "Waiting (" + std::to_string(c) + ")";
+        LOGD << "Waiting (" + std::to_string(c) + ")";
 
         args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
         c = args.callcnt;
 
-        LOGV << "Working (" + std::to_string(c) + ")";
+        LOGD << "Working (" + std::to_string(c) + ")";
 
         int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
         args.img_delta = 0;
@@ -100,7 +100,7 @@ void adjustBrightness(Args &args)
 
         prev_c = c;
 
-        LOGV << "Complete (" + std::to_string(c) + ")";
+        LOGD << "Complete (" + std::to_string(c) + ")";
     }
 }
 
@@ -153,7 +153,7 @@ void recordScreen(Args &args)
             return args.w->run;
         });
 
-        LOGD << "Taking screenshot";
+        LOGV << "Taking screenshot";
 
 #ifdef _WIN32
         if (useDXGI)
@@ -191,13 +191,13 @@ void recordScreen(Args &args)
                 args.target_br = cfg[MinBr];
             }
 
-            LOGV << std::string("Changing brightness: "+std::to_string(scr_br)+" -> "+std::to_string(args.target_br)+" | "+std::to_string(args.img_delta));
+            LOGD << std::string("Changing brightness: "+std::to_string(scr_br)+" -> "+std::to_string(args.target_br)+" | "+std::to_string(args.img_delta));
 
             if(args.target_br != scr_br)
             {
                 ++args.callcnt;
 
-                LOGV << std::string("ready (" + std::to_string(args.callcnt) + ")");
+                LOGD << std::string("ready (" + std::to_string(args.callcnt) + ")");
 
                 args.adjustbr_cv.notify_one();
             }
@@ -237,7 +237,7 @@ void recordScreen(Args &args)
 int main(int argc, char *argv[])
 {
     static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::verbose, &console_appender);
+    plog::init(plog::debug, &console_appender);
 
 #ifdef _WIN32
     checkInstance();

@@ -28,12 +28,12 @@ std::array<int, cfg_count> cfg
 void readConfig()
 {
 #ifdef _WIN32
-    const std::wstring path = getExecutablePath();
+    static const std::wstring path = getExecutablePath();
 #else
-    const std::string path = getHomePath();
+    static const std::string path = getHomePath();
 #endif
 
-    LOGI << "Opening config...";
+    LOGD << "Opening config...";
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
@@ -44,7 +44,7 @@ void readConfig()
         return;
     }
 
-    LOGI << "Config opened";
+    LOGD << "Config opened";
 
     file.seekg(0, std::ios::end);
     bool empty = file.tellg() == 0;
@@ -110,6 +110,8 @@ void saveConfig()
 
         file << line << '\n';
     }
+
+    LOGI << "Settings saved";
 
     file.close();
 }

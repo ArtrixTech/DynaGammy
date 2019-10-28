@@ -37,7 +37,7 @@ void setColors(int temp, std::array<double, 3> &c)
 
 int calcBrightness(const std::vector<uint8_t> &buf)
 {
-    LOGD << "Calculating brightness";
+    LOGV << "Calculating brightness";
     uint64_t r{}, g{}, b{};
 
     static const uint64_t len = buf.size();

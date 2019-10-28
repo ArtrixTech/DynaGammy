@@ -83,9 +83,8 @@ void MainWindow::init()
     {
         if (!QSystemTrayIcon::isSystemTrayAvailable())
         {
-#ifdef dbg
-            std::cout << "Qt: System tray unavailable.\n";
-#endif
+            LOGW << "System tray unavailable. Closing the settings window will quit the app";
+
             ignore_closeEvent = false;
             MainWindow::show();
         }
@@ -97,6 +96,8 @@ void MainWindow::init()
         this->trayIcon->setToolTip(QString("Gammy"));
         this->trayIcon->show();
         connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+
+        LOGI << "Tray icon created";
     }
 
     // Set slider properties
