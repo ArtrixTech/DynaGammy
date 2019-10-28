@@ -22,6 +22,7 @@ std::array<int, cfg_count> cfg
     32,     // Threshold
     100,    // Polling_Rate
     1,      // isAuto
+    0,      // toggleLimit
     3       // Debug (0: none, 1: fatal, 2: error, 3: warning, 4: info, 5: debug, 6: verbose)
 };
 
