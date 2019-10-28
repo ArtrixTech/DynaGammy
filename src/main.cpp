@@ -238,12 +238,14 @@ void recordScreen(Args &args)
 
 int main(int argc, char *argv[])
 {
-    //static plog::RollingFileAppender<plog::CsvFormatter> file_appender;
+    static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 3, 3);
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
     readConfig();
 
     plog::init(plog::Severity(cfg[Debug]), &console_appender);
+
+    if(cfg[Debug] >= plog::debug) plog::get()->addAppender(&file_appender);
 
 #ifdef _WIN32
     checkInstance();
