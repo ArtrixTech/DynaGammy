@@ -12,6 +12,10 @@
 #include <plog/Log.h>
 #include <plog/Appenders/ConsoleAppender.h>
 
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
 #include <condition_variable>
 typedef std::condition_variable convar;
 

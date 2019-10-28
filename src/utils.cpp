@@ -3,6 +3,11 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -32,6 +37,7 @@ void setColors(int temp, std::array<double, 3> &c)
 
 int calcBrightness(const std::vector<uint8_t> &buf)
 {
+    LOGD << "Calculating brightness";
     uint64_t r{}, g{}, b{};
 
     static const uint64_t len = buf.size();
@@ -126,15 +132,11 @@ void checkGammaRange()
 
     if (s == ERROR_SUCCESS)
     {
-#ifdef dbg
-        std::cout << "Gamma registry key found.\n";
-#endif
+        LOGI << "Gamma regkey already set";
         return;
     }
 
-#ifdef dbg
-        std::cout << "Gamma registry key not found. Creating one...\n";
-#endif
+    LOGW << "Gamma regkey not set. Creating one...";
 
     HKEY hKey;
 
@@ -142,9 +144,8 @@ void checkGammaRange()
 
     if (s == ERROR_SUCCESS)
     {
-#ifdef dbg
-        std::cout << "Gamma registry key created.\n";
-#endif
+        LOGI << "Gamma registry key created";
+
         DWORD val = 256;
 
         s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, LPBYTE(&val), sizeof(val));
@@ -152,25 +153,20 @@ void checkGammaRange()
         if (s == ERROR_SUCCESS)
         {
             MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
-#ifdef dbg
-            std::cout << "Gamma registry value set.\n";
-#endif
+
+            LOGI << "Gamma regkey created";
         }
-#ifdef dbg
-        else std::cout << "Error when setting Gamma registry value.\n";
-#endif
+        else LOGE << "Error when setting Gamma registry value";
     }
-#ifdef dbg
     else
     {
-        std::cout << "Error when creating/opening gamma RegKey.\n";
+        LOGE << "** Error when creating/opening gamma regkey";
 
         if (s == ERROR_ACCESS_DENIED)
         {
-            std::cout << "Access denied.\n";
+            LOGE << "** ACCESS_DENIED";
         }
     }
-#endif
 
     if (hKey) RegCloseKey(hKey);
 }
@@ -191,36 +187,24 @@ void toggleRegkey(bool isChecked)
 
         if (s == ERROR_SUCCESS)
         {
-#ifdef dbg
-            std::cout << "RegKey opened.\n";
-#endif
-
             s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
 
-#ifdef dbg
-                if (s == ERROR_SUCCESS) {
-                    std::cout << "RegValue set.\n";
-                }
-                else {
-                    std::cout << "Error when setting RegValue.\n";
-                }
-#endif
+            if (s == ERROR_SUCCESS)
+            {
+                LOGI << "Startup regkey set";
+            }
+            else LOGE << "Failed to set startup regvalue";
         }
-#ifdef dbg
-        else {
-            std::cout << "Error when opening RegKey.\n";
-        }
-#endif
+        else LOGE << "Failed to open startup regkey";
     }
-    else {
+    else
+    {
         s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
 
-#ifdef dbg
             if (s == ERROR_SUCCESS)
-                std::cout << "RegValue deleted.\n";
+                LOGI << "Run at startup unset";
             else
-                std::cout << "RegValue deletion failed.\n";
-#endif
+                LOGE << "Failed to delete startup regkey";
     }
 
     if(hKey) RegCloseKey(hKey);
@@ -228,12 +212,16 @@ void toggleRegkey(bool isChecked)
 
 void checkInstance()
 {
+    LOGV << "Checking for multiple instances";
+
     HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
 
     if (GetLastError() == ERROR_ALREADY_EXISTS)
     {
         CloseHandle(hStartEvent);
         hStartEvent = nullptr;
+
+        LOGV << "Another instance of Gammy is running. Closing";
         exit(0);
     }
 }

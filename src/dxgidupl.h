@@ -3,6 +3,10 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
 
 #ifndef DXGIDUPL_H
 #define DXGIDUPL_H
@@ -20,8 +24,6 @@ class DXGIDupl
     IDXGIOutput1            *output1;
     IDXGIOutputDuplication  *duplication;
     D3D11_TEXTURE2D_DESC    tex_desc;
-
-    size_t bufLen;
 
 public:
     DXGIDupl();

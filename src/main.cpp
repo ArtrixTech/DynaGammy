@@ -106,7 +106,7 @@ void adjustBrightness(Args &args)
 
 void recordScreen(Args &args)
 {
-    PLOGV << "recordScreen start";
+    PLOGV << "recordScreen() start";
 
     int prev_imgBr  = 0,
         prev_min    = 0,
@@ -153,6 +153,8 @@ void recordScreen(Args &args)
             return args.w->run;
         });
 
+        LOGD << "Taking screenshot";
+
 #ifdef _WIN32
         if (useDXGI)
         {
@@ -164,7 +166,7 @@ void recordScreen(Args &args)
         else
         {
             getGDISnapshot(buf);
-            Sleep(cfg[Polling_rate]);
+            std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
         }
 #else
         args.x11->getX11Snapshot(buf);
@@ -235,13 +237,12 @@ void recordScreen(Args &args)
 int main(int argc, char *argv[])
 {
     static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::debug, &console_appender);
+    plog::init(plog::verbose, &console_appender);
 
-    LOGV << "Starting program";
 #ifdef _WIN32
     checkInstance();
 
-    if(cfg[Debug])
+    if(cfg[Debug] == 0)
     {
         FILE *f1, *f2, *f3;
         AllocConsole();

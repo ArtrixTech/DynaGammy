@@ -123,6 +123,8 @@ void MainWindow::init()
 
         toggleSliders(cfg[isAuto]);
     }
+
+    LOGI << "Qt window initialized";
 }
 
 QMenu* MainWindow::createMenu()

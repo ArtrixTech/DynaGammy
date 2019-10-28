@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #include "cfg.h"
 #include "utils.h"
 #include <fstream>
@@ -28,7 +33,8 @@ void readConfig()
     const std::string path = getHomePath();
 #endif
 
-    LOGI << "Opening config";
+    LOGI << "Opening config...";
+
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
     if(!file.is_open())
@@ -38,12 +44,14 @@ void readConfig()
         return;
     }
 
+    LOGI << "Config opened";
+
     file.seekg(0, std::ios::end);
     bool empty = file.tellg() == 0;
 
     if(empty)
     {
-        LOGW << "Config empty";
+        LOGW << "Config empty. Creating one...";
 
         saveConfig();
         return;
@@ -78,7 +86,7 @@ void saveConfig()
 
     if(path.empty())
     {
-        LOGE << "Config path empty";
+        LOGE << "Invalid config path";
         return;
     }
 

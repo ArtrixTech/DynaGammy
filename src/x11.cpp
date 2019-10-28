@@ -3,7 +3,6 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#ifndef _WIN32
 #include "x11.h"
 #include <iostream>
 #include <cstring>
@@ -153,5 +152,3 @@ X11::~X11()
 {
     if(dsp) XCloseDisplay(dsp);
 }
-
-#endif

@@ -3,7 +3,6 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#ifndef _WIN32
 #ifndef X11_H
 #define X11_H
 
@@ -42,4 +41,3 @@ public:
 };
 
 #endif // X11_H
-#endif
