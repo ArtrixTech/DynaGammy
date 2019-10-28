@@ -237,12 +237,15 @@ void recordScreen(Args &args)
 int main(int argc, char *argv[])
 {
     static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::verbose, &console_appender);
+
+    readConfig();
+
+    plog::init(plog::Severity(cfg[Debug]), &console_appender);
 
 #ifdef _WIN32
     checkInstance();
 
-    if(cfg[Debug] == 0)
+    if(cfg[Debug] == plog::debug)
     {
         FILE *f1, *f2, *f3;
         AllocConsole();

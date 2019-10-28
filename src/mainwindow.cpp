@@ -47,8 +47,6 @@ void MainWindow::init()
 {
     ui->setupUi(this);
 
-    readConfig();
-
     QIcon icon = QIcon(":res/icons/128x128ball.ico");
 
     // Set window properties
