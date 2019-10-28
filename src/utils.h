@@ -9,12 +9,23 @@
 #include <array>
 #include <vector>
 
-#include <condition_variable>
-
 #include <plog/Log.h>
 #include <plog/Appenders/ConsoleAppender.h>
 
+#include <condition_variable>
 typedef std::condition_variable convar;
+
+enum OS
+{
+    Windows, Unix
+};
+
+#ifdef _WIN32
+constexpr OS os = Windows;
+#else
+constexpr OS os = Unix;
+#endif
+
 
 constexpr int   default_brightness = 255,
                 min_temp_kelvin = 2000,

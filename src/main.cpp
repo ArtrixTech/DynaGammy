@@ -87,7 +87,9 @@ void adjustBrightness(Args &args)
                 {
                     setGDIGamma(scr_br, cfg[Temp]);
                 }
-                else args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+#ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the code above
+                else {args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+#endif
             }
             else break;
 
@@ -119,6 +121,8 @@ void recordScreen(Args &args)
                     h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
                     len = w * h * 4;
 
+    LOGD << "Screen res: " + std::to_string(w) + " * " + std::to_string(h);
+
     DXGIDupl dx;
 
     bool useDXGI = dx.initDXGI();
@@ -130,6 +134,8 @@ void recordScreen(Args &args)
 
     args.x11->setXF86Gamma(scr_br, cfg[Temp]);
 #endif
+
+    LOGD << "Buffer size: " + std::to_string(len);
 
     // Buffer to store screen pixels
     std::vector<uint8_t> buf(len);
@@ -213,7 +219,9 @@ void recordScreen(Args &args)
     {
         setGDIGamma(default_brightness, 0);
     }
+#ifndef _WIN32 // @TODO: replace this
     else args.x11->setInitialGamma(args.w->set_previous_gamma);
+#endif
 
     ++args.callcnt;
     args.adjustbr_cv.notify_one();
@@ -227,7 +235,7 @@ void recordScreen(Args &args)
 int main(int argc, char *argv[])
 {
     static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::verbose, &console_appender);
+    plog::init(plog::debug, &console_appender);
 
     LOGV << "Starting program";
 #ifdef _WIN32

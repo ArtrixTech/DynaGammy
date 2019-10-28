@@ -8,27 +8,27 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
+
 #include "utils.h"
+#include "cfg.h"
+
+#include <locale>
+#include <codecvt>
+#define wchar_to_str(X) std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(X)
 
 DXGIDupl::DXGIDupl() {}
 
 bool DXGIDupl::initDXGI()
 {
-#ifdef dbg
-    std::cout << "Initializing DXGI...\n";
-#endif
-
-    IDXGIOutput *output;
-    IDXGIAdapter1 *pAdapter;
-    std::vector<IDXGIOutput*> vOutputs; // Monitors vector
+    IDXGIOutput                 *output;
+    IDXGIAdapter1               *pAdapter;
+    std::vector<IDXGIOutput*>   vOutputs; // Monitors vector
     std::vector<IDXGIAdapter1*> vAdapters; // GPUs vector
-
-    HRESULT hr;
 
     // Retrieve a IDXGIFactory to enumerate the adapters
     {
         IDXGIFactory1 *pFactory = nullptr;
-        hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory));
+        HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory));
 
         if (hr != S_OK)
         {
@@ -46,24 +46,24 @@ bool DXGIDupl::initDXGI()
 
         pFactory->Release();
 
-#ifdef dbg
-        // Get GPU info
-        DXGI_ADAPTER_DESC1 desc;
-
-        for (UINT i = 0; i < vAdapters.size(); ++i)
+        IF_PLOG(plog::debug) // Get GPU info
         {
-            pAdapter = vAdapters[i];
-            hr = pAdapter->GetDesc1(&desc);
+            DXGI_ADAPTER_DESC1 desc;
 
-            if (hr != S_OK)
+            for (UINT i = 0; i < vAdapters.size(); ++i)
             {
-                std::cout << "Error: failed to get a description for the adapter: " << i << '\n';
-                continue;
-            }
+                pAdapter = vAdapters[i];
+                HRESULT hr = pAdapter->GetDesc1(&desc);
 
-            std::wprintf(L"Adapter %i: %lS\n", i, desc.Description);
+                if (hr != S_OK)
+                {
+                    LOGE << "Failed to get description for adapter: " + std::to_string(i);
+                    continue;
+                }
+
+                LOGD << "Adapter " + std::to_string(i) + ": " + wchar_to_str(desc.Description);
+            }
         }
-#endif
     }
 
     // Get the monitors attached to the GPUs
@@ -77,41 +77,34 @@ bool DXGIDupl::initDXGI()
 
             while (pAdapter->EnumOutputs(j++, &output) != DXGI_ERROR_NOT_FOUND)
             {
-#ifdef dbg
-                std::printf("Found monitor %d on adapter %d\n", j, i);
-#endif
+                LOGV << "Found monitor " + std::to_string(j) + " on adapter " + std::to_string(i);
                 vOutputs.push_back(output);
             }
         }
 
         if (vOutputs.empty())
         {
-#ifdef dbg
-            std::printf("Error: no outputs found (%zu).\n", vOutputs.size());
-            getchar();
-#endif
-
+            LOGE << "No outputs found";
             return false;
         }
 
-#ifdef dbg
-            // Print monitor info.
-            DXGI_OUTPUT_DESC desc;
+        // Print monitor info
+        DXGI_OUTPUT_DESC desc;
 
-            for (size_t i = 0; i < vOutputs.size(); ++i)
+        for (size_t i = 0; i < vOutputs.size(); ++i)
+        {
+            output = vOutputs[i];
+            HRESULT hr = output->GetDesc(&desc);
+
+            if (hr != S_OK)
             {
-                output = vOutputs[i];
-                hr = output->GetDesc(&desc);
-
-                if (hr != S_OK)
-                {
-                    printf("Error: failed to retrieve a DXGI_OUTPUT_DESC for output %llu.\n", i);
-                    continue;
-                }
-
-                std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
+                LOGE << "Failed to get description for output " + std::to_string(i);
+                continue;
             }
-#endif
+
+            LOGV << "Monitor: " + wchar_to_str(desc.DeviceName) + ", attached to desktop: " + std::to_string(desc.AttachedToDesktop);
+            //std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
+        }
     }
 
     // Create a Direct3D device to access the OutputDuplication interface
@@ -142,7 +135,7 @@ bool DXGIDupl::initDXGI()
             return false;
         }
 
-        hr = D3D11CreateDevice(
+        HRESULT hr = D3D11CreateDevice(
             d3d_adapter,			  // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
             D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
             nullptr,                  // Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicable.
@@ -203,7 +196,7 @@ bool DXGIDupl::initDXGI()
     // Set texture properties
     {
         DXGI_OUTPUT_DESC desc;
-        hr = output->GetDesc(&desc);
+        HRESULT hr = output->GetDesc(&desc);
 
         bufLen = desc.DesktopCoordinates.right * desc.DesktopCoordinates.bottom * 4;
 
@@ -232,7 +225,7 @@ bool DXGIDupl::initDXGI()
 
     // Initialize output duplication
     {
-        hr = output->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
+        HRESULT hr = output->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
 
         if (hr != S_OK)
         {

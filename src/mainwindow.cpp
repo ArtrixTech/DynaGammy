@@ -265,7 +265,9 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     {
         setGDIGamma(scr_br, val);
     }
+#ifndef _WIN32 // @TODO: replace this
     else x11->setXF86Gamma(scr_br, val);
+#endif
 
     int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val,
                                      0, temp_arr_entries * temp_mult,
@@ -325,7 +327,9 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
     {
         setGDIGamma(scr_br, cfg[Temp]);
     }
+#ifndef _WIN32 // @TODO: Replace this
     else x11->setXF86Gamma(scr_br, cfg[Temp]);
+#endif
 
     MainWindow::updateBrLabel();
 }

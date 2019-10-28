@@ -3,6 +3,10 @@
 #include <fstream>
 #include <iostream>
 
+#ifdef _WIN32
+#include <Windows.h> // GetModuleFileNameW
+#endif
+
 std::array<int, cfg_count> cfg
 {
     192,    // MinBr
@@ -19,7 +23,7 @@ std::array<int, cfg_count> cfg
 void readConfig()
 {
 #ifdef _WIN32
-    const std::wstring path = getExecutablePath(true);
+    const std::wstring path = getExecutablePath();
 #else
     const std::string path = getHomePath();
 #endif

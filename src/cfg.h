@@ -5,17 +5,6 @@
 
 #include <array>
 
-enum class OS
-{
-    Windows, Unix
-};
-
-#ifdef _WIN32
-constexpr OS os = OS::Windows;
-#else
-constexpr OS os = OS::Unix;
-#endif
-
 constexpr int cfg_count = 10;
 
 constexpr std::array<const char*, cfg_count> cfg_str
