@@ -237,7 +237,7 @@ void recordScreen(Args &args)
 int main(int argc, char *argv[])
 {
     static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
-    plog::init(plog::debug, &console_appender);
+    plog::init(plog::verbose, &console_appender);
 
 #ifdef _WIN32
     checkInstance();
@@ -291,9 +291,9 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 void sig_handler(int signo)
 {
-    LOGV_IF(signo == SIGINT) << "SIGINT received";
-    LOGV_IF(signo == SIGTERM) << "SIGTERM received";
-    LOGV_IF(signo == SIGQUIT) << "SIGQUIT received";
+    LOGD_IF(signo == SIGINT) << "SIGINT received";
+    LOGD_IF(signo == SIGTERM) << "SIGTERM received";
+    LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
 
     saveConfig();
 

@@ -77,7 +77,7 @@ bool DXGIDupl::initDXGI()
 
             while (pAdapter->EnumOutputs(j++, &output) != DXGI_ERROR_NOT_FOUND)
             {
-                LOGV << "Found monitor " + std::to_string(j) + " on adapter " + std::to_string(i);
+                LOGD << "Found monitor " + std::to_string(j) + " on adapter " + std::to_string(i);
                 vOutputs.push_back(output);
             }
         }
@@ -102,7 +102,7 @@ bool DXGIDupl::initDXGI()
                 continue;
             }
 
-            LOGV << "Monitor: " + wchar_to_str(desc.DeviceName) + ", attached to desktop: " + std::to_string(desc.AttachedToDesktop);
+            LOGD << "Monitor: " + wchar_to_str(desc.DeviceName) + ", attached to desktop: " + std::to_string(desc.AttachedToDesktop);
             //std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
         }
     }
