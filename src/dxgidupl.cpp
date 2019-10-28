@@ -32,7 +32,7 @@ bool DXGIDupl::initDXGI()
 
         if (hr != S_OK)
         {
-            LOGE << "Error: failed to retrieve the IDXGIFactory";
+            LOGE << "Failed to retrieve the IDXGIFactory";
 
             return false;
         }
@@ -57,11 +57,11 @@ bool DXGIDupl::initDXGI()
 
                 if (hr != S_OK)
                 {
-                    LOGE << "Failed to get description for adapter: " + std::to_string(i);
+                    LOGE << "Failed to get description for adapter: " << i;
                     continue;
                 }
 
-                LOGD << "Adapter " + std::to_string(i) + ": " + wchar_to_str(desc.Description);
+                LOGD << "Adapter " << i << ": " << desc.Description;
             }
         }
     }
@@ -77,7 +77,7 @@ bool DXGIDupl::initDXGI()
 
             while (pAdapter->EnumOutputs(j++, &output) != DXGI_ERROR_NOT_FOUND)
             {
-                LOGD << "Found monitor " + std::to_string(j) + " on adapter " + std::to_string(i);
+                LOGD << "Found monitor " << j << " on adapter " << i;
                 vOutputs.push_back(output);
             }
         }
@@ -98,12 +98,11 @@ bool DXGIDupl::initDXGI()
 
             if (hr != S_OK)
             {
-                LOGE << "Failed to get description for output " + std::to_string(i);
+                LOGE << "Failed to get description for output " << i;
                 continue;
             }
 
-            LOGD << "Monitor: " + wchar_to_str(desc.DeviceName) + ", attached to desktop: " + std::to_string(desc.AttachedToDesktop);
-            //std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
+            LOGD << "Monitor: " << desc.DeviceName << ", attached to desktop: " << desc.AttachedToDesktop;
         }
     }
 
@@ -115,7 +114,7 @@ bool DXGIDupl::initDXGI()
 
         if (vAdapters.size() <= use_adapter)
         {
-            LOGE << "Invalid adapter index: " + std::to_string(use_adapter) + ", we only have: " + std::to_string(vAdapters.size());
+            LOGE << "Invalid adapter index: " << use_adapter << ", we only have: " << vAdapters.size();
             return false;
         }
 

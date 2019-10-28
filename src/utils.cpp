@@ -154,7 +154,7 @@ void checkGammaRange()
         {
             MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
 
-            LOGI << "Gamma regkey created";
+            LOGI << "Gamma regvalue set";
         }
         else LOGE << "Error when setting Gamma registry value";
     }
