@@ -8,16 +8,15 @@
 #include <string>
 #include <array>
 #include <vector>
+
 #include <condition_variable>
 
-//#define dbg
-//#define dbgcfg
+#include <plog/Log.h>
+#include <plog/Appenders/ConsoleAppender.h>
 
 typedef std::condition_variable convar;
 
 constexpr int   default_brightness = 255,
-                cfg_count = 9,
-
                 min_temp_kelvin = 2000,
                 max_temp_kelvin = 6500,
                 temp_arr_entries = 46,
@@ -28,7 +27,7 @@ constexpr int   default_brightness = 255,
  * Color ramp by Ingo Thies, from Redshift
  * https://github.com/jonls/redshift/blob/master/README-colorramp
 */
-constexpr std::array<double, temp_steps> ingo_thies_table =
+constexpr std::array<double, temp_steps> ingo_thies_table
 {
     1.00000000,  0.54360078,  0.08679949, /* 2000K */
     1.00000000,  0.56618736,  0.14065513,
@@ -78,52 +77,20 @@ constexpr std::array<double, temp_steps> ingo_thies_table =
     1.00000000,  1.00000000,  1.00000000 /* 6500K */
 };
 
-constexpr std::array<const char*, cfg_count> cfg_str =
-{
-    "minBrightness=",
-    "maxBrightness=",
-    "offset=",
-    "temp=",
-    "speed=",
-    "threshold=",
-    "updateRate=",
-    "auto=",
-    "toggleLimit="
-};
-
-extern std::array<int, cfg_count> cfg;
-
-enum {
-    MinBr,
-    MaxBr,
-    Offset,
-    Temp,
-    Speed,
-    Threshold,
-    Polling_rate,
-    isAuto,
-    toggleLimit
-};
-
 void setColors(int temp, std::array<double, 3> &c);
 
 int calcBrightness(const std::vector<uint8_t> &buf);
 
-void readConfig();
-
-void saveConfig();
-
 template <class T>
-T convertToRange(T old_val, int old_min, int old_max, int new_min, int new_max)
+constexpr T convertToRange(T old_val,   int old_min, int old_max,
+                                        int new_min, int new_max)
 {
     T val = (((old_val - old_min) * (new_max - new_min)) / old_max - old_min) + new_min;
 
     return val;
 }
 
-#ifndef _WIN32
-std::string getHomePath(bool add_cfg);
-#else
+// Windows functions
 
 void getGDISnapshot(std::vector<uint8_t> &buf);
 void setGDIGamma(unsigned short brightness, int temp);
@@ -133,6 +100,5 @@ void checkGammaRange();
 void toggleRegkey(bool);
 
 std::wstring getExecutablePath(bool add_cfg);
-#endif
 
 #endif // UTILS_H

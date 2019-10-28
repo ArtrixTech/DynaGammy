@@ -68,7 +68,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon *trayIcon;
-    QMenu* createMenu();
+    QMenu *createMenu();
     void toggleSliders(bool show);
     void setBrSlidersRange(bool);
     void closeEvent(QCloseEvent *);

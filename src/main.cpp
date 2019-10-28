@@ -8,6 +8,7 @@
 #include "mainwindow.h"
 #include "main.h"
 #include "utils.h"
+#include "cfg.h"
 
 #ifdef _WIN32
     #include "dxgidupl.h"
@@ -61,16 +62,13 @@ void adjustBrightness(Args &args)
 
     while(!args.w->quit)
     {
-#ifdef dbgthr
-        std::cout << "adjustBrightness: waiting (" << c << ")\n";
-#endif
+        LOGV << "Waiting (" + std::to_string(c) + ")";
+
         args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
         c = args.callcnt;
 
-#ifdef dbgthr
-        std::cout << "adjustBrightness: working (" << c << ")\n";
-#endif
+        LOGV << "Working (" + std::to_string(c) + ")";
 
         int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
         args.img_delta = 0;
@@ -85,11 +83,11 @@ void adjustBrightness(Args &args)
 
             if(!args.w->quit)
             {
-#ifdef _WIN32
-                setGDIGamma(scr_br, cfg[Temp]);
-#else
-                args.x11->setXF86Gamma(scr_br, cfg[Temp]);
-#endif
+                if constexpr (os == OS::Windows)
+                {
+                    setGDIGamma(scr_br, cfg[Temp]);
+                }
+                else args.x11->setXF86Gamma(scr_br, cfg[Temp]);
             }
             else break;
 
@@ -100,17 +98,13 @@ void adjustBrightness(Args &args)
 
         prev_c = c;
 
-#ifdef dbgthr
-        std::cout << "adjustBrightness: complete (" << c << ")\n";
-#endif
+        LOGV << "Complete (" + std::to_string(c) + ")";
     }
 }
 
-void app(Args &args)
+void recordScreen(Args &args)
 {
-#ifdef dbg
-    std::cout << "Initializing screenshot loop\n";
-#endif
+    PLOGV << "recordScreen start";
 
     int prev_imgBr  = 0,
         prev_min    = 0,
@@ -150,7 +144,7 @@ void app(Args &args)
     {
         args.w->auto_cv->wait(lock, [&]
         {
-             return args.w->run;
+            return args.w->run;
         });
 
 #ifdef _WIN32
@@ -189,16 +183,14 @@ void app(Args &args)
                 args.target_br = cfg[MinBr];
             }
 
-#ifdef dbgbr
-            std::cout << scr_br << " -> " << args.target_br << " | " << args.img_delta << '\n';
-#endif
+            LOGV << std::string("Changing brightness: "+std::to_string(scr_br)+" -> "+std::to_string(args.target_br)+" | "+std::to_string(args.img_delta));
 
             if(args.target_br != scr_br)
             {
                 ++args.callcnt;
-#ifdef dbgthr
-                std::cout << "app: ready (" << args.callcnt << ")\n";
-#endif
+
+                LOGV << std::string("ready (" + std::to_string(args.callcnt) + ")");
+
                 args.adjustbr_cv.notify_one();
             }
             else args.img_delta = 0;
@@ -217,18 +209,16 @@ void app(Args &args)
         prev_offset = cfg[Offset];
     }
 
-#ifdef _WIN32
-    setGDIGamma(default_brightness, 0);
-#else
-    args.x11->setInitialGamma(args.w->set_previous_gamma);
-#endif
+    if constexpr (os == OS::Windows)
+    {
+        setGDIGamma(default_brightness, 0);
+    }
+    else args.x11->setInitialGamma(args.w->set_previous_gamma);
 
     ++args.callcnt;
     args.adjustbr_cv.notify_one();
 
-#ifdef dbgthr
-    std::cout << "app: notified children to quit (" << args.callcnt << ")\n";
-#endif
+    LOGV << std::string("Notified children to quit (" + std::to_string(args.callcnt) + ")");
 
     t1.join();
     QApplication::quit();
@@ -236,16 +226,21 @@ void app(Args &args)
 
 int main(int argc, char *argv[])
 {
+    static plog::ConsoleAppender<plog::TxtFormatter> console_appender;
+    plog::init(plog::verbose, &console_appender);
+
+    LOGV << "Starting program";
 #ifdef _WIN32
     checkInstance();
 
-#ifdef dbg
-    FILE *f1, *f2, *f3;
-    AllocConsole();
-    freopen_s(&f1, "CONIN$", "r", stdin);
-    freopen_s(&f2, "CONOUT$", "w", stdout);
-    freopen_s(&f3, "CONOUT$", "w", stderr);
-#endif
+    if(cfg[Debug])
+    {
+        FILE *f1, *f2, *f3;
+        AllocConsole();
+        freopen_s(&f1, "CONIN$", "r", stdin);
+        freopen_s(&f2, "CONOUT$", "w", stdout);
+        freopen_s(&f3, "CONOUT$", "w", stderr);
+    }
 
     SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
@@ -268,15 +263,15 @@ int main(int argc, char *argv[])
 #else
     MainWindow wnd(&x11, &auto_cv);
 
-    cv_ptr = &auto_cv;
-    quit_ptr = &wnd.quit;
-    run_ptr = &wnd.run;
+    cv_ptr          = &auto_cv;
+    quit_ptr        = &wnd.quit;
+    run_ptr         = &wnd.run;
     thread_args.x11 = &x11;
 #endif
 
     thread_args.w = &wnd;
 
-    std::thread t1(app, std::ref(thread_args));
+    std::thread t1(recordScreen, std::ref(thread_args));
 
     a.exec();
     t1.join();
@@ -287,30 +282,9 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 void sig_handler(int signo)
 {
-    switch(signo)
-    {
-        case SIGINT:
-        {
-#ifdef dbg
-            std::cout << "Received SIGINT.\n";
-#endif
-            break;
-        }
-        case SIGTERM:
-        {
-#ifdef dbg
-            std::cout << "Received SIGTERM.\n";
-#endif
-            break;
-        }
-        case SIGQUIT:
-        {
-#ifdef dbg
-            std::cout << "Received SIGQUIT.\n";
-#endif
-            break;
-        }
-    }
+    LOGV_IF(signo == SIGINT) << "SIGINT received";
+    LOGV_IF(signo == SIGTERM) << "SIGTERM received";
+    LOGV_IF(signo == SIGQUIT) << "SIGQUIT received";
 
     saveConfig();
 

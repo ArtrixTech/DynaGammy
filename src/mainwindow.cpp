@@ -6,7 +6,7 @@
 #include "ui_mainwindow.h"
 #include "main.h"
 #include "utils.h"
-#include <math.h>
+#include "cfg.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -46,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent, convar *auto_cv)
 void MainWindow::init()
 {
     ui->setupUi(this);
+
     readConfig();
 
     QIcon icon = QIcon(":res/icons/128x128ball.ico");
@@ -65,9 +66,11 @@ void MainWindow::init()
         ui->closeButton->hide();
         ui->hideButton->hide();
 
-#ifdef _WIN32
-        ui->extendBr->hide();
-#endif
+        if constexpr(os == OS::Windows)
+        {
+            // Extending brightness range doesn't work yet on Windows
+            ui->extendBr->hide();
+        }
 
         ui->manBrSlider->hide();
 
@@ -138,6 +141,7 @@ QMenu* MainWindow::createMenu()
     s == ERROR_SUCCESS ? run_startup->setChecked(true):
                          run_startup->setChecked(false);
 #else
+
     QAction *show_wnd = new QAction("&Show Gammy", this);
 
     auto show_on_top = [&]()
@@ -146,8 +150,8 @@ QMenu* MainWindow::createMenu()
         {
             setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
-            //Move the window to bottom right again.
-            //For some reason it moves up otherwise.
+            // Move the window to bottom right again.
+            // For some reason it moves up otherwise.
             QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
             move(scr.width() - this->width(), scr.height() - this->height());
 
@@ -257,11 +261,11 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 {
     cfg[Temp] = val;
 
-#ifdef _WIN32
-    setGDIGamma(scr_br, val);
-#else
-    x11->setXF86Gamma(scr_br, val);
-#endif
+    if constexpr(os == OS::Windows)
+    {
+        setGDIGamma(scr_br, val);
+    }
+    else x11->setXF86Gamma(scr_br, val);
 
     int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val,
                                      0, temp_arr_entries * temp_mult,
@@ -317,11 +321,11 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
 {
     scr_br = value;
 
-#ifdef _WIN32
-    setGDIGamma(scr_br, cfg[Temp]);
-#else
-    x11->setXF86Gamma(scr_br, cfg[Temp]);
-#endif
+    if constexpr(os == OS::Windows)
+    {
+        setGDIGamma(scr_br, cfg[Temp]);
+    }
+    else x11->setXF86Gamma(scr_br, cfg[Temp]);
 
     MainWindow::updateBrLabel();
 }

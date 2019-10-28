@@ -13,11 +13,11 @@
 
 X11::X11()
 {
-#ifdef dbg
-    std::cout << "Initializing XDisplay ";
-#endif
+    LOGV << "Initializing XThreads\n";
 
     XInitThreads();
+
+    LOGV << "Initializing XDisplay ";
 
     dsp     = XOpenDisplay(nullptr);
     root    = DefaultRootWindow(dsp);
@@ -25,9 +25,7 @@ X11::X11()
     scr     = DefaultScreenOfDisplay(dsp);
     scr_num = XDefaultScreen(dsp);
 
-#ifdef dbg
-    std::cout << "(scr " << scr_num << ")\n";
-#endif
+    LOGV << "(scr " << scr_num << ")\n";
 
     w = uint32_t(scr->width);
     h = uint32_t(scr->height);
@@ -38,40 +36,30 @@ X11::X11()
 
         if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base))
         {
-#ifdef dbg
-            std::cout << "Failed to query XF86VidMode extension.\n";
-#endif
+            LOGW << "Failed to query XF86VidMode extension.\n";
         }
 
         int major_ver, minor_ver;
 
         if (!XF86VidModeQueryVersion(dsp, &major_ver, &minor_ver))
         {
-#ifdef dbg
-            std::cout << "Failed to query XF86VidMode version.\n";
-#endif
+            LOGW << "Failed to query XF86VidMode version.\n";
         }
 
-#ifdef dbg
-        std::cout << "XF86VidMode ver: " << major_ver << "." << minor_ver << "\n";
-#endif
+        LOGV << "XF86VidMode ver: " + std::to_string(major_ver) + "." + std::to_string(minor_ver);
    }
 
     // Get initial gamma ramp and size
     {
         if (!XF86VidModeGetGammaRampSize(dsp, scr_num, &ramp_sz))
         {
-#ifdef dbg
-            std::cout << "Failed to get XF86 gamma ramp size.\n";
-#endif
+            LOGF << "Failed to get XF86 gamma ramp size.\n";
             exit(EXIT_FAILURE);
         }
 
         if(ramp_sz == 0)
         {
-#ifdef dbg
-            std::cout << "Invalid gamma ramp size.\n";
-#endif
+            LOGF << "Invalid gamma ramp size.\n";
             exit(EXIT_FAILURE);
         }
 
@@ -84,9 +72,7 @@ X11::X11()
 
         if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b))
         {
-#ifdef dbg
-            std::cout << "Failed to get initial gamma ramp.\n";
-#endif
+            LOGE << "Failed to get initial gamma ramp.\n";
             initial_ramp_exists = false;
         }
     }
@@ -143,18 +129,12 @@ void X11::setInitialGamma(bool set_previous)
 {
     if(set_previous && initial_ramp_exists)
     {
-
-#ifdef dbg
-        std::cout << "Setting previous gamma\n";
-#endif
-
+        LOGI << "Setting previous gamma";
         XF86VidModeSetGammaRamp(dsp, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
     }
     else
     {
-#ifdef dbg
-            std::cout << "Setting pure gamma\n";
-#endif
+        LOGI << "Setting pure gamma";
         X11::setXF86Gamma(255, 0);
     }
 }

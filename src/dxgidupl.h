@@ -3,7 +3,7 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#ifdef _WIN32
+
 #ifndef DXGIDUPL_H
 #define DXGIDUPL_H
 #include <Windows.h>
@@ -36,4 +36,4 @@ public:
 extern DXGIDupl dx;
 
 #endif // DXGIDUPL_H
-#endif
+

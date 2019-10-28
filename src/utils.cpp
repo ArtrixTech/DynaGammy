@@ -14,18 +14,6 @@
 
 #include "utils.h"
 
-std::array<int, cfg_count> cfg
-{
-    192,    // MinBr
-    255,    // MaxBr
-    78,     // Offset
-    0,      // Temp
-    3,      // Speed
-    32,     // Threshold
-    100,    // Polling_Rate
-    1       // isAuto
-};
-
 void setColors(int temp, std::array<double, 3> &c)
 {
     size_t tick = size_t(temp / temp_mult);
@@ -69,144 +57,7 @@ int calcBrightness(const std::vector<uint8_t> &buf)
     return brightness;
 }
 
-void readConfig()
-{
-#ifdef dbg
-    std::cout << "Reading config...\n";
-#endif
-
 #ifdef _WIN32
-    const std::wstring path = getExecutablePath(true);
-#else
-    const std::string path = getHomePath(true);
-#endif
-
-    std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
-
-    if(!file.is_open())
-    {
-#ifdef dbg
-        std::cout << "Unable to open settings file.\n";
-#endif
-        return;
-    }
-
-    file.seekg(0, std::ios::end);
-    bool empty = file.tellg() == 0;
-
-    if(empty)
-    {
-#ifdef dbg
-        std::cout << "Config empty.\n";
-#endif
-
-        saveConfig();
-        return;
-    }
-
-    file.seekg(0);
-
-    size_t c = 0;
-    for (std::string line; std::getline(file, line);)
-    {
-#ifdef dbgcfg
-        std::cout << line << '\n';
-#endif
-
-        if(!line.empty())
-        {
-            size_t pos = line.find('=') + 1;
-            std::string val = line.substr(pos);
-
-            cfg[c++] = std::stoi(val);
-        }
-    }
-
-    file.close();
-}
-
-void saveConfig()
-{
-#ifdef dbg
-    std::cout << "Saving config...\n";
-#endif
-
-#ifdef _WIN32
-    static const std::wstring path = getExecutablePath(true);
-#else
-    static const std::string path = getHomePath(true);
-#endif
-
-    if(path.empty())
-    {
-#ifdef dbg
-        std::cout << "Config path empty.\n";
-#endif
-        return;
-    }
-
-    std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
-
-    if(!file.good() || !file.is_open())
-    {
-#ifdef dbg
-        std::cout << "Unable to open config file.\n";
-#endif
-        return;
-    }
-
-    for(size_t i = 0; i < cfg_count; i++)
-    {
-        std::string s = cfg_str[i];
-        int val = cfg[i];
-
-        std::string line (s + std::to_string(val));
-
-#ifdef dbgcfg
-        std::cout << line << '\n';
-#endif
-
-        file << line << '\n';
-    }
-
-    file.close();
-}
-
-#ifndef _WIN32
-std::string getHomePath(bool add_cfg)
-{
-    const char *xdg_cfg_home;
-    const char *home;
-
-    std::string path;
-    std::string cfg_filename = "gammy";
-
-    xdg_cfg_home = getenv("XDG_CONFIG_HOME");
-
-    if (xdg_cfg_home)
-    {
-       path = std::string(xdg_cfg_home) + '/';
-    }
-    else
-    {
-        home = getenv("HOME");
-        if(!home) return "";
-
-        path = std::string(home) + "/.config/";
-    }
-
-    if(add_cfg)
-    {
-        path += cfg_filename;
-    }
-
-#ifdef dbg
-    std::cout << "Config path: " << path << '\n';
-#endif
-
-    return path;
-}
-#else
 
 static const HDC screenDC = GetDC(nullptr);
 
@@ -373,20 +224,6 @@ void toggleRegkey(bool isChecked)
     }
 
     if(hKey) RegCloseKey(hKey);
-}
-
-std::wstring getExecutablePath(bool add_cfg)
-{
-    wchar_t buf[FILENAME_MAX] {};
-    GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
-    std::wstring path(buf);
-
-    std::wstring appname = L"gammy.exe";
-    path.erase(path.find(appname), appname.length());
-
-    if(add_cfg) path += L"gammysettings.cfg";
-
-    return path;
 }
 
 void checkInstance()

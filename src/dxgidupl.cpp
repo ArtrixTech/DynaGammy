@@ -3,7 +3,6 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#ifdef _WIN32
 #include "main.h"
 #include "dxgidupl.h"
 #include <thread>
@@ -33,10 +32,8 @@ bool DXGIDupl::initDXGI()
 
         if (hr != S_OK)
         {
-#ifdef dbg
-            std::cout << "Error: failed to retrieve the IDXGIFactory.\n";
-            getchar();
-#endif
+            LOGE << "Error: failed to retrieve the IDXGIFactory";
+
             return false;
         }
 
@@ -394,4 +391,3 @@ DXGIDupl::~DXGIDupl()
     if(d3d_context) d3d_context->Release();
     if(d3d_device)  d3d_device->Release();
 }
-#endif
