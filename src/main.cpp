@@ -88,7 +88,7 @@ void adjustBrightness(Args &args)
                     setGDIGamma(scr_br, cfg[Temp]);
                 }
 #ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the code above
-                else {args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+                else {args.x11->setXF86Gamma(scr_br, cfg[Temp]); }
 #endif
             }
             else break;
