@@ -38,7 +38,7 @@ public:
     bool ignore_closeEvent = true;
 
     void updateBrLabel();
-    void updatePollingSlider(int, int);
+    void setPollingRange(int, int);
 
     bool run = true;
     bool *force = nullptr;

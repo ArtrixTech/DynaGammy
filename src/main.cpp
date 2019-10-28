@@ -62,13 +62,13 @@ void adjustBrightness(Args &args)
 
     while(!args.w->quit)
     {
-        LOGD << "Waiting (" + std::to_string(c) + ")";
+        LOGD << "Waiting (" << c << ")";
 
         args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
         c = args.callcnt;
 
-        LOGD << "Working (" + std::to_string(c) + ")";
+        LOGD << "Working (" << c << ")";
 
         int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
         args.img_delta = 0;
@@ -87,7 +87,7 @@ void adjustBrightness(Args &args)
                 {
                     setGDIGamma(scr_br, cfg[Temp]);
                 }
-#ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the code above
+#ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the constexpr check
                 else {args.x11->setXF86Gamma(scr_br, cfg[Temp]); }
 #endif
             }
@@ -121,13 +121,18 @@ void recordScreen(Args &args)
                     h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
                     len = w * h * 4;
 
-    LOGD << "Screen res: " + std::to_string(w) + " * " + std::to_string(h);
+    LOGD << "Screen resolution: " << w  << "*" << h;
 
     DXGIDupl dx;
 
     bool useDXGI = dx.initDXGI();
 
-    if (!useDXGI) args.w->updatePollingSlider(1000, 5000);
+    if (!useDXGI)
+    {
+        LOGE << "DXGI initialization failed. Using GDI instead";
+        args.w->setPollingRange(1000, 5000);
+    }
+
 #else
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
     const uint64_t len = screen_res * 4;
@@ -135,7 +140,7 @@ void recordScreen(Args &args)
     args.x11->setXF86Gamma(scr_br, cfg[Temp]);
 #endif
 
-    LOGD << "Buffer size: " + std::to_string(len);
+    LOGD << "Screen bufsize: " << len;
 
     // Buffer to store screen pixels
     std::vector<uint8_t> buf(len);
@@ -158,10 +163,7 @@ void recordScreen(Args &args)
 #ifdef _WIN32
         if (useDXGI)
         {
-            while (!dx.getDXGISnapshot(buf))
-            {
-                dx.restartDXGI();
-            }
+            while (!dx.getDXGISnapshot(buf)) dx.restartDXGI();
         }
         else
         {

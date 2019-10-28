@@ -354,9 +354,11 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->offsetSlider->setRange(0, br_limit);
 }
 
-void MainWindow::updatePollingSlider(int min, int max)
+void MainWindow::setPollingRange(int min, int max)
 {
    const int poll = cfg[Polling_rate];
+
+   LOGD << "Setting polling rate slider range to: " << min << ", " << max;
 
    ui->pollingSlider->setRange(min, max);
 
