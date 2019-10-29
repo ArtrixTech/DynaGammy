@@ -230,7 +230,7 @@ void recordScreen(Args &args)
     ++args.callcnt;
     args.adjustbr_cv.notify_one();
 
-    LOGV << std::string("Notified children to quit (" + std::to_string(args.callcnt) + ")");
+    LOGD << "Notified children to quit (" << args.callcnt << ')';
 
     t1.join();
     QApplication::quit();
