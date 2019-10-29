@@ -274,7 +274,7 @@ bool DXGIDupl::getDXGISnapshot(std::vector<uint8_t> &buf) noexcept
 
     if (hr != S_OK)
     {
-        LOGE << "Texture creation failed, error: " + std::to_string(hr);
+        LOGE << "Texture creation failed, error: " << hr;
         return false;
     }
 

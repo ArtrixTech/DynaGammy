@@ -3,11 +3,6 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-/**
- * Copyright (C) 2019 Francesco Fusco. All rights reserved.
- * License: https://github.com/Fushko/gammy#license
- */
-
 #ifndef DXGIDUPL_H
 #define DXGIDUPL_H
 #include <Windows.h>

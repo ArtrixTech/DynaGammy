@@ -62,13 +62,13 @@ void adjustBrightness(Args &args)
 
     while(!args.w->quit)
     {
-        LOGD << "Waiting (" << c << ")";
+        LOGD << "Waiting (" << c << ')';
 
         args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
         c = args.callcnt;
 
-        LOGD << "Working (" << c << ")";
+        LOGD << "Working (" << c << ')';
 
         int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
         args.img_delta = 0;
@@ -101,7 +101,7 @@ void adjustBrightness(Args &args)
         prev_c = c;
     }
 
-       LOGD << "Complete (" + std::to_string(c) + ")";
+       LOGD << "Complete (" << c << ')';
 }
 
 void recordScreen(Args &args)

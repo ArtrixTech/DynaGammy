@@ -6,9 +6,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-//#define dbgthr
-//#define dbgbr
-
 extern int scr_br;
 
 #ifndef _WIN32

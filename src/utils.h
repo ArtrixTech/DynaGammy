@@ -110,6 +110,4 @@ void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);
 
-std::wstring getExecutablePath(bool add_cfg);
-
 #endif // UTILS_H
