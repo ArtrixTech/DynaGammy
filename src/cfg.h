@@ -1,12 +1,10 @@
-#ifndef CFG_H
 /**
  * Copyright (C) 2019 Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
 
+#ifndef CFG_H
 #define CFG_H
-
-#endif // CFG_H
 
 #include <array>
 
@@ -46,3 +44,5 @@ void readConfig();
 void saveConfig();
 
 extern std::array<int, cfg_count> cfg;
+
+#endif // CFG_H

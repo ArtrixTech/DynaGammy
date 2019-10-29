@@ -13,10 +13,6 @@
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Appenders/RollingFileAppender.h>
 
-/**
- * Copyright (C) 2019 Francesco Fusco. All rights reserved.
- * License: https://github.com/Fushko/gammy#license
- */
 #include <condition_variable>
 typedef std::condition_variable convar;
 
@@ -30,7 +26,6 @@ constexpr OS os = Windows;
 #else
 constexpr OS os = Unix;
 #endif
-
 
 constexpr int   default_brightness = 255,
                 min_temp_kelvin = 2000,
