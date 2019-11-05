@@ -389,6 +389,11 @@ void MainWindow::setPollingRange(int min, int max)
    ui->pollingSlider->setValue(poll);
 }
 
+void MainWindow::setTempSlider(int val)
+{
+    ui->tempSlider->setValue(val);
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;

@@ -47,6 +47,8 @@ public:
     bool    run_temp = false;
     convar  *temp_cv = nullptr;
 
+    void setTempSlider(int);
+
 private slots:
     void init();
     void iconActivated(QSystemTrayIcon::ActivationReason reason);

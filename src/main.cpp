@@ -113,6 +113,8 @@ void adjustTemperature(Args &args)
     std::mutex m;
     std::unique_lock lock(m);
 
+    bool increase = true;
+
     while (!args.w->quit)
     {
         args.w->temp_cv->wait(lock, [&]
@@ -121,24 +123,17 @@ void adjustTemperature(Args &args)
         });
 
         LOGI << "Adjusting temp";
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+
+        if(cfg[Temp] >= temp_steps) increase = false;
+        else if(cfg[Temp] == 0)     increase = true;
+
+        increase ? ++cfg[Temp] : --cfg[Temp];
+
+        if(!args.w->quit) args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+        args.w->setTempSlider(cfg[Temp]);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
-    /*
-    using std::chrono::system_clock;
-
-    std::time_t tt = system_clock::to_time_t(system_clock::now());
-
-    struct std::tm *ptm = std::localtime(&tt);
-
-    auto cur_time = std::put_time(ptm, "%X");
-    std::cout << "Current time: " << cur_time << '\n';
-    std::cout << "Waiting for the next 30 secs...\n";
-
-    //++ptm->tm_min;
-    ptm->tm_sec += 3;
-
-    std::this_thread::sleep_until(system_clock::from_time_t(mktime(ptm)));
-    std::cout << cur_time << " reached!\n";*/
 }
 
 void recordScreen(Args &args)
