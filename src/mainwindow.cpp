@@ -18,6 +18,7 @@
 #include <QHelpEvent>
 #include <QAction>
 #include <QMenu>
+#include <QTime>
 
 #include <iostream>
 
@@ -360,13 +361,40 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->offsetSlider->setRange(0, br_limit);
 }
 
+void MainWindow::on_pushButton_clicked()
+{
+    TempScheduler ts(nullptr, temp_cv, &run_temp);
+    ts.exec();
+}
+
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-    if(checked)
+    auto cur_time = QTime::currentTime().toString();
+
+    int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
+    int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
+
+    LOGI << "Current hour: " << cur_hour << ':' << cur_min;
+
+    cfg[isAutoTemp] = checked;
+
+    if (checked)
     {
-        TempScheduler ts(nullptr, temp_cv, &run_temp);
-        ts.exec();
+        LOGI << "Starting adaptive temp";
+
+        if(cur_hour >= cfg[HourStart]) // This check should go elsewhere
+        {
+            run_temp = true;
+            temp_cv->notify_one();
+        }
     }
+    else
+    {
+        LOGI << "Pausing adaptive temp";
+        run_temp = false;
+        temp_cv->notify_one();
+    }
+
 }
 
 void MainWindow::setPollingRange(int min, int max)

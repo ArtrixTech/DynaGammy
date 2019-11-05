@@ -1,6 +1,5 @@
 #include "tempscheduler.h"
 #include "ui_tempscheduler.h"
-#include "QDebug"
 #include "cfg.h"
 
 TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
@@ -23,31 +22,8 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
 
 void TempScheduler::on_buttonBox_accepted()
 {
-    LOGI << temp_start_kelvin << "K -> " << temp_end_kelvin << " K";
-    LOGI << time_start << " -> " << time_end;
-
-    auto cur_time = QTime::currentTime().toString();
-
-    int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
-    int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
-
-    LOGI << "Current hour: " << cur_hour << ':' << cur_min;
-
     cfg[HourStart]  = QStringRef(&time_start, 0, 2).toInt();
     cfg[HourEnd]    = QStringRef(&time_end, 0, 2).toInt();
-
-    if(cur_hour >= cfg[HourStart])
-    {
-        LOGI << "Adaptive temp should start";
-        *run_temp = true;
-        temp_cv->notify_one();
-    }
-    else
-    {
-        LOGI << "Adaptive temp should stop";
-        *run_temp = false;
-        temp_cv->notify_one();
-    }
 
     saveConfig();
 }

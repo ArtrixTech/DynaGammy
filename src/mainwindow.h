@@ -72,6 +72,8 @@ private slots:
 
     void on_autoTempCheck_toggled(bool checked);
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon *trayIcon;

@@ -1141,7 +1141,7 @@ font-size: 17px;
      <rect>
       <x>0</x>
       <y>60</y>
-      <width>341</width>
+      <width>343</width>
       <height>421</height>
      </rect>
     </property>
@@ -1970,6 +1970,13 @@ background-color:rgb(20,22,35);
             </size>
            </property>
           </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>Configure</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
