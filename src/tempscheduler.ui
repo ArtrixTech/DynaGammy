@@ -29,7 +29,7 @@
     </widget>
    </item>
    <item row="3" column="0" colspan="2">
-    <widget class="QTimeEdit" name="timeEdit">
+    <widget class="QTimeEdit" name="timeStartBox">
      <property name="timeSpec">
       <enum>Qt::LocalTime</enum>
      </property>
@@ -67,7 +67,7 @@
     </widget>
    </item>
    <item row="1" column="2">
-    <widget class="QSpinBox" name="spinBox_2">
+    <widget class="QSpinBox" name="tempEndBox">
      <property name="minimum">
       <number>2000</number>
      </property>
@@ -80,7 +80,7 @@
     </widget>
    </item>
    <item row="3" column="2" colspan="2">
-    <widget class="QTimeEdit" name="timeEdit_2">
+    <widget class="QTimeEdit" name="timeEndBox">
      <property name="time">
       <time>
        <hour>6</hour>
@@ -118,7 +118,7 @@
     </spacer>
    </item>
    <item row="1" column="0">
-    <widget class="QSpinBox" name="spinBox">
+    <widget class="QSpinBox" name="tempStartBox">
      <property name="minimum">
       <number>2000</number>
      </property>
@@ -134,15 +134,15 @@
     </widget>
    </item>
   </layout>
-  <zorder>spinBox</zorder>
+  <zorder>tempStartBox</zorder>
   <zorder>label_6</zorder>
   <zorder>label</zorder>
-  <zorder>timeEdit</zorder>
+  <zorder>timeStartBox</zorder>
   <zorder>buttonBox</zorder>
   <zorder>label_2</zorder>
   <zorder>label_4</zorder>
-  <zorder>spinBox_2</zorder>
-  <zorder>timeEdit_2</zorder>
+  <zorder>tempEndBox</zorder>
+  <zorder>timeEndBox</zorder>
   <zorder>label_3</zorder>
   <zorder>label_5</zorder>
  </widget>

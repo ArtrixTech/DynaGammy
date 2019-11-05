@@ -20,13 +20,13 @@ public:
 private slots:
     void on_buttonBox_accepted();
 
-    void on_spinBox_valueChanged(int arg1);
+    void on_tempStartBox_valueChanged(int arg1);
 
-    void on_spinBox_2_valueChanged(int arg1);
+    void on_tempEndBox_valueChanged(int arg1);
 
-    void on_timeEdit_timeChanged(const QTime &time);
+    void on_timeStartBox_timeChanged(const QTime &time);
 
-    void on_timeEdit_2_timeChanged(const QTime &time);
+    void on_timeEndBox_timeChanged(const QTime &time);
 
 private:
     Ui::TempScheduler *ui;
