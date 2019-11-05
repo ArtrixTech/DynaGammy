@@ -134,6 +134,17 @@
     </widget>
    </item>
   </layout>
+  <zorder>spinBox</zorder>
+  <zorder>label_6</zorder>
+  <zorder>label</zorder>
+  <zorder>timeEdit</zorder>
+  <zorder>buttonBox</zorder>
+  <zorder>label_2</zorder>
+  <zorder>label_4</zorder>
+  <zorder>spinBox_2</zorder>
+  <zorder>timeEdit_2</zorder>
+  <zorder>label_3</zorder>
+  <zorder>label_5</zorder>
  </widget>
  <resources/>
  <connections>
