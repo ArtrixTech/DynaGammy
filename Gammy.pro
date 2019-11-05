@@ -13,13 +13,18 @@ TARGET = gammy
 TEMPLATE = app
 
 CONFIG += c++11 c++17
+CONFIG += optimize_full
 
 HEADERS += src/main.h src/mainwindow.h src/utils.h \
-    src/tempscheduler.h
+    src/tempscheduler.h \
+    src/cfg.h
+
 SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
-    src/tempscheduler.cpp
+    src/tempscheduler.cpp \
+    src/cfg.cpp
+
 FORMS   += src/mainwindow.ui \
-    src/tempscheduler.ui
+    src/tempscheduler.ui \
 
 win32:{
     SOURCES += src/dxgidupl.cpp
@@ -51,3 +56,5 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 # Uncomment to make the code fail to compile if you use deprecated APIs.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+INCLUDEPATH += $$PWD/includes

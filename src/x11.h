@@ -3,7 +3,6 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#ifndef _WIN32
 #ifndef X11_H
 #define X11_H
 
@@ -13,14 +12,16 @@
 
 class X11
 {
-    Display* dsp;
+    Display *dsp;
 
-    Screen* scr;
+    Screen *scr;
     Window root;
 
     int ramp_sz;
     int scr_num;
+
     std::vector<uint16_t> init_ramp;
+    bool initial_ramp_exists = true;
 
     unsigned w, h;
 
@@ -40,4 +41,3 @@ public:
 };
 
 #endif // X11_H
-#endif

@@ -3,41 +3,37 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#ifdef _WIN32
 #include "main.h"
 #include "dxgidupl.h"
-#include <vector>
 #include <thread>
 #include <chrono>
 #include <iostream>
+
 #include "utils.h"
+#include "cfg.h"
+
+#include <locale>
+#include <codecvt>
+#define wchar_to_str(X) std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(X)
 
 DXGIDupl::DXGIDupl() {}
 
 bool DXGIDupl::initDXGI()
 {
-    #ifdef dbg
-    std::cout << "Initializing DXGI...\n";
-    #endif
+    IDXGIOutput                 *output;
+    IDXGIAdapter1               *pAdapter;
+    std::vector<IDXGIOutput*>   vOutputs;   // Monitors vector
+    std::vector<IDXGIAdapter1*> vAdapters;  // GPUs vector
 
-    IDXGIOutput* output;
-    IDXGIAdapter1* pAdapter;
-    std::vector<IDXGIOutput*> vOutputs; //Monitors vector
-    std::vector<IDXGIAdapter1*> vAdapters; //GPUs vector
-
-    HRESULT hr;
-
-    //Retrieve a IDXGIFactory to enumerate the adapters
+    // Retrieve a IDXGIFactory to enumerate the adapters
     {
-        IDXGIFactory1* pFactory = nullptr;
-        hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory));
+        IDXGIFactory1 *pFactory = nullptr;
+        HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory));
 
         if (hr != S_OK)
         {
-            #ifdef dbg
-            std::cout << "Error: failed to retrieve the IDXGIFactory.\n";
-            getchar();
-            #endif
+            LOGE << "Failed to retrieve the IDXGIFactory";
+
             return false;
         }
 
@@ -50,27 +46,27 @@ bool DXGIDupl::initDXGI()
 
         pFactory->Release();
 
-        #ifdef dbg
-        //Get GPU info
-        DXGI_ADAPTER_DESC1 desc;
-
-        for (UINT i = 0; i < vAdapters.size(); ++i)
+        IF_PLOG(plog::debug) // Get GPU info
         {
-            pAdapter = vAdapters[i];
-            hr = pAdapter->GetDesc1(&desc);
+            DXGI_ADAPTER_DESC1 desc;
 
-            if (hr != S_OK)
+            for (UINT i = 0; i < vAdapters.size(); ++i)
             {
-                std::cout << "Error: failed to get a description for the adapter: " << i << '\n';
-                continue;
-            }
+                pAdapter = vAdapters[i];
+                HRESULT hr = pAdapter->GetDesc1(&desc);
 
-            std::wprintf(L"Adapter %i: %lS\n", i, desc.Description);
+                if (hr != S_OK)
+                {
+                    LOGE << "Failed to get description for adapter: " << i;
+                    continue;
+                }
+
+                LOGD << "Adapter " << i << ": " << desc.Description;
+            }
         }
-        #endif
     }
 
-    //Get the monitors attached to the GPUs
+    // Get the monitors attached to the GPUs
     {
         UINT j;
 
@@ -78,58 +74,47 @@ bool DXGIDupl::initDXGI()
         {
             j = 0;
             pAdapter = vAdapters[i];
+
             while (pAdapter->EnumOutputs(j++, &output) != DXGI_ERROR_NOT_FOUND)
             {
-                #ifdef dbg
-                std::printf("Found monitor %d on adapter %d\n", j, i);
-                #endif
+                LOGD << "Found monitor " << j << " on adapter " << i;
                 vOutputs.push_back(output);
             }
         }
 
         if (vOutputs.empty())
         {
-            #ifdef dbg
-            std::printf("Error: no outputs found (%zu).\n", vOutputs.size());
-            getchar();
-            #endif
-
+            LOGE << "No outputs found";
             return false;
         }
 
-        #ifdef dbg
-            //Print monitor info.
-            DXGI_OUTPUT_DESC desc;
+        // Print monitor info
+        DXGI_OUTPUT_DESC desc;
 
-            for (size_t i = 0; i < vOutputs.size(); ++i)
+        for (size_t i = 0; i < vOutputs.size(); ++i)
+        {
+            output = vOutputs[i];
+            HRESULT hr = output->GetDesc(&desc);
+
+            if (hr != S_OK)
             {
-                output = vOutputs[i];
-                hr = output->GetDesc(&desc);
-
-                if (hr != S_OK)
-                {
-                    printf("Error: failed to retrieve a DXGI_OUTPUT_DESC for output %llu.\n", i);
-                    continue;
-                }
-
-                std::wprintf(L"Monitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'y' : 'n');
+                LOGE << "Failed to get description for output " << i;
+                continue;
             }
-        #endif
+
+            LOGD << "Monitor: " << desc.DeviceName << ", attached to desktop: " << desc.AttachedToDesktop;
+        }
     }
 
-    //Create a Direct3D device to access the OutputDuplication interface
+    // Create a Direct3D device to access the OutputDuplication interface
     {
         D3D_FEATURE_LEVEL d3d_feature_level;
-        IDXGIAdapter1* d3d_adapter;
+        IDXGIAdapter1 *d3d_adapter;
         UINT use_adapter = 0;
 
         if (vAdapters.size() <= use_adapter)
         {
-            #ifdef dbg
-            std::printf("Invalid adapter index: %d, we only have: %zu - 1\n", use_adapter, vAdapters.size());
-            getchar();
-            #endif
-
+            LOGE << "Invalid adapter index: " << use_adapter << ", we only have: " << vAdapters.size();
             return false;
         }
 
@@ -137,15 +122,11 @@ bool DXGIDupl::initDXGI()
 
         if (!d3d_adapter)
         {
-            #ifdef dbg
-            std::cout << "Error: the stored adapter is nullptr.\n";
-            getchar();
-            #endif
-
+            LOGE << "The stored adapter is nullptr";
             return false;
         }
 
-        hr = D3D11CreateDevice(
+        HRESULT hr = D3D11CreateDevice(
             d3d_adapter,			  // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
             D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
             nullptr,                  // Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicable.
@@ -162,61 +143,43 @@ bool DXGIDupl::initDXGI()
 
         if (hr != S_OK)
         {
-            #ifdef dbg
-            std::cout << "Error: failed to create the D3D11 Device.\n";
+            LOGE << "Failed to create D3D11 Device";
 
             if (hr == E_INVALIDARG)
             {
-                std::cout << "Got INVALID arg passed into D3D11CreateDevice. Did you pass a adapter + a driver which is not the UNKNOWN driver?\n";
+                LOGE << "Got INVALID arg passed into D3D11CreateDevice. Did you pass a adapter + a driver which is not the UNKNOWN driver?";
             }
-
-            getchar();
-            #endif
 
             return false;
         }
     }
 
-    //Choose what monitor to use
+    // Choose what monitor to use
     {
         UINT use_monitor = 0;
         output = vOutputs[use_monitor];
 
         if (vOutputs.size() <= use_monitor)
         {
-            #ifdef dbg
-            std::printf("Invalid monitor index: %d, we only have: %zu - 1\n", use_monitor, vOutputs.size());
-            getchar();
-            #endif
-
+            LOGE << "Invalid monitor index";
             return false;
         }
 
         if (!output)
         {
-            #ifdef dbg
-            std::cout << "No valid output found. The output is nullptr.\n";
-            getchar();
-            #endif
-
+            LOGE << "No valid output found. The output is nullptr";
             return false;
         }
     }
 
-    //Set texture properties
+    // Set texture properties
     {
         DXGI_OUTPUT_DESC desc;
-        hr = output->GetDesc(&desc);
-
-        bufLen = desc.DesktopCoordinates.right * desc.DesktopCoordinates.bottom * 4;
+        HRESULT hr = output->GetDesc(&desc);
 
         if (hr != S_OK)
         {
-            #ifdef dbg
-            std::cout << "Error: failed to get output description.\n";
-            getchar();
-            #endif
-
+            LOGE << "Failed to get output description";
             return false;
         }
 
@@ -233,17 +196,13 @@ bool DXGIDupl::initDXGI()
         tex_desc.MiscFlags = 0;
     }
 
-    //Initialize output duplication
+    // Initialize output duplication
     {
-        hr = output->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
+        HRESULT hr = output->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
 
         if (hr != S_OK)
         {
-            #ifdef dbg
-            std::cout << "Error: failed to query the IDXGIOutput1 interface.\n";
-            getchar();
-            #endif
-
+            LOGE << "Failed to query IDXGIOutput1 interface";
             return false;
         }
 
@@ -251,11 +210,7 @@ bool DXGIDupl::initDXGI()
 
         if (hr != S_OK)
         {
-            #ifdef dbg
-            std::cout << "Error: DuplicateOutput failed.\n";
-            getchar();
-            #endif
-
+            LOGE << "DuplicateOutput failed";
             return false;
         }
 
@@ -269,13 +224,13 @@ bool DXGIDupl::initDXGI()
     return true;
 }
 
-bool DXGIDupl::getDXGISnapshot(uint8_t* buf) noexcept
+bool DXGIDupl::getDXGISnapshot(std::vector<uint8_t> &buf) noexcept
 {
     HRESULT hr;
 
-    ID3D11Texture2D* tex;
+    ID3D11Texture2D *tex;
     DXGI_OUTDUPL_FRAME_INFO frame_info;
-    IDXGIResource* desktop_resource;
+    IDXGIResource *desktop_resource;
 
     hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_resource);
 
@@ -283,7 +238,7 @@ bool DXGIDupl::getDXGISnapshot(uint8_t* buf) noexcept
     {
         case S_OK:
         {
-            //Get the texture interface
+            // Get the texture interface
             hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&tex));
 
             desktop_resource->Release();
@@ -291,9 +246,7 @@ bool DXGIDupl::getDXGISnapshot(uint8_t* buf) noexcept
 
             if (hr != S_OK)
             {
-                #ifdef dbg
-                std::cout << "Error: failed to query the ID3D11Texture2D interface on the IDXGIResource.\n";
-                #endif
+                LOGE << "Failed to query the ID3D11Texture2D interface on the IDXGIResource";
                 return false;
             }
 
@@ -301,35 +254,27 @@ bool DXGIDupl::getDXGISnapshot(uint8_t* buf) noexcept
         }
         case DXGI_ERROR_ACCESS_LOST:
         {
-            #ifdef dbg
-            std::cout << "Received a DXGI_ERROR_ACCESS_LOST.\n";
-            #endif
+            LOGE << "Received a DXGI_ERROR_ACCESS_LOST";
             return false;
         }
         case DXGI_ERROR_WAIT_TIMEOUT:
         {
-            #ifdef dbg
-            std::cout << "Received a DXGI_ERROR_WAIT_TIMEOUT.\n";
-            #endif
+            LOGE << "Received a DXGI_ERROR_WAIT_TIMEOUT";
             return false;
         }
         default:
         {
-            #ifdef dbg
-            std::cout << "Error: failed to acquire frame.\n";
-            #endif
+            LOGE << "Error: failed to acquire frame";
             return false;
         }
-     };
+     }
 
-    ID3D11Texture2D* staging_tex;
+    ID3D11Texture2D *staging_tex;
     hr = d3d_device->CreateTexture2D(&tex_desc, nullptr, &staging_tex);
 
     if (hr != S_OK)
     {
-        #ifdef dbg
-        std::cout << "Failed to create the 2D texture, error: " << hr << '\n';
-        #endif
+        LOGE << "Texture creation failed, error: " << hr;
         return false;
     }
 
@@ -348,12 +293,8 @@ bool DXGIDupl::getDXGISnapshot(uint8_t* buf) noexcept
     staging_tex->Release();
     d3d_context->Release();
 
-    #ifdef dbg
-    //std::cout << "depthPitch = " << map.DepthPitch << '\n';
-    #endif
-
-    //buf = reinterpret_cast<uint8_t*>(map.pData); //750 Ti: stable, Intel HD 2000: can crash when reading the buffer in calcBrightness
-    memcpy(buf, map.pData, bufLen); //750 Ti: stable, Intel HD 2000: can cause a crash when copying
+    LOGV << "Copying buffer";
+    memcpy(buf.data(), reinterpret_cast<uint8_t*>(map.pData), buf.size());
 
     return true;
 }
@@ -362,32 +303,34 @@ void DXGIDupl::restartDXGI()
 {
     HRESULT hr;
 
-    do {
+    do
+    {
         hr = output1->DuplicateOutput(d3d_device, &duplication);
 
-        #ifdef dbg
-        if (hr != S_OK)
+        IF_PLOG(plog::debug)
         {
-            std::cout << "Unable to duplicate output. Reason: ";
+            if(hr != S_OK)
+            {
+                LOGE << "** Unable to duplicate output. Reason:";
 
-            switch (hr) {
-            case E_INVALIDARG:	 printf("E_INVALIDARG\n"); break;
-            case E_ACCESSDENIED: printf("E_ACCESSDENIED\n"); break;
-            case DXGI_ERROR_UNSUPPORTED: printf("E_DXGI_ERROR_UNSUPPORTED\n"); break;
-            case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE: printf("DXGI_ERROR_NOT_CURRENTLY_AVAILABLE\n"); break;
-            case DXGI_ERROR_SESSION_DISCONNECTED: printf("DXGI_ERROR_SESSION_DISCONNECTED\n"); break;
+                switch (hr)
+                {
+                    case E_INVALIDARG:                          LOGE << "E_INVALIDARG"; break;
+                    case E_ACCESSDENIED:                        LOGE << "E_ACCESSDENIED"; break;
+                    case DXGI_ERROR_UNSUPPORTED:                LOGE << "E_DXGI_ERROR_UNSUPPORTED"; break;
+                    case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE:    LOGE << "DXGI_ERROR_NOT_CURRENTLY_AVAILABLE"; break;
+                    case DXGI_ERROR_SESSION_DISCONNECTED:       LOGE << "DXGI_ERROR_SESSION_DISCONNECTED"; break;
+                }
+
+                LOGI << "Retrying... (2.5 sec)";
             }
-
-            std::cout << "Retrying... (2.5 sec)\n";
         }
-        #endif
 
         Sleep(2500);
-    } while (hr != S_OK);
+    }
+    while (hr != S_OK);
 
-#ifdef dbg
-    std::cout << "Output duplication restarted successfully.\n";
-#endif
+    LOGI << "Output duplication restarted successfully";
 
     output1->Release();
 }
@@ -399,4 +342,3 @@ DXGIDupl::~DXGIDupl()
     if(d3d_context) d3d_context->Release();
     if(d3d_device)  d3d_device->Release();
 }
-#endif

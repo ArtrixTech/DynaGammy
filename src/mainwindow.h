@@ -8,12 +8,13 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include <condition_variable>
 
 #ifndef _WIN32
 #include "x11.h"
 #undef Bool
 #endif
+
+#include "utils.h"
 
 namespace Ui {
 class MainWindow;
@@ -24,10 +25,10 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr, std::condition_variable* p = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr, convar *auto_cv = nullptr);
 
 #ifndef _WIN32
-    explicit MainWindow(X11* x11, std::condition_variable* p = nullptr);
+    explicit MainWindow(X11 *x11, convar *auto_cv = nullptr);
 #endif
 
     ~MainWindow();
@@ -37,11 +38,11 @@ public:
     bool ignore_closeEvent = true;
 
     void updateBrLabel();
-    void updatePollingSlider(int, int);
+    void setPollingRange(int, int);
 
     bool run = true;
-    bool* force = nullptr;
-    std::condition_variable* pausethr = nullptr;
+    bool *force = nullptr;
+    convar *auto_cv = nullptr;
 
 private slots:
     void init();
@@ -68,14 +69,14 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QSystemTrayIcon* trayIcon;
-    QMenu* createMenu();
+    QSystemTrayIcon *trayIcon;
+    QMenu *createMenu();
     void toggleSliders(bool show);
     void setBrSlidersRange(bool);
     void closeEvent(QCloseEvent *);
 
     #ifndef _WIN32
-        X11* x11;
+        X11 *x11;
     #endif
 };
 

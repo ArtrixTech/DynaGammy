@@ -14,18 +14,6 @@
 
 #include "utils.h"
 
-std::array<int, cfg_count> cfg
-{
-    192,    // MinBr
-    255,    // MaxBr
-    78,     // Offset
-    0,      // Temp
-    3,      // Speed
-    32,     // Threshold
-    100,    // Polling_Rate
-    1       // isAuto
-};
-
 void setColors(int temp, std::array<double, 3> &c)
 {
     size_t tick = size_t(temp / temp_mult);
@@ -44,11 +32,12 @@ void setColors(int temp, std::array<double, 3> &c)
 
 int calcBrightness(const std::vector<uint8_t> &buf)
 {
+    LOGV << "Calculating brightness";
     uint64_t r{}, g{}, b{};
 
     static const uint64_t len = buf.size();
 
-    //Remove the last 4 bits to avoid going out of bounds
+    // Remove the last 4 bits to avoid going out of bounds
     for (auto i = len - 4; i > 0; i -= 4)
     {
         r += buf[i + 2];
@@ -69,150 +58,14 @@ int calcBrightness(const std::vector<uint8_t> &buf)
     return brightness;
 }
 
-void readConfig()
-{
-#ifdef dbg
-    std::cout << "Reading config...\n";
-#endif
-
 #ifdef _WIN32
-    const std::wstring path = getExecutablePath(true);
-#else
-    const std::string path = getHomePath(true);
-#endif
-
-    std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
-
-    if(!file.is_open())
-    {
-        #ifdef dbg
-        std::cout << "Unable to open settings file.\n";
-        #endif
-        return;
-    }
-
-    file.seekg(0, std::ios::end);
-    bool empty = file.tellg() == 0;
-
-    if(empty)
-    {
-        #ifdef dbg
-        std::cout << "Config empty.\n";
-        #endif
-
-        saveConfig();
-        return;
-    }
-
-    file.seekg(0);
-
-    size_t c = 0;
-    for (std::string line; std::getline(file, line);)
-    {
-        #ifdef dbgcfg
-        std::cout << line << '\n';
-        #endif
-
-        if(!line.empty())
-        {
-            size_t pos = line.find('=') + 1;
-            std::string val = line.substr(pos);
-
-            cfg[c++] = std::stoi(val);
-        }
-    }
-
-    file.close();
-}
-
-void saveConfig()
-{
-#ifdef dbg
-    std::cout << "Saving config...\n";
-#endif
-
-#ifdef _WIN32
-    static const std::wstring path = getExecutablePath(true);
-#else
-    static const std::string path = getHomePath(true);
-#endif
-
-    if(path.empty())
-    {
-#ifdef dbg
-        std::cout << "Config path empty.\n";
-#endif
-        return;
-    }
-
-    std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
-
-    if(!file.good() || !file.is_open())
-    {
-#ifdef dbg
-        std::cout << "Unable to open config file.\n";
-#endif
-        return;
-    }
-
-    for(size_t i = 0; i < cfg_count; i++)
-    {
-        std::string s = cfg_str[i];
-        int val = cfg[i];
-
-        std::string line (s + std::to_string(val));
-
-        #ifdef dbgcfg
-        std::cout << line << '\n';
-        #endif
-
-        file << line << '\n';
-    }
-
-    file.close();
-}
-
-#ifndef _WIN32
-std::string getHomePath(bool add_cfg)
-{
-    const char* xdg_cfg_home;
-    const char* home;
-
-    std::string path;
-    std::string cfg_filename = "gammy";
-
-    xdg_cfg_home = getenv("XDG_CONFIG_HOME");
-
-    if (xdg_cfg_home)
-    {
-       path = std::string(xdg_cfg_home) + '/';
-    }
-    else
-    {
-        home = getenv("HOME");
-        if(!home) return "";
-
-        path = std::string(home) + "/.config/";
-    }
-
-    if(add_cfg)
-    {
-        path += cfg_filename;
-    }
-
-#ifdef dbg
-    std::cout << "Config path: " << path << '\n';
-#endif
-
-    return path;
-}
-#else
 
 static const HDC screenDC = GetDC(nullptr);
 
-void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
+void getGDISnapshot(std::vector<uint8_t> &buf)
 {
-    static uint64_t len = w * h * 4;
+    const static uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
+                          h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
 
     static BITMAPINFOHEADER info;
     ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
@@ -222,7 +75,7 @@ void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
     info.biPlanes = 1;
     info.biBitCount = 32;
     info.biCompression = BI_RGB;
-    info.biSizeImage = len;
+    info.biSizeImage = buf.size();
     info.biClrUsed = 0;
     info.biClrImportant = 0;
 
@@ -233,7 +86,7 @@ void getGDISnapshot(uint8_t *buf, const uint64_t w, const uint64_t h)
 
     BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
 
-    GetDIBits(memoryDC, hBitmap, 0, h, buf, LPBITMAPINFO(&info), DIB_RGB_COLORS);
+    GetDIBits(memoryDC, hBitmap, 0, h, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
 
     SelectObject(memoryDC, oldObj);
     DeleteObject(hBitmap);
@@ -274,15 +127,11 @@ void checkGammaRange()
 
     if (s == ERROR_SUCCESS)
     {
-#ifdef dbg
-        std::cout << "Gamma registry key found.\n";
-#endif
+        LOGI << "Gamma regkey already set";
         return;
     }
 
-#ifdef dbg
-        std::cout << "Gamma registry key not found. Creating one...\n";
-#endif
+    LOGW << "Gamma regkey not set. Creating one...";
 
     HKEY hKey;
 
@@ -290,9 +139,8 @@ void checkGammaRange()
 
     if (s == ERROR_SUCCESS)
     {
-#ifdef dbg
-        std::cout << "Gamma registry key created.\n";
-#endif
+        LOGI << "Gamma registry key created";
+
         DWORD val = 256;
 
         s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, LPBYTE(&val), sizeof(val));
@@ -300,25 +148,20 @@ void checkGammaRange()
         if (s == ERROR_SUCCESS)
         {
             MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
-#ifdef dbg
-            std::cout << "Gamma registry value set.\n";
-#endif
+
+            LOGI << "Gamma regvalue set";
         }
-#ifdef dbg
-        else std::cout << "Error when setting Gamma registry value.\n";
-#endif
+        else LOGE << "Error when setting Gamma registry value";
     }
-#ifdef dbg
     else
     {
-        std::cout << "Error when creating/opening gamma RegKey.\n";
+        LOGE << "** Error when creating/opening gamma regkey";
 
         if (s == ERROR_ACCESS_DENIED)
         {
-            std::cout << "Access denied.\n";
+            LOGE << "** ACCESS_DENIED";
         }
     }
-#endif
 
     if (hKey) RegCloseKey(hKey);
 }
@@ -339,63 +182,41 @@ void toggleRegkey(bool isChecked)
 
         if (s == ERROR_SUCCESS)
         {
-            #ifdef dbg
-            std::cout << "RegKey opened.\n";
-            #endif
-
             s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
 
-            #ifdef dbg
-                if (s == ERROR_SUCCESS) {
-                    std::cout << "RegValue set.\n";
-                }
-                else {
-                    std::cout << "Error when setting RegValue.\n";
-                }
-            #endif
+            if (s == ERROR_SUCCESS)
+            {
+                LOGI << "Startup regkey set";
+            }
+            else LOGE << "Failed to set startup regvalue";
         }
-        #ifdef dbg
-        else {
-            std::cout << "Error when opening RegKey.\n";
-        }
-        #endif
+        else LOGE << "Failed to open startup regkey";
     }
-    else {
+    else
+    {
         s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
 
-        #ifdef dbg
             if (s == ERROR_SUCCESS)
-                std::cout << "RegValue deleted.\n";
+                LOGI << "Run at startup unset";
             else
-                std::cout << "RegValue deletion failed.\n";
-        #endif
+                LOGE << "Failed to delete startup regkey";
     }
 
     if(hKey) RegCloseKey(hKey);
 }
 
-std::wstring getExecutablePath(bool add_cfg)
-{
-    wchar_t buf[FILENAME_MAX] {};
-    GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
-    std::wstring path(buf);
-
-    std::wstring appname = L"gammy.exe";
-    path.erase(path.find(appname), appname.length());
-
-    if(add_cfg) path += L"gammysettings.cfg";
-
-    return path;
-}
-
 void checkInstance()
 {
+    LOGV << "Checking for multiple instances";
+
     HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
 
     if (GetLastError() == ERROR_ALREADY_EXISTS)
     {
         CloseHandle(hStartEvent);
         hStartEvent = nullptr;
+
+        LOGV << "Another instance of Gammy is running. Closing";
         exit(0);
     }
 }
