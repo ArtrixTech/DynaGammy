@@ -14,6 +14,7 @@ class TempScheduler : public QDialog
 
 public:
     explicit TempScheduler(QWidget *parent = nullptr);
+    explicit TempScheduler(QWidget *parent = nullptr, convar *temp_cv = nullptr, bool *run_temp = {});
     ~TempScheduler();
 
 private slots:
@@ -29,6 +30,9 @@ private slots:
 
 private:
     Ui::TempScheduler *ui;
+
+    bool *run_temp = nullptr;
+    convar *temp_cv;
 
     int temp_start_kelvin = max_temp_kelvin;
     int temp_end_kelvin = min_temp_kelvin;

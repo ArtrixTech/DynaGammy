@@ -26,20 +26,22 @@
 
 #ifndef _WIN32
 
-MainWindow::MainWindow(X11 *x11, convar *auto_cv)
+MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
     : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     this->auto_cv = auto_cv;
+    this->temp_cv = temp_cv;
     this->x11 = x11;
 
     init();
 }
 #endif
 
-MainWindow::MainWindow(QWidget *parent, convar *auto_cv)
+MainWindow::MainWindow(QWidget *parent, convar *auto_cv, convar *temp_cv)
     : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
     this->auto_cv = auto_cv;
+    this->temp_cv = temp_cv;
 
     init();
 }
@@ -206,6 +208,9 @@ void MainWindow::on_closeButton_clicked()
     quit = true;
     auto_cv->notify_one();
 
+    run_temp = true;
+    temp_cv->notify_one();
+
     QCloseEvent e;
     e.setAccepted(true);
     emit closeEvent(&e);
@@ -359,7 +364,7 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
     if(checked)
     {
-        TempScheduler ts;
+        TempScheduler ts(nullptr, temp_cv, &run_temp);
         ts.exec();
     }
 }

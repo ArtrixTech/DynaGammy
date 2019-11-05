@@ -46,6 +46,7 @@ static convar *cv_ptr;
 struct Args
 {
     convar  adjustbr_cv;
+    convar  temp_cv;
 #ifndef _WIN32
     X11         *x11 {};
 #endif
@@ -109,6 +110,20 @@ void adjustBrightness(Args &args)
 
 void adjustTemperature(Args &args)
 {
+    std::mutex m;
+    std::unique_lock lock(m);
+
+    while (!args.w->quit)
+    {
+        args.w->temp_cv->wait(lock, [&]
+        {
+            return args.w->run_temp;
+        });
+
+        LOGI << "Adjusting temp";
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+    /*
     using std::chrono::system_clock;
 
     std::time_t tt = system_clock::to_time_t(system_clock::now());
@@ -123,7 +138,7 @@ void adjustTemperature(Args &args)
     ptm->tm_sec += 3;
 
     std::this_thread::sleep_until(system_clock::from_time_t(mktime(ptm)));
-    std::cout << cur_time << " reached!\n";
+    std::cout << cur_time << " reached!\n";*/
 }
 
 void recordScreen(Args &args)
@@ -298,11 +313,12 @@ int main(int argc, char *argv[])
 
     Args thread_args;
     convar auto_cv;
+    convar temp_cv;
 
 #ifdef _WIN32
-    MainWindow wnd(nullptr, &auto_cv);
+    MainWindow wnd(nullptr, &auto_cv, $temp_cv);
 #else
-    MainWindow wnd(&x11, &auto_cv);
+    MainWindow wnd(&x11, &auto_cv, &temp_cv);
 
     cv_ptr          = &auto_cv;
     quit_ptr        = &wnd.quit;
