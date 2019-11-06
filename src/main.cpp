@@ -121,17 +121,21 @@ void adjustTemperature(Args &args)
 
     while (!args.w->quit)
     {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
         args.w->temp_cv->wait(lock, [&]
         {
             return args.w->run_temp;
         });
 
         auto cur_time = QTime::currentTime().toString();
+        LOGI << "cur_time = " << cur_time;
 
         int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
+        LOGI << "cur_hour = " << cur_hour;
         //int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
 
-        if(cur_hour <= cfg[HourStart]) continue;
+        if(cur_hour < cfg[HourStart]) continue;
 
         LOGI << "Adjusting temp";
 
@@ -143,8 +147,6 @@ void adjustTemperature(Args &args)
         if(!args.w->quit) args.x11->setXF86Gamma(scr_br, cfg[Temp]);
 
         args.w->setTempSlider(cfg[Temp]);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
