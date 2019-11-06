@@ -4,6 +4,7 @@
  */
 
 #include <QApplication>
+#include <QTime>
 
 #include "mainwindow.h"
 #include "main.h"
@@ -115,12 +116,22 @@ void adjustTemperature(Args &args)
 
     bool increase = true;
 
+
+    //LOGI << "Current hour: " << cur_hour << ':' << cur_min;
+
     while (!args.w->quit)
     {
         args.w->temp_cv->wait(lock, [&]
         {
             return args.w->run_temp;
         });
+
+        auto cur_time = QTime::currentTime().toString();
+
+        int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
+        //int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
+
+        if(cur_hour <= cfg[HourStart]) continue;
 
         LOGI << "Adjusting temp";
 
@@ -130,9 +141,10 @@ void adjustTemperature(Args &args)
         increase ? ++cfg[Temp] : --cfg[Temp];
 
         if(!args.w->quit) args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+
         args.w->setTempSlider(cfg[Temp]);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 

@@ -13,11 +13,8 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
     ui->tempStartBox->setValue(cfg[TempStart]);
     ui->tempEndBox->setValue(cfg[TempEnd]);
 
-    auto time_start = QTime(cfg[HourStart], 0);
-    auto time_end   = QTime(cfg[HourEnd], 0);
-
-    ui->timeStartBox->setTime(time_start);
-    ui->timeEndBox->setTime(time_end);
+    ui->timeStartBox->setTime(QTime(cfg[HourStart], 0));
+    ui->timeEndBox->setTime(QTime(cfg[HourEnd], 0));
 }
 
 void TempScheduler::on_buttonBox_accepted()

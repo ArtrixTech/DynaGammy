@@ -369,12 +369,7 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-    auto cur_time = QTime::currentTime().toString();
 
-    int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
-    int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
-
-    LOGI << "Current hour: " << cur_hour << ':' << cur_min;
 
     cfg[isAutoTemp] = checked;
 
@@ -382,11 +377,11 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
     {
         LOGI << "Starting adaptive temp";
 
-        if(cur_hour >= cfg[HourStart]) // This check should go elsewhere
-        {
+        //if(cur_hour >= cfg[HourStart]) // This check should go elsewhere
+        //{
             run_temp = true;
             temp_cv->notify_one();
-        }
+        //}
     }
     else
     {
