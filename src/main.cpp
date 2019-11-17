@@ -75,7 +75,9 @@ void adjustBrightness(Args &args)
 
         LOGD << "Working (" << c << ')';
 
-        int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
+        int speed = cfg.at("speed");
+
+        int sleeptime = (100 - args.img_delta / 4) / speed;
         args.img_delta = 0;
 
         if (scr_br < args.target_br) sleeptime /= 3;
@@ -90,10 +92,10 @@ void adjustBrightness(Args &args)
             {
                 if constexpr (os == OS::Windows)
                 {
-                    setGDIGamma(scr_br, cfg[Temp]);
+                    setGDIGamma(scr_br, cfg["temp_step"]);
                 }
 #ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the constexpr check
-                else {args.x11->setXF86Gamma(scr_br, cfg[Temp]); }
+                else {args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
 #endif
             }
             else break;
@@ -135,18 +137,22 @@ void adjustTemperature(Args &args)
         LOGI << "cur_hour = " << cur_hour;
         //int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
 
-        if(cur_hour < cfg[HourStart]) continue;
+        if(cur_hour < cfg["hour_start"]) continue;
 
         LOGI << "Adjusting temp";
 
-        if(cfg[Temp] >= temp_steps) increase = false;
-        else if(cfg[Temp] == 0)     increase = true;
+        if(cfg["temp_step"] >= temp_steps) increase = false;
+        else if(cfg["temp_step"] == 0)     increase = true;
 
-        increase ? ++cfg[Temp] : --cfg[Temp];
+        int temp_step = cfg["temp_step"];
 
-        if(!args.w->quit) args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+        increase ? ++temp_step : --temp_step;
 
-        args.w->setTempSlider(cfg[Temp]);
+        cfg["temp_step"] = temp_step;
+
+        if(!args.w->quit) args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
+
+        args.w->setTempSlider(cfg["temp_step"]);
     }
 }
 
@@ -183,7 +189,7 @@ void recordScreen(Args &args)
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
     const uint64_t len = screen_res * 4;
 
-    args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+    args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
 #endif
 
     LOGD << "Screen bufsize: " << len;
@@ -220,7 +226,7 @@ void recordScreen(Args &args)
 #else
         args.x11->getX11Snapshot(buf);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
+        std::this_thread::sleep_for(std::chrono::milliseconds(cfg["polling_rate"]));
 #endif
 
         args.img_br     = calcBrightness(buf);
@@ -228,16 +234,18 @@ void recordScreen(Args &args)
 
         std::call_once(f, [&](){ args.img_delta = 0; });
 
-        if (args.img_delta > cfg[Threshold] || force)
+        if (args.img_delta > cfg["threshold"] || force)
         {
-            args.target_br = default_brightness - args.img_br + cfg[Offset];
+            int offset = cfg["offset"];
 
-            if (args.target_br > cfg[MaxBr]) {
-                args.target_br = cfg[MaxBr];
+            args.target_br = default_brightness - args.img_br + offset;
+
+            if (args.target_br > cfg["max_br"]) {
+                args.target_br = cfg["max_br"];
             }
             else
-            if (args.target_br < cfg[MinBr]) {
-                args.target_br = cfg[MinBr];
+            if (args.target_br < cfg["min_br"]) {
+                args.target_br = cfg["min_br"];
             }
 
             LOGD << scr_br << " -> " << args.target_br << " delta: " << args.img_delta;
@@ -255,15 +263,15 @@ void recordScreen(Args &args)
             force = false;
         }
 
-        if (cfg[MinBr] != prev_min || cfg[MaxBr] != prev_max || cfg[Offset] != prev_offset)
+        if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
         {
             force = true;
         }
 
         prev_imgBr  = args.img_br;
-        prev_min    = cfg[MinBr];
-        prev_max    = cfg[MaxBr];
-        prev_offset = cfg[Offset];
+        prev_min    = cfg["min_br"];
+        prev_max    = cfg["max_br"];
+        prev_offset = cfg["offset"];
     }
 
     if constexpr (os == OS::Windows)
@@ -286,14 +294,14 @@ void recordScreen(Args &args)
 
 int main(int argc, char *argv[])
 {
-    static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 3, 3);
+    static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 10, 1);
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
-    readConfig();
+    read();
 
-    plog::init(plog::Severity(cfg[Debug]), &console_appender);
+    plog::init(plog::Severity(cfg["log_lvl"]), &console_appender);
 
-    if(cfg[Debug] >= plog::debug) plog::get()->addAppender(&file_appender);
+    if(cfg["log_lvl"] >= plog::debug) plog::get()->addAppender(&file_appender);
 
 #ifdef _WIN32
     checkInstance();
@@ -352,7 +360,7 @@ void sig_handler(int signo)
     LOGD_IF(signo == SIGTERM) << "SIGTERM received";
     LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
 
-    saveConfig();
+   //cfg.save();
 
     if(run_ptr && quit_ptr && cv_ptr)
     {

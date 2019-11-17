@@ -10,29 +10,29 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
     this->temp_cv = temp_cv;
     this->run_temp = run_temp;
 
-    ui->tempStartBox->setValue(cfg[TempStart]);
-    ui->tempEndBox->setValue(cfg[TempEnd]);
+    ui->tempStartBox->setValue(cfg["temp_start_kelvin"]);
+    ui->tempEndBox->setValue(cfg["temp_end_kelvin"]);
 
-    ui->timeStartBox->setTime(QTime(cfg[HourStart], 0));
-    ui->timeEndBox->setTime(QTime(cfg[HourEnd], 0));
+    ui->timeStartBox->setTime(QTime(cfg["hour_start"], 0));
+    ui->timeEndBox->setTime(QTime(cfg["hour_end"], 0));
 }
 
 void TempScheduler::on_buttonBox_accepted()
 {
-    cfg[HourStart]  = QStringRef(&time_start, 0, 2).toInt();
-    cfg[HourEnd]    = QStringRef(&time_end, 0, 2).toInt();
+    cfg["Hour_start"]  = QStringRef(&time_start, 0, 2).toInt();
+    cfg["hour_end"]    = QStringRef(&time_end, 0, 2).toInt();
 
-    saveConfig();
+    save();
 }
 
 void TempScheduler::on_tempStartBox_valueChanged(int arg1)
 {
-    cfg[TempStart] = arg1;
+    cfg["temp_start"] = arg1;
 }
 
 void TempScheduler::on_tempEndBox_valueChanged(int arg1)
 {
-    cfg[TempEnd] = arg1;
+    cfg["temp_end"] = arg1;
 }
 
 void TempScheduler::on_timeStartBox_timeChanged(const QTime &time)
