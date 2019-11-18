@@ -20,9 +20,9 @@ public:
 private slots:
     void on_buttonBox_accepted();
 
-    void on_tempStartBox_valueChanged(int arg1);
+    void on_tempStartBox_valueChanged(int);
 
-    void on_tempEndBox_valueChanged(int arg1);
+    void on_tempEndBox_valueChanged(int);
 
     void on_timeStartBox_timeChanged(const QTime &time);
 
@@ -37,8 +37,8 @@ private:
     int temp_start_kelvin = max_temp_kelvin;
     int temp_end_kelvin = min_temp_kelvin;
 
-    QString time_start  = "18:00:00";
-    QString time_end    = "06:00:00";
+    QString time_start  = "18:00";
+    QString time_end    = "06:00";
 };
 
 #endif // TEMPSCHEDULER_H
