@@ -75,7 +75,7 @@ void adjustBrightness(Args &args)
 
         LOGD << "Working (" << c << ')';
 
-        int speed = cfg.at("speed");
+        int speed = cfg["speed"];
 
         int sleeptime = (100 - args.img_delta / 4) / speed;
         args.img_delta = 0;
@@ -192,7 +192,7 @@ void recordScreen(Args &args)
     args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
 #endif
 
-    LOGD << "Screen bufsize: " << len;
+    LOGD << "Buffer size: " << len;
 
     // Buffer to store screen pixels
     std::vector<uint8_t> buf(len);
@@ -294,19 +294,20 @@ void recordScreen(Args &args)
 
 int main(int argc, char *argv[])
 {
-    static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 10, 1);
+    static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+
+    plog::init(plog::Severity(plog::debug), &console_appender);
+    plog::get()->addAppender(&file_appender);
 
     read();
 
-    plog::init(plog::Severity(cfg["log_lvl"]), &console_appender);
-
-    if(cfg["log_lvl"] >= plog::debug) plog::get()->addAppender(&file_appender);
+    plog::get()->setMaxSeverity(cfg["log_lvl"]);
 
 #ifdef _WIN32
     checkInstance();
 
-    if(cfg[Debug] >= plog::debug)
+    if(cfg["log_lvl"] > plog::none)
     {
         FILE *f1, *f2, *f3;
         AllocConsole();
@@ -360,7 +361,7 @@ void sig_handler(int signo)
     LOGD_IF(signo == SIGTERM) << "SIGTERM received";
     LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
 
-   //cfg.save();
+    save();
 
     if(run_ptr && quit_ptr && cv_ptr)
     {

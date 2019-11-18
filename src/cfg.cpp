@@ -12,23 +12,29 @@
 #include <Windows.h> // GetModuleFileNameW
 #endif
 
-json cfg = {
-    {"min_br", 192},
-    {"max_br", 255},
-    {"offset", 78},
-    {"speed", 3 },
-    {"threshold", 32},
-    {"polling_rate", 100},
-    {"temp_step", 0},
-    {"temp_start_kelvin", 6500},
-    {"temp_end_kelvin", 2500},
-    {"hour_start", "17:00"},
-    {"hour_end", "06:00"},
-    {"auto_br", true},
-    {"auto_temp", false},
-    {"extend_br", false},
-    {"log_lvl", 3}
-};
+json setDefault()
+{
+    return
+    {
+        {"min_br", 192},
+        {"max_br", 255},
+        {"offset", 78},
+        {"speed", 3 },
+        {"threshold", 32},
+        {"polling_rate", 100},
+        {"temp_step", 0},
+        {"temp_start_kelvin", 6500},
+        {"temp_end_kelvin", 2500},
+        {"hour_start", "17:00"},
+        {"hour_end", "06:00"},
+        {"auto_br", true},
+        {"auto_temp", false},
+        {"extend_br", false},
+        {"log_lvl", 3}
+    };
+}
+
+json cfg = setDefault();
 
 void save()
 {
@@ -52,11 +58,17 @@ void save()
         return;
     }
 
-    file << std::setw(4) << cfg;
+    try
+    {
+        file << std::setw(4) << cfg;
+    }
+    catch (json::exception &e)
+    {
+        LOGE << e.what() << " id: " << e.id;
+        return;
+    }
 
     LOGI << "Settings saved";
-
-    file.close();
 }
 
 void read()
@@ -71,10 +83,9 @@ void read()
 
     std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
-    if(!file.is_open())
+    if(!file.good() || !file.is_open())
     {
         LOGE << "Unable to open config file";
-
         return;
     }
 
@@ -93,9 +104,22 @@ void read()
 
     file.seekg(0);
 
-    file >> std::setw(4) >> cfg;
+    try
+    {
+        file >> std::setw(4) >> cfg;
+    }
+    catch (json::exception &e)
+    {
+        LOGE << e.what();
+        LOGE << "Resetting config...";
 
-    file.close();
+        cfg = setDefault();
+        save();
+
+        return;
+    }
+
+    LOGD << "Settings read";
 }
 
 #ifndef _WIN32
