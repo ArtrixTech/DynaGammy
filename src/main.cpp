@@ -116,43 +116,59 @@ void adjustTemperature(Args &args)
     std::mutex m;
     std::unique_lock lock(m);
 
-    bool increase = true;
-
-
-    //LOGI << "Current hour: " << cur_hour << ':' << cur_min;
-
     while (!args.w->quit)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
         args.w->temp_cv->wait(lock, [&]
         {
             return args.w->run_temp;
         });
 
         auto cur_time = QTime::currentTime().toString();
-        LOGI << "cur_time = " << cur_time;
 
         int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
-        LOGI << "cur_hour = " << cur_hour;
-        //int cur_min  = QStringRef(&cur_time, 3, 2).toInt();
 
-        if(cur_hour < cfg["hour_start"]) continue;
+        QString time_start = cfg["hour_start"].get<std::string>().c_str();
 
-        LOGI << "Adjusting temp";
+        int hr_start = QStringRef(&time_start, 0, 2).toInt();
 
-        if(cfg["temp_step"] >= temp_steps) increase = false;
-        else if(cfg["temp_step"] == 0)     increase = true;
+        if(cur_hour >= hr_start)
+        {
+            LOGI << "Adjusting temperature...";
 
-        int temp_step = cfg["temp_step"];
+            int target_temp = cfg["temp_end_kelvin"].get<int>();
 
-        increase ? ++temp_step : --temp_step;
+            int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
 
-        cfg["temp_step"] = temp_step;
+            while (args.w->run_temp)
+            {
+                int temp_step = cfg["temp_step"];
 
-        if(!args.w->quit) args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
+                if     (temp_step < target_step) ++temp_step;
+                else if(temp_step > target_step) --temp_step;
+                else break;
 
-        args.w->setTempSlider(cfg["temp_step"]);
+                if(!args.w->quit)
+                {
+                    if constexpr (os == OS::Windows)
+                    {
+                        setGDIGamma(scr_br, temp_step);
+                    }
+#ifndef _WIN32
+                    else { args.x11->setXF86Gamma(scr_br, temp_step); }
+#endif
+                }
+                else break;
+
+                args.w->setTempSlider(temp_step);
+
+                cfg["temp_step"] = temp_step;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+
+            args.w->run_temp = false;
+            args.w->temp_cv->notify_one();
+        }
     }
 }
 

@@ -278,7 +278,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     else x11->setXF86Gamma(scr_br, val);
 #endif
 
-    int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val,
+    int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val,
                                      0, temp_arr_entries * temp_mult,
                                      min_temp_kelvin, max_temp_kelvin);
 

@@ -17,8 +17,8 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
     ui->tempEndBox->setValue(cfg["temp_end_kelvin"]);
     this->temp_end_kelvin = cfg["temp_end_kelvin"];
 
-    this->time_start = std::string(cfg["hour_start"]).c_str(); // Thankfully not performance critical
-    this->time_end = std::string(cfg["hour_end"]).c_str();
+    this->time_start = cfg["hour_start"].get<std::string>().c_str();
+    this->time_end  = cfg["hour_end"].get<std::string>().c_str();
 
     {
         auto hr = QStringRef(&time_start, 0, 2);
