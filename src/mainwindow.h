@@ -40,11 +40,12 @@ public:
     void updateBrLabel();
     void setPollingRange(int, int);
 
-    bool    run = true;
+    bool    run_ss_thread = true;
     bool    *force = nullptr;
     convar  *auto_cv = nullptr;
 
-    bool    run_temp = false;
+    bool    run_temp_thread = false;
+    bool    *temp_needs_change = nullptr;
     convar  *temp_cv = nullptr;
 
     void setTempSlider(int);

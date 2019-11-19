@@ -32,6 +32,7 @@ MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
 {
     this->auto_cv = auto_cv;
     this->temp_cv = temp_cv;
+
     this->x11 = x11;
 
     init();
@@ -121,7 +122,7 @@ void MainWindow::init()
     {
         ui->autoCheck->setChecked(cfg["auto_br"]);
 
-        run = cfg["auto_br"];
+        run_ss_thread = cfg["auto_br"];
         auto_cv->notify_one();
 
         toggleSliders(cfg["auto_br"]);
@@ -149,7 +150,7 @@ QMenu* MainWindow::createMenu()
 
     QAction *show_wnd = new QAction("&Show Gammy", this);
 
-    auto show_on_top = [&]()
+    auto show_on_top = [this]()
     {
         if(this->isHidden())
         {
@@ -201,31 +202,6 @@ void MainWindow::updateBrLabel()
 void MainWindow::on_hideButton_clicked()
 {
     this->hide();
-}
-
-void MainWindow::on_closeButton_clicked()
-{
-    run = true;
-    quit = true;
-    auto_cv->notify_one();
-
-    run_temp = true;
-    temp_cv->notify_one();
-
-    QCloseEvent e;
-    e.setAccepted(true);
-    emit closeEvent(&e);
-
-    trayIcon->hide();
-}
-
-void MainWindow::closeEvent(QCloseEvent *e)
-{
-    this->hide();
-
-    save();
-
-    if(ignore_closeEvent) e->ignore();
 }
 
 //___________________________________________________________
@@ -302,17 +278,39 @@ void MainWindow::on_autoCheck_stateChanged(int state)
     if(state == 2)
     {
         cfg["auto_br"] = true;
-        run = true;
+        run_ss_thread = true;
         if(force) *force = true;
     }
     else
     {
         cfg["auto_br"] = false;
-        run = false;
+        run_ss_thread = false;
     }
 
-    toggleSliders(run);
+    toggleSliders(run_ss_thread);
     auto_cv->notify_one();
+}
+
+void MainWindow::on_autoTempCheck_toggled(bool checked)
+{
+    cfg["auto_temp"] = checked;
+
+    if (checked)
+    {
+        LOGF << "Resuming temp thread";
+
+       *temp_needs_change = true;
+        run_temp_thread = true;
+        temp_cv->notify_one();
+    }
+    else
+    {
+        LOGF << "Pausing temp thread";
+
+        run_temp_thread = false;
+        temp_cv->notify_one();
+    }
+
 }
 
 void MainWindow::toggleSliders(bool is_auto)
@@ -366,28 +364,8 @@ void MainWindow::setBrSlidersRange(bool inc)
 
 void MainWindow::on_pushButton_clicked()
 {
-    TempScheduler ts(nullptr, temp_cv, &run_temp);
+    TempScheduler ts(nullptr, temp_cv, temp_needs_change);
     ts.exec();
-}
-
-void MainWindow::on_autoTempCheck_toggled(bool checked)
-{
-    cfg["auto_temp"] = checked;
-
-    if (checked)
-    {
-        LOGI << "Starting adaptive temp";
-
-        run_temp = true;
-        temp_cv->notify_one();
-    }
-    else
-    {
-        LOGI << "Pausing adaptive temp";
-        run_temp = false;
-        temp_cv->notify_one();
-    }
-
 }
 
 void MainWindow::setPollingRange(int min, int max)
@@ -415,12 +393,37 @@ void MainWindow::setTempSlider(int val)
     ui->tempSlider->setValue(val);
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
 void MainWindow::on_tempSlider_sliderPressed()
 {
     ui->autoTempCheck->setChecked(false);
+}
+
+void MainWindow::on_closeButton_clicked()
+{
+    run_ss_thread = true;
+    quit = true;
+    auto_cv->notify_one();
+
+    run_temp_thread = true;
+    temp_cv->notify_one();
+
+    QCloseEvent e;
+    e.setAccepted(true);
+    emit closeEvent(&e);
+
+    trayIcon->hide();
+}
+
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    this->hide();
+
+    save();
+
+    if(ignore_closeEvent) e->ignore();
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
 }

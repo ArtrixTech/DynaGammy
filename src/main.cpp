@@ -83,7 +83,7 @@ void adjustBrightness(Args &args)
 
         if (scr_br < args.target_br) sleeptime /= 3;
 
-        while (c == args.callcnt && args.w->run)
+        while (c == args.callcnt && args.w->run_ss_thread)
         {
             if     (scr_br < args.target_br) ++scr_br;
             else if(scr_br > args.target_br) --scr_br;
@@ -118,16 +118,17 @@ void adjustTemperature(Args &args)
     using namespace std::chrono;
     using namespace std::chrono_literals;
 
+    std::string t_start;
+
+    bool needs_change = true;
+    args.w->temp_needs_change = &needs_change;
+
     std::mutex m;
     std::unique_lock lock(m);
 
-    std::string t_start;
-
-    bool x = true;
-
     while (!args.w->quit)
     {
-        sleep_for(1s);
+        args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
         t_start = cfg["time_start"];
 
@@ -150,23 +151,27 @@ void adjustTemperature(Args &args)
         {
            LOGF << "Time to adjust temperature";
 
-           if(!x)
+           if(!needs_change)
            {
-               LOGF << "Temp already adjusted.";
+               LOGF << "Temp already adjusted. Sleeping 1s";
+               sleep_for(1s);
            }
         }
         else
         {
-            // We can sleep, but how do I wake up?
+            // We can sleep, but how to wake up when the start time changes?
             // sleep_until(system_clock::now() + abs(diff));
 
+            // Just poll every few secs instead
             continue;
         }
 
         int target_temp = cfg["target_temp"];
+
+        // Map kelvin temperature to a step in the temperature array
         int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
 
-        while (x)
+        while (needs_change && args.w->run_temp_thread)
         {
             int temp_step = cfg["temp_step"];
 
@@ -174,7 +179,7 @@ void adjustTemperature(Args &args)
             else if(temp_step > target_step) --temp_step;
             else
             {
-                x = false;
+                needs_change = false;
                 break;
             }
 
@@ -249,10 +254,7 @@ void recordScreen(Args &args)
 
     while (!args.w->quit)
     {
-        args.w->auto_cv->wait(lock, [&]
-        {
-            return args.w->run;
-        });
+        args.w->auto_cv->wait(lock, [&] { return args.w->run_ss_thread; });
 
         LOGV << "Taking screenshot";
 
@@ -384,7 +386,7 @@ int main(int argc, char *argv[])
 
     cv_ptr          = &auto_cv;
     quit_ptr        = &wnd.quit;
-    run_ptr         = &wnd.run;
+    run_ptr         = &wnd.run_ss_thread;
     thread_args.x11 = &x11;
 #endif
 
