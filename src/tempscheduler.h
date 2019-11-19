@@ -34,8 +34,8 @@ private:
     bool *run_temp = nullptr;
     convar *temp_cv;
 
-    int temp_start_kelvin = max_temp_kelvin;
-    int temp_end_kelvin = min_temp_kelvin;
+    int start_temp = max_temp_kelvin;
+    int target_temp = min_temp_kelvin;
 
     QString time_start  = "18:00";
     QString time_end    = "06:00";

@@ -74,6 +74,8 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_tempSlider_sliderPressed();
+
 private:
     Ui::MainWindow *ui;
     QSystemTrayIcon *trayIcon;

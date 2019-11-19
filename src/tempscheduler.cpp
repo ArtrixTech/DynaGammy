@@ -11,14 +11,14 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
     this->temp_cv = temp_cv;
     this->run_temp = run_temp;
 
-    ui->tempStartBox->setValue(cfg["temp_start_kelvin"]);
-    this->temp_start_kelvin = cfg["temp_start_kelvin"];
+    this->start_temp = cfg["start_temp"];
+    ui->tempStartBox->setValue(start_temp);
 
-    ui->tempEndBox->setValue(cfg["temp_end_kelvin"]);
-    this->temp_end_kelvin = cfg["temp_end_kelvin"];
+    this->target_temp = cfg["target_temp"];
+    ui->tempEndBox->setValue(target_temp);
 
-    this->time_start = cfg["hour_start"].get<std::string>().c_str();
-    this->time_end  = cfg["hour_end"].get<std::string>().c_str();
+    this->time_start = cfg["time_start"].get<std::string>().c_str();
+    this->time_end  = cfg["time_end"].get<std::string>().c_str();
 
     {
         auto hr = QStringRef(&time_start, 0, 2);
@@ -39,23 +39,23 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *run_temp) :
 
 void TempScheduler::on_buttonBox_accepted()
 {
-    cfg["hour_start"]  = this->time_start.toStdString();
-    cfg["hour_end"]    = this->time_end.toStdString();
+    cfg["time_start"]  = this->time_start.toStdString();
+    cfg["time_end"]    = this->time_end.toStdString();
 
-    cfg["temp_start_kelvin"] = this->temp_start_kelvin;
-    cfg["temp_end_kelvin"] = this->temp_end_kelvin;
+    cfg["start_temp"] = this->start_temp;
+    cfg["target_temp"] = this->target_temp;
 
     save();
 }
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)
 {
-    this->temp_start_kelvin = val;
+    this->start_temp = val;
 }
 
 void TempScheduler::on_tempEndBox_valueChanged(int val)
 {
-    this->temp_end_kelvin = val;
+    this->target_temp = val;
 }
 
 void TempScheduler::on_timeStartBox_timeChanged(const QTime &time)

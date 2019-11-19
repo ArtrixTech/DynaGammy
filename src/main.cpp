@@ -34,6 +34,7 @@
 #include <iomanip>
 #include <chrono>
 #include <ctime>
+#include <charconv>
 
 // Reflects the current screen brightness
 int scr_br = default_brightness;
@@ -113,61 +114,87 @@ void adjustBrightness(Args &args)
 
 void adjustTemperature(Args &args)
 {
+    using namespace std::this_thread;
+    using namespace std::chrono;
+    using namespace std::chrono_literals;
+
     std::mutex m;
     std::unique_lock lock(m);
 
+    std::string t_start;
+
+    bool x = true;
+
     while (!args.w->quit)
     {
-        args.w->temp_cv->wait(lock, [&]
+        sleep_for(1s);
+
+        t_start = cfg["time_start"];
+
+        LOGF << "Sleeping until: " << t_start;
+
+        std::string_view start_sv { t_start.c_str(), t_start.size() };
+
+        int hr;
+        std::from_chars(start_sv.data(), start_sv.data() + 2, hr);
+
+        int min;
+        std::from_chars(start_sv.data() + 3, start_sv.data() + 5, min);
+
+        int cur_time    = QTime::currentTime().msecsSinceStartOfDay();
+        int start_time  = QTime(hr, min).msecsSinceStartOfDay();
+
+        duration diff = milliseconds(cur_time - start_time);
+
+        if(diff > 0ms)
         {
-            return args.w->run_temp;
-        });
+           LOGF << "Time to adjust temperature";
 
-        auto cur_time = QTime::currentTime().toString();
-
-        int cur_hour = QStringRef(&cur_time, 0, 2).toInt();
-
-        QString time_start = cfg["hour_start"].get<std::string>().c_str();
-
-        int hr_start = QStringRef(&time_start, 0, 2).toInt();
-
-        if(cur_hour >= hr_start)
+           if(!x)
+           {
+               LOGF << "Temp already adjusted.";
+           }
+        }
+        else
         {
-            LOGI << "Adjusting temperature...";
+            // We can sleep, but how do I wake up?
+            // sleep_until(system_clock::now() + abs(diff));
 
-            int target_temp = cfg["temp_end_kelvin"].get<int>();
+            continue;
+        }
 
-            int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
+        int target_temp = cfg["target_temp"];
+        int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
 
-            while (args.w->run_temp)
+        while (x)
+        {
+            int temp_step = cfg["temp_step"];
+
+            if     (temp_step < target_step) ++temp_step;
+            else if(temp_step > target_step) --temp_step;
+            else
             {
-                int temp_step = cfg["temp_step"];
-
-                if     (temp_step < target_step) ++temp_step;
-                else if(temp_step > target_step) --temp_step;
-                else break;
-
-                if(!args.w->quit)
-                {
-                    if constexpr (os == OS::Windows)
-                    {
-                        setGDIGamma(scr_br, temp_step);
-                    }
-#ifndef _WIN32
-                    else { args.x11->setXF86Gamma(scr_br, temp_step); }
-#endif
-                }
-                else break;
-
-                args.w->setTempSlider(temp_step);
-
-                cfg["temp_step"] = temp_step;
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                x = false;
+                break;
             }
 
-            args.w->run_temp = false;
-            args.w->temp_cv->notify_one();
+            if(!args.w->quit)
+            {
+                if constexpr (os == OS::Windows)
+                {
+                    setGDIGamma(scr_br, temp_step);
+                }
+#ifndef _WIN32
+                else { args.x11->setXF86Gamma(scr_br, temp_step); }
+#endif
+            }
+            else break;
+
+            args.w->setTempSlider(temp_step);
+
+            cfg["temp_step"] = temp_step;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 }
@@ -303,9 +330,10 @@ void recordScreen(Args &args)
 
     LOGD << "Notified children to quit (" << args.callcnt << ')';
 
+    _exit(0);
+
     t1.join();
     t2.join();
-    QApplication::quit();
 }
 
 int main(int argc, char *argv[])
