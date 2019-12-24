@@ -24,7 +24,7 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>335</width>
+    <width>375</width>
     <height>510</height>
    </size>
   </property>
@@ -1043,6 +1043,11 @@ font-size: 17px;
          </disabled>
         </palette>
        </property>
+       <property name="font">
+        <font>
+         <family>Ubuntu</family>
+        </font>
+       </property>
        <property name="styleSheet">
         <string notr="true">margin-left: 4px</string>
        </property>
@@ -1141,7 +1146,7 @@ font-size: 17px;
      <rect>
       <x>0</x>
       <y>60</y>
-      <width>343</width>
+      <width>341</width>
       <height>421</height>
      </rect>
     </property>
@@ -1950,11 +1955,41 @@ background-color:rgb(20,22,35);
              </disabled>
             </palette>
            </property>
+           <property name="font">
+            <font>
+             <family>Ubuntu</family>
+            </font>
+           </property>
            <property name="styleSheet">
             <string notr="true">margin-left: 4px</string>
            </property>
            <property name="text">
             <string>Auto</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="maximumSize">
+            <size>
+             <width>35</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Ubuntu</family>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color:black;
+color:white;</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1970,13 +2005,6 @@ background-color:rgb(20,22,35);
             </size>
            </property>
           </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton">
-           <property name="text">
-            <string>Configure</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>
