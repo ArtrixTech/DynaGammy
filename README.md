@@ -1,3 +1,4 @@
+
 # Gammy
 
 is a GUI tool for adjusting pixel brightness automatically (or manually) and temperature (manual only for now).
@@ -44,13 +45,14 @@ Updating Qt is recommended, but as a workaround you can delete the offending lin
 Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings. 
 
 Unticking the "Auto" checkbox allows manual brightness adjustment.
+
 The padlock button can be toggled to extend the brightness range to a max. of 200%. (Linux only)
 
 Dragging the bottom of the window will reveal additional settings:
 
-- Adaption speed controls how quickly the brightness adapts when a change is detected.
-- Threshold controls how much the screen has to change in order to trigger adaptation.
-- Screenshot rate determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommendend.
+- "Adaption speed" controls how quickly the brightness adapts when a change is detected.
+- "Threshold" controls how much the screen has to change in order to trigger adaptation.
+- "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommendend.
 
 ## Third party
 
@@ -60,4 +62,3 @@ Dragging the bottom of the window will reveal additional settings:
 ## License
 
 [GPLv3](https://github.com/Fushko/gammy/blob/master/LICENSE)
-
