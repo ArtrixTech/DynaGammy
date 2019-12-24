@@ -119,8 +119,10 @@ void adjustTemperature(Args &args)
     using namespace std::chrono_literals;
 
     std::string t_start;
+    std::string t_end;
 
     bool needs_change = true;
+    bool increase_temp = true;
     args.w->temp_needs_change = &needs_change;
 
     std::mutex m;
@@ -128,30 +130,44 @@ void adjustTemperature(Args &args)
 
     while (!args.w->quit)
     {
+        sleep_for(1s);
+
         args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
         t_start = cfg["time_start"];
+        t_end   = cfg["time_end"];
 
         LOGF << "Sleeping until: " << t_start;
 
-        std::string_view start_sv { t_start.c_str(), t_start.size() };
+        std::string_view start_sv   { t_start.c_str(), t_start.size() };
+        std::string_view end_sv     { t_end.c_str(), t_end.size() };
 
-        int hr;
-        std::from_chars(start_sv.data(), start_sv.data() + 2, hr);
+        int start_hr;
+        int end_hr;
+        std::from_chars(start_sv.data(), start_sv.data() + 2, start_hr);
+        std::from_chars(end_sv.data(), end_sv.data() + 2, end_hr);
 
-        int min;
-        std::from_chars(start_sv.data() + 3, start_sv.data() + 5, min);
+        int start_min;
+        int end_min;
+        std::from_chars(start_sv.data() + 3, start_sv.data() + 5, start_min);
+        std::from_chars(end_sv.data() + 3, end_sv.data() + 5, end_min);
 
         int cur_time    = QTime::currentTime().msecsSinceStartOfDay();
-        int start_time  = QTime(hr, min).msecsSinceStartOfDay();
+        int start_time  = QTime(start_hr, start_min).msecsSinceStartOfDay();
+        int end_time    = QTime(end_hr, end_min).msecsSinceStartOfDay();
 
         duration diff = milliseconds(cur_time - start_time);
+
+        duration end_diff = milliseconds(cur_time - end_time);
+
+        LOGF << "Difference between now and start time: " << diff.count();
+        LOGF << "Difference between now and end time: " << end_diff.count();
 
         if(diff > 0ms)
         {
            LOGF << "Time to adjust temperature";
 
-           if(!needs_change)
+           if(!needs_change && end_diff < 0ms)
            {
                LOGF << "Temp already adjusted. Sleeping 1s";
                sleep_for(1s);
@@ -161,12 +177,14 @@ void adjustTemperature(Args &args)
         {
             // We can sleep, but how to wake up when the start time changes?
             // sleep_until(system_clock::now() + abs(diff));
-
             // Just poll every few secs instead
             continue;
         }
 
-        int target_temp = cfg["target_temp"];
+        int target_temp;
+
+        if(end_diff < 0ms) target_temp = cfg["target_temp"];
+        else target_temp = cfg["start_temp"];
 
         // Map kelvin temperature to a step in the temperature array
         int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
@@ -199,7 +217,7 @@ void adjustTemperature(Args &args)
 
             cfg["temp_step"] = temp_step;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            sleep_for(50ms);
         }
     }
 }
