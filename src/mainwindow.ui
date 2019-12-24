@@ -1557,7 +1557,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
          <item>
           <widget class="QLabel" name="speedText">
            <property name="text">
-            <string>Transition speed:</string>
+            <string>Adaptation speed:</string>
            </property>
           </widget>
          </item>
