@@ -36,11 +36,16 @@ qmake Gammy.pro
 make
 ./gammy
 ```
-NOTE: If make fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, delete the offending lines and run make again.
+NOTE: If make fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, your Qt version is older than 5.12.
+I recommend updating Qt to a newer version, but as a workaround you can delete the offending lines in ui_mainwindow.h and run make again.
 
 ## Usage
 
-Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on it to open the settings. Expand the options by dragging the bottom of the window.
+Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings. 
+Dragging the bottom of the window will reveal additional settings.
+
+Unticking the Auto checkbox allows manual brightness adjustment.
+The padlock button can be toggled to extend the brightness range to a max. of 200%. (Linux only)
 
 ## Third party
 
