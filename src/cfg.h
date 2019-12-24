@@ -8,7 +8,7 @@
 
 #include <array>
 
-constexpr int cfg_count = 10;
+constexpr int cfg_count = 11;
 
 constexpr std::array<const char*, cfg_count> cfg_str
 {
@@ -21,7 +21,8 @@ constexpr std::array<const char*, cfg_count> cfg_str
     "updateRate=",
     "auto=",
     "toggleLimit=",
-    "debug="
+    "debug=",
+    "curBr="
 };
 
 enum cfg {
@@ -34,7 +35,8 @@ enum cfg {
     Polling_rate,
     isAuto,
     toggleLimit,
-    Debug
+    Debug,
+    CurBr
 };
 
 auto getHomePath()          -> std::string;

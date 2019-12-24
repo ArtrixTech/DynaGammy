@@ -323,13 +323,14 @@ void MainWindow::toggleSliders(bool is_auto)
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
     scr_br = value;
+    cfg[CurBr] = value;
 
     if constexpr(os == OS::Windows)
     {
-        setGDIGamma(scr_br, cfg[Temp]);
+        setGDIGamma(cfg[CurBr], cfg[Temp]);
     }
 #ifndef _WIN32 // @TODO: Replace this
-    else x11->setXF86Gamma(scr_br, cfg[Temp]);
+    else x11->setXF86Gamma(cfg[CurBr], cfg[Temp]);
 #endif
 
     MainWindow::updateBrLabel();

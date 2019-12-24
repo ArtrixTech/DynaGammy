@@ -23,7 +23,8 @@ std::array<int, cfg_count> cfg
     100,    // Polling_Rate
     1,      // isAuto
     0,      // toggleLimit
-    3       // Debug (0: none, 1: fatal, 2: error, 3: warning, 4: info, 5: debug, 6: verbose)
+    3,      // Debug (0: none, 1: fatal, 2: error, 3: warning, 4: info, 5: debug, 6: verbose)
+    255     // CurBr
 };
 
 void readConfig()
@@ -101,15 +102,7 @@ void saveConfig()
 
     for(size_t i = 0; i < cfg_count; i++)
     {
-        std::string s = cfg_str[i];
-
-        int val = cfg[i];
-
-        std::string line (s + std::to_string(val));
-
-        LOGV << line;
-
-        file << line << '\n';
+        file << cfg_str[i] << cfg[i] << '\n';
     }
 
     LOGI << "Settings saved";
@@ -130,7 +123,7 @@ std::string getHomePath()
 
     if (xdg_cfg_home)
     {
-       path = std::string(xdg_cfg_home) + '/';
+        path = std::string(xdg_cfg_home) + '/';
     }
     else
     {

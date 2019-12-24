@@ -243,6 +243,9 @@ int main(int argc, char *argv[])
 
     readConfig();
 
+    // Start with manual brightness set if auto is disabled
+    if(!cfg[isAuto]) scr_br = cfg[CurBr];
+
     plog::init(plog::Severity(cfg[Debug]), &console_appender);
 
     if(cfg[Debug] >= plog::debug) plog::get()->addAppender(&file_appender);
