@@ -127,9 +127,15 @@ void adjustTemperature(Args &args)
     std::mutex m;
     std::unique_lock lock(m);
 
+    bool is_past_decrease = false;
+    bool is_past_increase = false;
+
+    bool restore          = false;
+    bool decreased_state  = false;
+
     while (!args.w->quit)
     {
-        sleep_for(1s);
+        sleep_for(5s);
 
         args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
@@ -153,29 +159,52 @@ void adjustTemperature(Args &args)
         LOGI << "Temp. decreasing at: " << start_datetime.toString();
         LOGI << "Temp. increasing at: " << end_datetime.toString();
 
-        bool time_to_adjust = QDateTime::currentDateTime() > start_datetime;
+        is_past_decrease = QDateTime::currentDateTime() > start_datetime;
+        is_past_increase = QDateTime::currentDateTime() > end_datetime;
 
-        if(!time_to_adjust)
+        if(is_past_decrease)
         {
-            LOGI << "Not adjusting yet";
-
-            continue;
+            LOGI << "We are past decrease time.";
+        }
+        else if(is_past_increase)
+        {
+            LOGI << "We are past increase time.";
         }
         else
         {
-            if(!needs_change)
-            {
-                LOGI << "Temp already adjusted";
-                continue;
-            }
-
-            LOGI << "Time to adjust";
+            LOGI << "No change needed";
+            continue;
         }
+
+        if(restore && decreased_state)
+        {
+            LOGI << "Temperature has been restored.";
+            continue;
+        }
+
+        if(decreased_state)
+        {
+            LOGI << "Temperature is in decreased state already.";
+
+            if(needs_change)
+            {
+                LOGI << "However, a change has been detected.";
+            }
+            else if(is_past_increase && !restore)
+            {
+                LOGI << "However, it's time to restore it.";
+                restore = true;
+                needs_change = true;
+            }
+            else continue;
+        }
+
+        LOGI << "Adjusting temperature...";
 
         int target_temp;
 
-        if(1) target_temp = cfg["target_temp"];
-        else target_temp = cfg["start_temp"];
+        if(restore) target_temp = cfg["start_temp"];
+        else        target_temp = cfg["target_temp"];
 
         // Map kelvin temperature to a step in the temperature array
         int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
@@ -188,6 +217,7 @@ void adjustTemperature(Args &args)
             else if(temp_step > target_step) --temp_step;
             else
             {
+                decreased_state = is_past_decrease;
                 needs_change = false;
                 break;
             }
