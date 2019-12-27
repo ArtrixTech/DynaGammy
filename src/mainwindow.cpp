@@ -118,14 +118,14 @@ void MainWindow::init()
         ui->pollingSlider->setValue(cfg["polling_rate"]);
     }
 
-    // Set auto brightness toggle
+    // Set auto brightness/temp toggles
     {
         ui->autoCheck->setChecked(cfg["auto_br"]);
-
         run_ss_thread = cfg["auto_br"];
         auto_cv->notify_one();
-
         toggleSliders(cfg["auto_br"]);
+
+        ui->autoTempCheck->setChecked(cfg["auto_temp"]);
     }
 
     LOGI << "Qt window initialized";
@@ -293,24 +293,21 @@ void MainWindow::on_autoCheck_stateChanged(int state)
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-    cfg["auto_temp"] = checked;
+   cfg["auto_temp"] = checked;
+   run_temp_thread = checked;
 
     if (checked)
     {
         LOGI << "Resuming temperature thread";
 
-       *temp_needs_change = true;
-        run_temp_thread = true;
-        temp_cv->notify_one();
+       if(temp_needs_change) *temp_needs_change = true;
     }
     else
     {
         LOGI << "Pausing temperature thread";
-
-        run_temp_thread = false;
-        temp_cv->notify_one();
     }
 
+    temp_cv->notify_one();
 }
 
 void MainWindow::toggleSliders(bool is_auto)
