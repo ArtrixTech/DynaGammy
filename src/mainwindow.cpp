@@ -297,7 +297,7 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 
     if (checked)
     {
-        LOGF << "Resuming temp thread";
+        LOGI << "Resuming temperature thread";
 
        *temp_needs_change = true;
         run_temp_thread = true;
@@ -305,7 +305,7 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
     }
     else
     {
-        LOGF << "Pausing temp thread";
+        LOGI << "Pausing temperature thread";
 
         run_temp_thread = false;
         temp_cv->notify_one();

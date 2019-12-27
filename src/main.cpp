@@ -122,7 +122,6 @@ void adjustTemperature(Args &args)
     std::string t_end;
 
     bool needs_change = true;
-    bool increase_temp = true;
     args.w->temp_needs_change = &needs_change;
 
     std::mutex m;
@@ -134,56 +133,48 @@ void adjustTemperature(Args &args)
 
         args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
-        t_start = cfg["time_start"];
-        t_end   = cfg["time_end"];
+        std::string time_start_str  = cfg["time_start"];
+        std::string start_hour      = time_start_str.substr(0, 2);
+        std::string start_min       = time_start_str.substr(3, 2);
 
-        LOGF << "Sleeping until: " << t_start;
+        std::string time_end_str    = cfg["time_end"];
+        std::string end_hour        = time_end_str.substr(0, 2);
+        std::string end_min         = time_end_str.substr(3, 2);
 
-        std::string_view start_sv   { t_start.c_str(), t_start.size() };
-        std::string_view end_sv     { t_end.c_str(), t_end.size() };
+        QTime start_time            = QTime(std::stoi(start_hour), std::stoi(start_min));
+        QTime end_time              = QTime(std::stoi(end_hour), std::stoi(end_min));
 
-        int start_hr;
-        int end_hr;
-        std::from_chars(start_sv.data(), start_sv.data() + 2, start_hr);
-        std::from_chars(end_sv.data(), end_sv.data() + 2, end_hr);
+        QDateTime start_datetime    = QDateTime::currentDateTime();
+        QDateTime end_datetime      = start_datetime.addDays(1);
 
-        int start_min;
-        int end_min;
-        std::from_chars(start_sv.data() + 3, start_sv.data() + 5, start_min);
-        std::from_chars(end_sv.data() + 3, end_sv.data() + 5, end_min);
+        start_datetime.setTime(start_time);
+        end_datetime.setTime(end_time);
 
-        int cur_time    = QTime::currentTime().msecsSinceStartOfDay();
-        int start_time  = QTime(start_hr, start_min).msecsSinceStartOfDay();
-        int end_time    = QTime(end_hr, end_min).msecsSinceStartOfDay();
+        LOGI << "Temp. decreasing at: " << start_datetime.toString();
+        LOGI << "Temp. increasing at: " << end_datetime.toString();
 
-        duration diff = milliseconds(cur_time - start_time);
+        bool time_to_adjust = QDateTime::currentDateTime() > start_datetime;
 
-        duration end_diff = milliseconds(cur_time - end_time);
-
-        LOGF << "Difference between now and start time: " << diff.count();
-        LOGF << "Difference between now and end time: " << end_diff.count();
-
-        if(diff > 0ms)
+        if(!time_to_adjust)
         {
-           LOGF << "Time to adjust temperature";
+            LOGI << "Not adjusting yet";
 
-           if(!needs_change && end_diff < 0ms)
-           {
-               LOGF << "Temp already adjusted. Sleeping 1s";
-               sleep_for(1s);
-           }
+            continue;
         }
         else
         {
-            // We can sleep, but how to wake up when the start time changes?
-            // sleep_until(system_clock::now() + abs(diff));
-            // Just poll every few secs instead
-            continue;
+            if(!needs_change)
+            {
+                LOGI << "Temp already adjusted";
+                continue;
+            }
+
+            LOGI << "Time to adjust";
         }
 
         int target_temp;
 
-        if(end_diff < 0ms) target_temp = cfg["target_temp"];
+        if(1) target_temp = cfg["target_temp"];
         else target_temp = cfg["start_temp"];
 
         // Map kelvin temperature to a step in the temperature array
@@ -361,11 +352,11 @@ int main(int argc, char *argv[])
     static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
-    plog::init(plog::Severity(plog::debug), &console_appender);
-    plog::get()->addAppender(&file_appender);
+    plog::init(plog::Severity(plog::info), &console_appender);
 
     read();
 
+    plog::get()->addAppender(&file_appender);
     plog::get()->setMaxSeverity(cfg["log_lvl"]);
 
 #ifdef _WIN32
