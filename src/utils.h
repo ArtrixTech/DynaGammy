@@ -88,6 +88,8 @@ constexpr std::array<double, temp_steps> ingo_thies_table
     1.00000000,  1.00000000,  1.00000000 /* 6500K */
 };
 
+int kelvinToStep(int);
+
 void setColors(int temp, std::array<double, 3> &c);
 
 int calcBrightness(const std::vector<uint8_t> &buf);

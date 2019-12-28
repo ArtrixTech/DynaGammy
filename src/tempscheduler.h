@@ -37,8 +37,10 @@ private:
     int start_temp = max_temp_kelvin;
     int target_temp = min_temp_kelvin;
 
-    QString time_start  = "18:00";
-    QString time_end    = "06:00";
+    QString time_start;
+    QString time_end;
+
+    void setDates();
 };
 
 #endif // TEMPSCHEDULER_H

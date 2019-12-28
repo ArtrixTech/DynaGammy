@@ -254,10 +254,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
     else x11->setXF86Gamma(scr_br, val);
 #endif
 
-    int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val,
-                                     0, temp_arr_entries * temp_mult,
-                                     min_temp_kelvin, max_temp_kelvin);
-
+    int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
     temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
 
     ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
@@ -293,14 +290,16 @@ void MainWindow::on_autoCheck_stateChanged(int state)
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-   cfg["auto_temp"] = checked;
-   run_temp_thread = checked;
+    cfg["auto_temp"] = checked;
+    run_temp_thread = checked;
+
+    ui->tempSlider->setDisabled(checked);
 
     if (checked)
     {
         LOGI << "Resuming temperature thread";
 
-       if(temp_needs_change) *temp_needs_change = true;
+        if(temp_needs_change) *temp_needs_change = true;
     }
     else
     {
@@ -392,7 +391,7 @@ void MainWindow::setTempSlider(int val)
 
 void MainWindow::on_tempSlider_sliderPressed()
 {
-    ui->autoTempCheck->setChecked(false);
+
 }
 
 void MainWindow::on_closeButton_clicked()

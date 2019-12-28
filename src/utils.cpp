@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "utils.h"
+#include "cfg.h"
 
 void setColors(int temp, std::array<double, 3> &c)
 {
@@ -56,6 +57,12 @@ int calcBrightness(const std::vector<uint8_t> &buf)
     int brightness = (r * 0.2126 + g * 0.7152 + b * 0.0722) / screen_res;
 
     return brightness;
+}
+
+// Map kelvin temperature to a step in the temperature array
+int kelvinToStep(int temp)
+{
+    return ((max_temp_kelvin - temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
 }
 
 #ifdef _WIN32

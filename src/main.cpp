@@ -112,6 +112,14 @@ void adjustBrightness(Args &args)
        LOGD << "Complete (" << c << ')';
 }
 
+void setTime(QTime &t, const std::string &time_str)
+{
+    const auto start_hour = time_str.substr(0, 2);
+    const auto start_min  = time_str.substr(3, 2);
+
+    t = QTime(std::stoi(start_hour), std::stoi(start_min));
+}
+
 void adjustTemperature(Args &args)
 {
     using namespace std::this_thread;
@@ -127,11 +135,22 @@ void adjustTemperature(Args &args)
     std::mutex m;
     std::unique_lock lock(m);
 
-    bool is_past_decrease = false;
-    bool is_past_increase = false;
+    int state = cfg["temp_state"];
 
-    bool restore          = false;
-    bool decreased_state  = false;
+    enum states {
+        INITIAL,
+        LOW_TEMP,
+        HIGH_TEMP
+    };
+
+    bool start_date_reached   = false;
+    bool end_date_reached     = false;
+
+    QDate date_start;
+    QTime time_start;
+
+    QDate date_end;
+    QTime time_end;
 
     while (!args.w->quit)
     {
@@ -139,86 +158,74 @@ void adjustTemperature(Args &args)
 
         args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
-        std::string time_start_str  = cfg["time_start"];
-        std::string start_hour      = time_start_str.substr(0, 2);
-        std::string start_min       = time_start_str.substr(3, 2);
+        date_start = QDate::fromJulianDay(cfg["jday_start"]);
+        setTime(time_start, cfg["time_start"]);
+        auto datetime_start = QDateTime(date_start, time_start);
 
-        std::string time_end_str    = cfg["time_end"];
-        std::string end_hour        = time_end_str.substr(0, 2);
-        std::string end_min         = time_end_str.substr(3, 2);
+        date_end = QDate::fromJulianDay(cfg["jday_end"]);
+        setTime(time_end, cfg["time_end"]);
+        auto datetime_end = QDateTime(date_end, time_end);
 
-        QTime start_time            = QTime(std::stoi(start_hour), std::stoi(start_min));
-        QTime end_time              = QTime(std::stoi(end_hour), std::stoi(end_min));
+        start_date_reached = QDateTime::currentDateTime() > datetime_start;
+        end_date_reached   = QDateTime::currentDateTime() > datetime_end;
 
-        QDateTime start_datetime    = QDateTime::currentDateTime();
-        QDateTime end_datetime      = start_datetime.addDays(1);
+        LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ")";
+        LOGI << "End   reached: "   << end_date_reached   << " (" << datetime_end.toString()   << ")";
 
-        start_datetime.setTime(start_time);
-        end_datetime.setTime(end_time);
+        LOGI << "State: " << state << " | " << needs_change;
 
-        LOGI << "Temp. decreasing at: " << start_datetime.toString();
-        LOGI << "Temp. increasing at: " << end_datetime.toString();
+        if(needs_change) state = INITIAL;
 
-        is_past_decrease = QDateTime::currentDateTime() > start_datetime;
-        is_past_increase = QDateTime::currentDateTime() > end_datetime;
+        if(start_date_reached) state = LOW_TEMP;
 
-        if(is_past_decrease)
+        cfg["temp_state"] = state;
+
+        if(!start_date_reached && state == LOW_TEMP)
         {
-            LOGI << "We are past decrease time.";
-        }
-        else if(is_past_increase)
-        {
-            LOGI << "We are past increase time.";
-        }
-        else
-        {
-            LOGI << "No change needed";
-            continue;
-        }
-
-        if(restore && decreased_state)
-        {
-            LOGI << "Temperature has been restored.";
-            continue;
-        }
-
-        if(decreased_state)
-        {
-            LOGI << "Temperature is in decreased state already.";
-
-            if(needs_change)
+            if(!end_date_reached)
             {
-                LOGI << "However, a change has been detected.";
+                continue;
             }
-            else if(is_past_increase && !restore)
-            {
-                LOGI << "However, it's time to restore it.";
-                restore = true;
-                needs_change = true;
-            }
-            else continue;
         }
 
-        LOGI << "Adjusting temperature...";
+        int temp_target = cfg["temp_target"];
 
-        int target_temp;
-
-        if(restore) target_temp = cfg["start_temp"];
-        else        target_temp = cfg["target_temp"];
-
-        // Map kelvin temperature to a step in the temperature array
-        int target_step = ((max_temp_kelvin - target_temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
-
-        while (needs_change && args.w->run_temp_thread)
+        if(end_date_reached || !start_date_reached)
         {
-            int temp_step = cfg["temp_step"];
+            temp_target = cfg["temp_initial"];
+        }
 
-            if     (temp_step < target_step) ++temp_step;
-            else if(temp_step > target_step) --temp_step;
+        int target_step = kelvinToStep(temp_target);
+
+        while (args.w->run_temp_thread || needs_change)
+        {
+            int step = cfg["temp_step"];
+
+            if (step < target_step)
+            {
+                ++step;
+            }
+            else if(step > target_step)
+            {
+                --step;
+            }
             else
             {
-                decreased_state = is_past_decrease;
+                int64_t tomorrow_jday = QDate::currentDate().addDays(1).toJulianDay();
+
+                if(state == LOW_TEMP)
+                {
+                    cfg["jday_start"] = tomorrow_jday;
+                }
+                else if(state == HIGH_TEMP)
+                {
+                    cfg["jday_end"] = tomorrow_jday;
+                }
+
+                cfg["temp_state"] = state;
+
                 needs_change = false;
+
                 break;
             }
 
@@ -226,17 +233,17 @@ void adjustTemperature(Args &args)
             {
                 if constexpr (os == OS::Windows)
                 {
-                    setGDIGamma(scr_br, temp_step);
+                    setGDIGamma(scr_br, step);
                 }
 #ifndef _WIN32
-                else { args.x11->setXF86Gamma(scr_br, temp_step); }
+                else { args.x11->setXF86Gamma(scr_br, step); }
 #endif
             }
             else break;
 
-            args.w->setTempSlider(temp_step);
+            args.w->setTempSlider(step);
 
-            cfg["temp_step"] = temp_step;
+            cfg["temp_step"] = step;
 
             sleep_for(50ms);
         }
@@ -285,6 +292,13 @@ void recordScreen(Args &args)
     std::vector<uint8_t> buf(len);
 
     std::thread t1(adjustBrightness, std::ref(args));
+
+    QDate start_date    = QDate::currentDate();
+    QDate end_date      = start_date.addDays(1);
+
+    cfg["jday_start"]   = start_date.toJulianDay();
+    cfg["jday_end"]     = end_date.toJulianDay();
+
     std::thread t2(adjustTemperature, std::ref(args));
 
     std::once_flag f;
