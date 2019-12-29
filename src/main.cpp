@@ -129,15 +129,14 @@ void adjustTemperature(Args &args)
     std::string t_start;
     std::string t_end;
 
-    bool needs_change = true;
-    args.w->temp_needs_change = &needs_change;
+
 
     std::mutex m;
     std::unique_lock lock(m);
 
     int state = cfg["temp_state"];
 
-    enum states {
+    enum TempState {
         INITIAL,
         LOW_TEMP,
         HIGH_TEMP
@@ -152,29 +151,38 @@ void adjustTemperature(Args &args)
     QDate date_end;
     QTime time_end;
 
+    int64_t jday_start;
+    int64_t jday_end;
+
+    bool needs_change           = true;
+    args.w->temp_needs_change   = &needs_change;
+
     while (!args.w->quit)
     {
-        sleep_for(5s);
+        sleep_for(2s);
 
         args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
-        date_start = QDate::fromJulianDay(cfg["jday_start"]);
+        if(needs_change)
+        {
+            jday_start = QDate::currentDate().toJulianDay();
+            jday_end   = jday_start + 1;
+        }
+
+        date_start = QDate::fromJulianDay(jday_start);
         setTime(time_start, cfg["time_start"]);
         auto datetime_start = QDateTime(date_start, time_start);
 
-        date_end = QDate::fromJulianDay(cfg["jday_end"]);
+        date_end = QDate::fromJulianDay(jday_end);
         setTime(time_end, cfg["time_end"]);
         auto datetime_end = QDateTime(date_end, time_end);
 
         start_date_reached = QDateTime::currentDateTime() > datetime_start;
         end_date_reached   = QDateTime::currentDateTime() > datetime_end;
 
-        LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ")";
-        LOGI << "End   reached: "   << end_date_reached   << " (" << datetime_end.toString()   << ")";
-
+        LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
+        LOGI << "End   reached: "   << end_date_reached << " (" << datetime_end.toString() << ')';
         LOGI << "State: " << state << " | " << needs_change;
-
-        if(needs_change) state = INITIAL;
 
         if(start_date_reached) state = LOW_TEMP;
 
@@ -182,6 +190,12 @@ void adjustTemperature(Args &args)
 
         if(!start_date_reached && state == LOW_TEMP)
         {
+            // This can mean two things:
+            // * the next start date is tomorrow
+            // * the start date is today but it's on low temp
+
+            if(jday_start == QDate::currentDate().toJulianDay()) state = HIGH_TEMP;
+
             if(!end_date_reached)
             {
                 continue;
@@ -197,7 +211,7 @@ void adjustTemperature(Args &args)
 
         int target_step = kelvinToStep(temp_target);
 
-        while (args.w->run_temp_thread || needs_change)
+        while (args.w->run_temp_thread)
         {
             int step = cfg["temp_step"];
 
@@ -215,11 +229,11 @@ void adjustTemperature(Args &args)
 
                 if(state == LOW_TEMP)
                 {
-                    cfg["jday_start"] = tomorrow_jday;
+                    jday_start = tomorrow_jday;
                 }
                 else if(state == HIGH_TEMP)
                 {
-                    cfg["jday_end"] = tomorrow_jday;
+                    jday_end = tomorrow_jday;
                 }
 
                 cfg["temp_state"] = state;
@@ -292,12 +306,6 @@ void recordScreen(Args &args)
     std::vector<uint8_t> buf(len);
 
     std::thread t1(adjustBrightness, std::ref(args));
-
-    QDate start_date    = QDate::currentDate();
-    QDate end_date      = start_date.addDays(1);
-
-    cfg["jday_start"]   = start_date.toJulianDay();
-    cfg["jday_end"]     = end_date.toJulianDay();
 
     std::thread t2(adjustTemperature, std::ref(args));
 

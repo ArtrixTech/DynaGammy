@@ -42,12 +42,6 @@ void TempScheduler::on_buttonBox_accepted()
     cfg["temp_initial"]     = this->start_temp;
     cfg["temp_target"]      = this->target_temp;
 
-    QDate start_date    = QDate::currentDate();
-    QDate end_date      = start_date.addDays(1);
-
-    cfg["jday_start"]   = start_date.toJulianDay();
-    cfg["jday_end"]     = end_date.toJulianDay();
-
     save();
 
     *needs_change = true;
