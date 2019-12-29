@@ -172,12 +172,12 @@ QMenu* MainWindow::createMenu()
     menu->addSeparator();
 
     QAction *quit_prev = new QAction("&Quit", this);
-    connect(quit_prev, &QAction::triggered, this, [=]{on_closeButton_clicked();});
+    connect(quit_prev, &QAction::triggered, this, [&]() { on_closeButton_clicked(true); });
     menu->addAction(quit_prev);
 
 #ifndef _WIN32
     QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
-    connect(quit_pure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
+    connect(quit_pure, &QAction::triggered, this, [&]() { on_closeButton_clicked(false); });
     menu->addAction(quit_pure);
 #endif
 
@@ -394,8 +394,11 @@ void MainWindow::on_tempSlider_sliderPressed()
 
 }
 
-void MainWindow::on_closeButton_clicked()
+void MainWindow::on_closeButton_clicked(bool set_previous_gamma)
 {
+    // Boolean to be read before quitting the screenshot thread
+    this->set_previous_gamma = set_previous_gamma;
+
     run_ss_thread = true;
     quit = true;
     auto_cv->notify_one();

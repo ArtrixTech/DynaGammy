@@ -62,7 +62,7 @@ private slots:
     void on_thresholdSlider_valueChanged(int val);
     void on_pollingSlider_valueChanged(int val);
 
-    void on_closeButton_clicked();
+    void on_closeButton_clicked(bool set_previous_gamma);
     void on_hideButton_clicked();
 
     void on_autoCheck_stateChanged(int arg1);
