@@ -96,7 +96,7 @@ void adjustBrightness(Args &args)
                     setGDIGamma(scr_br, cfg["temp_step"]);
                 }
 #ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the constexpr check
-                else {args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
+                else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
 #endif
             }
             else break;
@@ -112,14 +112,6 @@ void adjustBrightness(Args &args)
        LOGD << "Complete (" << c << ')';
 }
 
-void setTime(QTime &t, const std::string &time_str)
-{
-    const auto start_hour = time_str.substr(0, 2);
-    const auto start_min  = time_str.substr(3, 2);
-
-    t = QTime(std::stoi(start_hour), std::stoi(start_min));
-}
-
 void adjustTemperature(Args &args)
 {
     using namespace std::this_thread;
@@ -128,8 +120,6 @@ void adjustTemperature(Args &args)
 
     std::string t_start;
     std::string t_end;
-
-
 
     std::mutex m;
     std::unique_lock lock(m);
@@ -153,6 +143,14 @@ void adjustTemperature(Args &args)
 
     int64_t jday_start;
     int64_t jday_end;
+
+    const auto setTime = [] (QTime &t, const std::string &time_str)
+    {
+        const auto start_hour = time_str.substr(0, 2);
+        const auto start_min  = time_str.substr(3, 2);
+
+        t = QTime(std::stoi(start_hour), std::stoi(start_min));
+    };
 
     bool needs_change           = true;
     args.w->temp_needs_change   = &needs_change;
@@ -184,32 +182,32 @@ void adjustTemperature(Args &args)
         LOGI << "End   reached: "   << end_date_reached << " (" << datetime_end.toString() << ')';
         LOGI << "State: " << state << " | " << needs_change;
 
-        if(start_date_reached) state = LOW_TEMP;
+        int temp_target = cfg["temp_target"];
+
+        if(start_date_reached)
+        {
+            state = LOW_TEMP;
+        }
+        else
+        {
+            temp_target = cfg["temp_initial"];
+
+            if(state == LOW_TEMP)
+            {
+                if(jday_start == QDate::currentDate().toJulianDay())
+                {
+                    state = HIGH_TEMP;
+                }
+                else continue;
+            }
+            else if(!end_date_reached && !needs_change) continue;
+        }
 
         cfg["temp_state"] = state;
 
-        if(!start_date_reached && state == LOW_TEMP)
-        {
-            // This can mean two things:
-            // * the next start date is tomorrow
-            // * the start date is today but it's on low temp
-
-            if(jday_start == QDate::currentDate().toJulianDay()) state = HIGH_TEMP;
-
-            if(!end_date_reached)
-            {
-                continue;
-            }
-        }
-
-        int temp_target = cfg["temp_target"];
-
-        if(end_date_reached || !start_date_reached)
-        {
-            temp_target = cfg["temp_initial"];
-        }
-
         int target_step = kelvinToStep(temp_target);
+
+        LOGI << "Adjusting temperature...";
 
         while (args.w->run_temp_thread)
         {
