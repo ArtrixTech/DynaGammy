@@ -116,9 +116,6 @@ void adjustTemperature(Args &args)
     using namespace std::chrono;
     using namespace std::chrono_literals;
 
-    std::string t_start;
-    std::string t_end;
-
     std::mutex m;
     std::unique_lock lock(m);
 
