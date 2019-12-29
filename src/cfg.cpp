@@ -28,8 +28,6 @@ json setDefault()
         {"temp_state", 0},
         {"time_start", "17:00:00"},
         {"time_end", "06:00:00"},
-        {"jday_start", 0},
-        {"jday_end", 0},
         {"auto_br", true},
         {"auto_temp", false},
         {"extend_br", false},
