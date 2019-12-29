@@ -101,7 +101,7 @@ void getGDISnapshot(std::vector<uint8_t> &buf)
     DeleteDC(memoryDC);
 }
 
-void setGDIGamma(WORD brightness, int temp)
+void setGDIGamma(int brightness, int temp)
 {
     if (brightness > default_brightness) {
         return;

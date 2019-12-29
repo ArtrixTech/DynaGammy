@@ -89,17 +89,15 @@ void adjustBrightness(Args &args)
             else if(scr_br > args.target_br) --scr_br;
             else break;
 
-            if(!args.w->quit)
+            if(args.w->quit) break;
+
+            if constexpr (os == OS::Windows)
             {
-                if constexpr (os == OS::Windows)
-                {
-                    setGDIGamma(scr_br, cfg["temp_step"]);
-                }
-#ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the constexpr check
-                else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
-#endif
+                setGDIGamma(scr_br, cfg["temp_step"]);
             }
-            else break;
+#ifndef _WIN32
+            else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
+#endif
 
             if(args.w->isVisible()) args.w->updateBrLabel();
 
@@ -141,6 +139,9 @@ void adjustTemperature(Args &args)
     QDate date_end;
     QTime time_end;
 
+    QDateTime datetime_start;
+    QDateTime datetime_end;
+
     int64_t jday_start;
     int64_t jday_end;
 
@@ -157,23 +158,24 @@ void adjustTemperature(Args &args)
 
     while (!args.w->quit)
     {
-        sleep_for(2s);
+        sleep_for(2.5s);
 
         args.w->temp_cv->wait(lock, [&]{ return args.w->run_temp_thread; });
 
         if(needs_change)
         {
             jday_start = QDate::currentDate().toJulianDay();
-            jday_end   = jday_start + 1;
+            setTime(time_start, cfg["time_start"]);
+
+            jday_end = jday_start + 1;
+            setTime(time_end, cfg["time_end"]);
         }
 
-        date_start = QDate::fromJulianDay(jday_start);
-        setTime(time_start, cfg["time_start"]);
-        auto datetime_start = QDateTime(date_start, time_start);
+        date_start      = QDate::fromJulianDay(jday_start);
+        datetime_start  = QDateTime(date_start, time_start);
 
-        date_end = QDate::fromJulianDay(jday_end);
-        setTime(time_end, cfg["time_end"]);
-        auto datetime_end = QDateTime(date_end, time_end);
+        date_end        = QDate::fromJulianDay(jday_end);
+        datetime_end    = QDateTime(date_end, time_end);
 
         start_date_reached = QDateTime::currentDateTime() > datetime_start;
         end_date_reached   = QDateTime::currentDateTime() > datetime_end;
@@ -209,6 +211,8 @@ void adjustTemperature(Args &args)
 
         LOGI << "Adjusting temperature...";
 
+        needs_change = false;
+
         while (args.w->run_temp_thread)
         {
             int step = cfg["temp_step"];
@@ -236,22 +240,18 @@ void adjustTemperature(Args &args)
 
                 cfg["temp_state"] = state;
 
-                needs_change = false;
-
                 break;
             }
 
-            if(!args.w->quit)
+            if(args.w->quit) break;
+
+            if constexpr (os == OS::Windows)
             {
-                if constexpr (os == OS::Windows)
-                {
-                    setGDIGamma(scr_br, step);
-                }
-#ifndef _WIN32
-                else { args.x11->setXF86Gamma(scr_br, step); }
-#endif
+                setGDIGamma(scr_br, step);
             }
-            else break;
+#ifndef _WIN32
+            else { args.x11->setXF86Gamma(scr_br, step); }
+#endif
 
             args.w->setTempSlider(step);
 

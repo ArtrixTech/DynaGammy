@@ -107,7 +107,7 @@ constexpr T convertRange(T old_val,
 // Windows functions
 
 void getGDISnapshot(std::vector<uint8_t> &buf);
-void setGDIGamma(unsigned short brightness, int temp);
+void setGDIGamma(int brightness, int temp);
 
 void checkInstance();
 void checkGammaRange();
