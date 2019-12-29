@@ -2,14 +2,14 @@
 #include "ui_tempscheduler.h"
 #include "cfg.h"
 
-TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *needs_change) :
+TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_change) :
     QDialog(parent),
     ui(new Ui::TempScheduler)
 {
     ui->setupUi(this);
 
     this->temp_cv = temp_cv;
-    this->needs_change = needs_change;
+    this->force_change = force_change;
 
     this->start_temp = cfg["temp_initial"];
     ui->tempStartBox->setValue(start_temp);
@@ -44,7 +44,8 @@ void TempScheduler::on_buttonBox_accepted()
 
     save();
 
-    *needs_change = true;
+    *force_change = true;
+    temp_cv->notify_one();
 }
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)

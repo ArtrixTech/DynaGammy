@@ -299,7 +299,7 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
     {
         LOGI << "Resuming temperature thread";
 
-        if(temp_needs_change) *temp_needs_change = true;
+        if(force_temp_change) *force_temp_change = true;
     }
     else
     {
@@ -360,7 +360,7 @@ void MainWindow::setBrSlidersRange(bool inc)
 
 void MainWindow::on_pushButton_clicked()
 {
-    TempScheduler ts(nullptr, temp_cv, temp_needs_change);
+    TempScheduler ts(nullptr, temp_cv, force_temp_change);
     ts.exec();
 }
 

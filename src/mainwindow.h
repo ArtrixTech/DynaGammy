@@ -45,7 +45,7 @@ public:
     convar  *auto_cv = nullptr;
 
     bool    run_temp_thread = false;
-    bool    *temp_needs_change = nullptr;
+    bool    *force_temp_change = nullptr;
     convar  *temp_cv = nullptr;
 
     void setTempSlider(int);
