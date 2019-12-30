@@ -11,10 +11,10 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
     this->temp_cv = temp_cv;
     this->force_change = force_change;
 
-    this->start_temp = cfg["temp_initial"];
+    this->start_temp = cfg["temp_high"];
     ui->tempStartBox->setValue(start_temp);
 
-    this->target_temp = cfg["temp_target"];
+    this->target_temp = cfg["temp_low"];
     ui->tempEndBox->setValue(target_temp);
 
     {
@@ -39,8 +39,8 @@ void TempScheduler::on_buttonBox_accepted()
     cfg["time_start"]       = this->time_start.toStdString();
     cfg["time_end"]         = this->time_end.toStdString();
 
-    cfg["temp_initial"]     = this->start_temp;
-    cfg["temp_target"]      = this->target_temp;
+    cfg["temp_high"]     = this->start_temp;
+    cfg["temp_low"]      = this->target_temp;
 
     save();
 

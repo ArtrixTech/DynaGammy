@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (C) 2019 Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
@@ -109,202 +109,179 @@ void adjustBrightness(Args &args)
 
 void adjustTemperature(Args &args)
 {
-    using namespace std::this_thread;
-    using namespace std::chrono;
-    using namespace std::chrono_literals;
+	using namespace std::this_thread;
+	using namespace std::chrono;
+	using namespace std::chrono_literals;
 
-    std::mutex m;
-    std::unique_lock<std::mutex> lk(m);
+	std::mutex m;
+	std::unique_lock<std::mutex> lk(m);
 
-    int state = cfg["temp_state"];
+	bool start_date_reached = false;
+	bool end_date_reached	= false;
 
-    enum TempState {
-        INITIAL,
-        LOW_TEMP,
-        HIGH_TEMP
-    };
+	bool force = false;
+	args.w->force_temp_change = &force;
 
-    bool start_date_reached   = false;
-    bool end_date_reached     = false;
+	QDate date_start;
+	QTime time_start;
 
-    QDate date_start;
-    QTime time_start;
+	QDate date_end;
+	QTime time_end;
 
-    QDate date_end;
-    QTime time_end;
+	QDateTime datetime_start;
+	QDateTime datetime_end;
 
-    QDateTime datetime_start;
-    QDateTime datetime_end;
+	int64_t jday_start;
+	int64_t jday_end;
 
-    int64_t jday_start;
-    int64_t jday_end;
+	const auto setTime = [] (QTime &t, const std::string &time_str)
+	{
+		const auto start_hour	= time_str.substr(0, 2);
+		const auto start_min	= time_str.substr(3, 2);
 
-    const auto setTime = [] (QTime &t, const std::string &time_str)
-    {
-        const auto start_hour = time_str.substr(0, 2);
-        const auto start_min  = time_str.substr(3, 2);
+		t = QTime(std::stoi(start_hour), std::stoi(start_min));
+	};
 
-        t = QTime(std::stoi(start_hour), std::stoi(start_min));
-    };
+	const auto setJDays = [&] ()
+	{
+		jday_start	= QDate::currentDate().toJulianDay();
+		jday_end	= jday_start + 1;
+	};
 
-    const auto setJDays = [&] ()
-    {
-        jday_start = QDate::currentDate().toJulianDay();
-        jday_end = jday_start + 1;
-    };
+	const auto setDatetimes = [&] ()
+	{
+		setTime(time_start, cfg["time_start"]);
+		setTime(time_end, cfg["time_end"]);
 
-    const auto setDatetimes = [&] ()
-    {
-        setTime(time_start, cfg["time_start"]);
-        setTime(time_end, cfg["time_end"]);
+		date_start	= QDate::fromJulianDay(jday_start);
+		datetime_start	= QDateTime(date_start, time_start);
 
-        date_start      = QDate::fromJulianDay(jday_start);
-        datetime_start  = QDateTime(date_start, time_start);
+		date_end	= QDate::fromJulianDay(jday_end);
+		datetime_end	= QDateTime(date_end, time_end);
+	};
 
-        date_end        = QDate::fromJulianDay(jday_end);
-        datetime_end    = QDateTime(date_end, time_end);
-    };
+	const auto checkTime = [&] ()
+	{
+		setDatetimes();
 
-    setJDays();
+		start_date_reached = QDateTime::currentDateTime() > datetime_start;
+		end_date_reached   = QDateTime::currentDateTime() > datetime_end;
+	};
 
-    setDatetimes();
+	enum TempState {
+			HIGH_TEMP,
+			LOW_TEMP
+	};
 
-    bool needs_change = false;
+	setJDays();
+	checkTime();
 
-    bool force = false;
-    args.w->force_temp_change = &force;
+	int target_temp;
 
-    const auto update = [&] ()
-    {
-        start_date_reached = QDateTime::currentDateTime() > datetime_start;
-        end_date_reached   = QDateTime::currentDateTime() > datetime_end;
-    };
+	if(cfg["temp_state"] == HIGH_TEMP)	target_temp = cfg["temp_high"];
+	else					target_temp = cfg["temp_low"];
 
-    const auto clock = [&] ()
-    {
-        while(true)
-        {
-            setDatetimes();
+	bool needs_change = true;
+	args.w->temp_cv->notify_one();
 
-            update();
+	std::thread clock([&] ()
+	{
+		while(args.w->run_temp_thread)
+		{
+			checkTime();
 
-            sleep_for(3s);
+			LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
+			LOGI << "End   reached: " << end_date_reached << " (" << datetime_end.toString() << ')';
+			LOGI << "State: " << cfg["temp_state"];
 
-            LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
-            LOGI << "End   reached: "   << end_date_reached << " (" << datetime_end.toString() << ')';
-            LOGI << "State: " << state;
+			if(start_date_reached || end_date_reached)
+			{
+				needs_change = true;
+				args.w->temp_cv->notify_one();
+			}
 
-            if(start_date_reached && state == LOW_TEMP)
-            {
-                 LOGI << "Already in low temp.";
-                 continue;
-            }
+			sleep_for(10s);
+		}
+	});
 
-            if(!start_date_reached && !end_date_reached) continue;
+	while (!args.w->quit)
+	{
+		args.w->temp_cv->wait(lk, [&]
+		{
+			return needs_change || force;
+		});
 
-            needs_change = true;
-            args.w->temp_cv->notify_one();
-        }
-    };
+		needs_change = false;
 
-    std::thread c(clock);
+		if(force)
+		{
+			LOGI << "Settings changed.";
+			force = false;
 
-    while (!args.w->quit)
-    {
-        args.w->temp_cv->wait(lk, [&]
-        {
-            return needs_change || force;
-        });
+			setJDays(); // Reset the dates to today
+			checkTime();
+		}
 
-        needs_change = false;
+		if(start_date_reached)	target_temp = cfg["temp_low"];
+		else			target_temp = cfg["temp_high"];
 
-        LOGI << "Force: " << force;
+		int cur_step	= cfg["temp_step"];
+		int target_step = kelvinToStep(target_temp) - 1;
 
-        if(force)
-        {
-            setJDays();
-            setDatetimes();
-            update();
-        }
+		LOGI << cur_step << " -> " << target_step;
 
-        int temp_target = cfg["temp_target"];
+		if(cur_step == target_step)
+		{
+			LOGI << "No adjustment needed.";
+			continue;
+		}
 
-        if(start_date_reached)
-        {
-            state = LOW_TEMP;
-        }
-        else
-        {
-            temp_target = cfg["temp_initial"];
+		int add;
 
-            if(state == LOW_TEMP)
-            {
-                if(jday_start == QDate::currentDate().toJulianDay())
-                {
-                    state = HIGH_TEMP;
-                }
-                else if (!force) continue;
-            }
-            else if(!end_date_reached && !force) continue;
-        }
+		if(cur_step < target_step)
+		{
+			LOGI << "Temperature should be decreased.";
 
-        force = false;
+			add = 1;
+		}
+		else
+		{
+			LOGI << "Temperature should be increased.";
 
-        cfg["temp_state"] = state;
+			add = -1;
+		}
 
-        int target_step = kelvinToStep(temp_target);
+		while (args.w->run_temp_thread)
+		{
+			cur_step += add;
 
-        LOGI << "Adjusting temperature...";
+			if(cur_step == target_step)
+			{
+				LOGI << "Done.";
 
-        while (args.w->run_temp_thread)
-        {
-            int step = cfg["temp_step"];
+				if(start_date_reached) {
+					cfg["temp_state"] = LOW_TEMP; }
+				else {
+					cfg["temp_state"] = HIGH_TEMP; }
 
-            if (step < target_step)
-            {
-                ++step;
-            }
-            else if(step > target_step)
-            {
-                --step;
-            }
-            else
-            {
-                /*int64_t tomorrow_jday = QDate::currentDate().addDays(1).toJulianDay();
+				cfg["temp_step"] = cur_step;
 
-                if(state == LOW_TEMP)
-                {
-                    jday_start = tomorrow_jday;
-                }
-                else if(state == HIGH_TEMP)
-                {
-                    jday_end = tomorrow_jday;
-                }
+				break;
+			}
 
-                cfg["temp_state"] = state;*/
+			if(args.w->quit) break;
 
-                break;
-            }
-
-            if(args.w->quit) break;
-
-            if constexpr (os == OS::Windows)
-            {
-                setGDIGamma(scr_br, step);
-            }
+			if constexpr (os == OS::Windows) setGDIGamma(scr_br, cur_step);
 #ifndef _WIN32
-            else { args.x11->setXF86Gamma(scr_br, step); }
+			else args.x11->setXF86Gamma(scr_br, cur_step);
 #endif
 
-            args.w->setTempSlider(step);
+			args.w->setTempSlider(cur_step);
+			sleep_for(50ms);
+		}
+	}
 
-            cfg["temp_step"] = step;
-
-            sleep_for(50ms);
-        }
-    }
-
-    c.join();
+	clock.join();
 }
 
 void recordScreen(Args &args)
