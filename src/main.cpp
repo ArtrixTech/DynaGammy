@@ -44,16 +44,19 @@ static convar *cv_ptr;
 
 struct Args
 {
-    convar  adjustbr_cv;
-    convar  temp_cv;
+	convar	adjustbr_cv;
+	convar	temp_cv;
+
 #ifndef _WIN32
-    X11         *x11 {};
+	X11 *x11 {};
 #endif
-    MainWindow    *w {};
-    int64_t callcnt = 0;
-    int img_br      = 0;
-    int target_br   = 0;
-    int img_delta   = 0;
+
+	MainWindow *w {};
+
+	int64_t callcnt = 0;
+	int img_br	= 0;
+	int target_br	= 0;
+	int img_delta	= 0;
 };
 
 void adjustBrightness(Args &args)
@@ -122,17 +125,16 @@ void adjustTemperature(Args &args)
 	bool force = false;
 	args.w->force_temp_change = &force;
 
-	QDate date_start;
-	QTime time_start;
+	int64_t		jday_start;
+	int64_t		jday_end;
 
-	QDate date_end;
-	QTime time_end;
+	QDate		date_start;
+	QTime		time_start;
+	QDate		date_end;
+	QTime		time_end;
 
-	QDateTime datetime_start;
-	QDateTime datetime_end;
-
-	int64_t jday_start;
-	int64_t jday_end;
+	QDateTime	datetime_start;
+	QDateTime	datetime_end;
 
 	const auto setTime = [] (QTime &t, const std::string &time_str)
 	{
@@ -169,8 +171,8 @@ void adjustTemperature(Args &args)
 	};
 
 	enum TempState {
-			HIGH_TEMP,
-			LOW_TEMP
+		HIGH_TEMP,
+		LOW_TEMP
 	};
 
 	setJDays();
@@ -178,29 +180,31 @@ void adjustTemperature(Args &args)
 
 	int target_temp;
 
-	if(cfg["temp_state"] == HIGH_TEMP)	target_temp = cfg["temp_high"];
-	else					target_temp = cfg["temp_low"];
+	if(cfg["temp_state"] == HIGH_TEMP)
+		target_temp = cfg["temp_high"];
+	else
+		target_temp = cfg["temp_low"];
 
 	bool needs_change = true;
 	args.w->temp_cv->notify_one();
 
 	std::thread clock([&] ()
 	{
-		while(args.w->run_temp_thread)
+		while(true)
 		{
+			sleep_for(10s);
+
 			checkTime();
 
+			LOGI << "State: " << cfg["temp_state"];
 			LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
 			LOGI << "End   reached: " << end_date_reached << " (" << datetime_end.toString() << ')';
-			LOGI << "State: " << cfg["temp_state"];
 
 			if(start_date_reached || end_date_reached)
 			{
 				needs_change = true;
 				args.w->temp_cv->notify_one();
 			}
-
-			sleep_for(10s);
 		}
 	});
 
@@ -215,40 +219,54 @@ void adjustTemperature(Args &args)
 
 		if(force)
 		{
-			LOGI << "Settings changed.";
 			force = false;
 
 			setJDays(); // Reset the dates to today
 			checkTime();
 		}
 
-		if(start_date_reached)	target_temp = cfg["temp_low"];
-		else			target_temp = cfg["temp_high"];
+		if(start_date_reached)
+		{
+			LOGI << "Start date reached.";
+
+			target_temp = cfg["temp_low"];
+			cfg["temp_state"] = LOW_TEMP;
+		}
+		else
+		{
+			LOGI << "Start date not reached.";
+
+			target_temp = cfg["temp_high"];
+
+			if(cfg["temp_state"] == LOW_TEMP) // If it's true, start date shifted to tomorrow
+			{
+				// So when we reach tomorrow, switch to high temp
+				if(QDate::currentDate().toJulianDay() == jday_start) cfg["temp_state"] = HIGH_TEMP;
+			}
+			else
+			{
+				// If we're on high temp, and neither start or end have been reached, skip
+				if(!end_date_reached && !force) continue;
+			}
+		}
 
 		int cur_step	= cfg["temp_step"];
 		int target_step = kelvinToStep(target_temp) - 1;
 
-		LOGI << cur_step << " -> " << target_step;
+		int add = 0;
 
-		if(cur_step == target_step)
+		if(cur_step != target_step)
 		{
-			LOGI << "No adjustment needed.";
-			continue;
-		}
-
-		int add;
-
-		if(cur_step < target_step)
-		{
-			LOGI << "Temperature should be decreased.";
-
-			add = 1;
-		}
-		else
-		{
-			LOGI << "Temperature should be increased.";
-
-			add = -1;
+			if(cur_step < target_step)
+			{
+				LOGI << "Temperature should be decreased.";
+				add = 1;
+			}
+			else
+			{
+				LOGI << "Temperature should be increased.";
+				add = -1;
+			}
 		}
 
 		while (args.w->run_temp_thread)
@@ -259,12 +277,18 @@ void adjustTemperature(Args &args)
 			{
 				LOGI << "Done.";
 
-				if(start_date_reached) {
-					cfg["temp_state"] = LOW_TEMP; }
-				else {
-					cfg["temp_state"] = HIGH_TEMP; }
-
 				cfg["temp_step"] = cur_step;
+
+				int64_t tomorrow = QDate::currentDate().addDays(1).toJulianDay();
+
+				if(cfg["temp_state"] == HIGH_TEMP)
+				{
+					jday_end = tomorrow;
+				}
+				else
+				{
+					jday_start = tomorrow;
+				}
 
 				break;
 			}
