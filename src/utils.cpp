@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "utils.h"
+#include "cfg.h"
 
 void setColors(int temp, std::array<double, 3> &c)
 {
@@ -58,6 +59,12 @@ int calcBrightness(const std::vector<uint8_t> &buf)
     return brightness;
 }
 
+// Map kelvin temperature to a step in the temperature array
+int kelvinToStep(int temp)
+{
+    return ((max_temp_kelvin - temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
+}
+
 #ifdef _WIN32
 
 static const HDC screenDC = GetDC(nullptr);
@@ -94,7 +101,7 @@ void getGDISnapshot(std::vector<uint8_t> &buf)
     DeleteDC(memoryDC);
 }
 
-void setGDIGamma(WORD brightness, int temp)
+void setGDIGamma(int brightness, int temp)
 {
     if (brightness > default_brightness) {
         return;

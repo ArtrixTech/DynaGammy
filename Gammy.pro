@@ -16,10 +16,15 @@ CONFIG += c++11 c++17
 CONFIG += optimize_full
 
 HEADERS += src/main.h src/mainwindow.h src/utils.h \
+    src/tempscheduler.h \
     src/cfg.h
+
 SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
+    src/tempscheduler.cpp \
     src/cfg.cpp
-FORMS   += src/mainwindow.ui
+
+FORMS   += src/mainwindow.ui \
+    src/tempscheduler.ui \
 
 win32:{
     SOURCES += src/dxgidupl.cpp

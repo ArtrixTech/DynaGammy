@@ -18,29 +18,34 @@
 #include <QHelpEvent>
 #include <QAction>
 #include <QMenu>
+#include <QTime>
 
 #include <iostream>
 
 #include "mainwindow.h"
+#include "tempscheduler.h"
 
 #ifndef _WIN32
 
-MainWindow::MainWindow(X11 *x11, convar *auto_cv)
-    : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
+	: ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    this->auto_cv = auto_cv;
-    this->x11 = x11;
+	this->auto_cv = auto_cv;
+	this->temp_cv = temp_cv;
 
-    init();
+	this->x11 = x11;
+
+	init();
 }
 #endif
 
-MainWindow::MainWindow(QWidget *parent, convar *auto_cv)
-    : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(QWidget *parent, convar *auto_cv, convar *temp_cv)
+	: QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    this->auto_cv = auto_cv;
+	this->auto_cv = auto_cv;
+	this->temp_cv = temp_cv;
 
-    init();
+	init();
 }
 
 void MainWindow::init()
@@ -100,30 +105,32 @@ void MainWindow::init()
 
     // Set slider properties
     {
-        ui->extendBr->setChecked(cfg[toggleLimit]);
-        setBrSlidersRange(cfg[toggleLimit]);
+        ui->extendBr->setChecked(cfg["extend_br"]);
+        setBrSlidersRange(cfg["extend_br"]);
 
         ui->tempSlider->setRange(0, temp_arr_entries * temp_mult);
-        ui->minBrSlider->setValue(cfg[MinBr]);
-        ui->maxBrSlider->setValue(cfg[MaxBr]);
-        ui->offsetSlider->setValue(cfg[Offset]);
-        ui->speedSlider->setValue(cfg[Speed]);
-        ui->tempSlider->setValue(cfg[Temp]);
-        ui->thresholdSlider->setValue(cfg[Threshold]);
-        ui->pollingSlider->setValue(cfg[Polling_rate]);
+        ui->minBrSlider->setValue(cfg["min_br"]);
+        ui->maxBrSlider->setValue(cfg["max_br"]);
+        ui->offsetSlider->setValue(cfg["offset"]);
+        ui->speedSlider->setValue(cfg["speed"]);
+        ui->tempSlider->setValue(cfg["temp_step"]);
+        ui->thresholdSlider->setValue(cfg["threshold"]);
+        ui->pollingSlider->setValue(cfg["polling_rate"]);
     }
 
-    // Set auto brightness toggle
-    {
-        ui->autoCheck->setChecked(cfg[isAuto]);
+	// Set auto brightness/temp toggles
+	{
+		ui->autoCheck->setChecked(cfg["auto_br"]);
 
-        run = cfg[isAuto];
-        auto_cv->notify_one();
+		run_ss_thread = cfg["auto_br"];
+		auto_cv->notify_one();
 
-        toggleSliders(cfg[isAuto]);
-    }
+		toggleSliders(cfg["auto_br"]);
 
-    LOGI << "Qt window initialized";
+		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
+	}
+
+	LOGI << "Qt window initialized";
 }
 
 QMenu* MainWindow::createMenu()
@@ -145,7 +152,7 @@ QMenu* MainWindow::createMenu()
 
     QAction *show_wnd = new QAction("&Show Gammy", this);
 
-    auto show_on_top = [&]()
+    auto show_on_top = [this]()
     {
         if(this->isHidden())
         {
@@ -167,12 +174,12 @@ QMenu* MainWindow::createMenu()
     menu->addSeparator();
 
     QAction *quit_prev = new QAction("&Quit", this);
-    connect(quit_prev, &QAction::triggered, this, [=]{on_closeButton_clicked();});
+    connect(quit_prev, &QAction::triggered, this, [&]() { on_closeButton_clicked(true); });
     menu->addAction(quit_prev);
 
 #ifndef _WIN32
     QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
-    connect(quit_pure, &QAction::triggered, this, [=]{set_previous_gamma = false; on_closeButton_clicked(); });
+    connect(quit_pure, &QAction::triggered, this, [&]() { on_closeButton_clicked(false); });
     menu->addAction(quit_pure);
 #endif
 
@@ -199,112 +206,102 @@ void MainWindow::on_hideButton_clicked()
     this->hide();
 }
 
-void MainWindow::on_closeButton_clicked()
-{
-    run = true;
-    quit = true;
-    auto_cv->notify_one();
-
-    QCloseEvent e;
-    e.setAccepted(true);
-    emit closeEvent(&e);
-
-    trayIcon->hide();
-}
-
-void MainWindow::closeEvent(QCloseEvent* e)
-{
-    MainWindow::hide();
-    saveConfig();
-
-    if(ignore_closeEvent) e->ignore();
-}
-
 //___________________________________________________________
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {   
     ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 
-    if(val > cfg[MaxBr])
+    if(val > cfg["max_br"])
     {
-        ui->maxBrSlider->setValue(cfg[MaxBr] = val);
+        ui->maxBrSlider->setValue(cfg["max_br"] = val);
     }
 
-    cfg[MinBr] = val;
+    cfg["min_br"] = val;
 }
 
 void MainWindow::on_maxBrSlider_valueChanged(int val)
 {
     ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 
-    if(val < cfg[MinBr])
+    if(val < cfg["min_br"])
     {
-        ui->minBrSlider->setValue(cfg[MinBr] = val);
+        ui->minBrSlider->setValue(cfg["min_br"] = val);
     }
 
-    cfg[MaxBr] = val;
+    cfg["max_br"] = val;
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
-    cfg[Offset] = val;
+    cfg["offset"] = val;
 
     ui->offsetLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
-    cfg[Speed] = val;
+    cfg["speed"] = val;
 }
 
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
-    cfg[Temp] = val;
+	cfg["temp_step"] = val;
 
-    if constexpr(os == OS::Windows)
-    {
-        setGDIGamma(scr_br, val);
-    }
-#ifndef _WIN32 // @TODO: replace this
-    else x11->setXF86Gamma(scr_br, val);
+	if(this->quit) return;
+
+	if constexpr(os == OS::Windows) {
+		setGDIGamma(scr_br, val);
+	}
+#ifndef _WIN32
+	else x11->setXF86Gamma(scr_br, val);
 #endif
 
-    int temp_kelvin = convertToRange(temp_arr_entries * temp_mult - val,
-                                     0, temp_arr_entries * temp_mult,
-                                     min_temp_kelvin, max_temp_kelvin);
+	int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
 
-    temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
+	temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
 
-    ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
+	ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
 {
-    cfg[Threshold] = val;
+    cfg["threshold"] = val;
 }
 
 void MainWindow::on_pollingSlider_valueChanged(int val)
 {
-    cfg[Polling_rate] = val;
+    cfg["polling_rate"] = val;
 }
 
-void MainWindow::on_autoCheck_stateChanged(int state)
+void MainWindow::on_autoCheck_toggled(bool checked)
 {
-    if(state == 2)
-    {
-        cfg[isAuto] = 1;
-        run = true;
-        if(force) *force = true;
-    }
-    else
-    {
-        cfg[isAuto] = 0;
-        run = false;
-    }
+	run_ss_thread		= checked;
+	if(force) *force	= checked;
+	auto_cv->notify_all();
 
-    toggleSliders(run);
-    auto_cv->notify_one();
+	toggleSliders(checked);
+	cfg["auto_br"]		= checked;
+}
+
+void MainWindow::on_autoTempCheck_toggled(bool checked)
+{
+	cfg["auto_temp"]	= checked;
+	run_temp_thread		= checked;
+
+	ui->tempSlider->setDisabled(checked);
+
+	if (checked)
+	{
+		LOGI << "Resuming temperature thread";
+		if(force_temp_change) *force_temp_change = true;
+	}
+	else
+	{
+		LOGI << "Pausing temperature thread";
+	}
+
+	temp_cv->notify_one();
 }
 
 void MainWindow::toggleSliders(bool is_auto)
@@ -322,29 +319,30 @@ void MainWindow::toggleSliders(bool is_auto)
 
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
-    scr_br = value;
-    cfg[CurBr] = value;
+	scr_br = value;
+	cfg["brightness"] = value;
 
-    if constexpr(os == OS::Windows)
-    {
-        setGDIGamma(cfg[CurBr], cfg[Temp]);
-    }
-#ifndef _WIN32 // @TODO: Replace this
-    else x11->setXF86Gamma(cfg[CurBr], cfg[Temp]);
+	if constexpr(os == OS::Windows) {
+		setGDIGamma(scr_br, cfg["temp_step"]);
+	}
+#ifndef _WIN32
+	else x11->setXF86Gamma(scr_br, cfg["temp_step"]);
 #endif
 
-    MainWindow::updateBrLabel();
+	updateBrLabel();
 }
 
 void MainWindow::on_extendBr_clicked(bool checked)
 {
-    cfg[toggleLimit] = checked;
+    cfg["extend_br"] = checked;
 
-    setBrSlidersRange(cfg[toggleLimit]);
+    setBrSlidersRange(cfg["extend_br"]);
 }
 
 void MainWindow::setBrSlidersRange(bool inc)
 {
+    LOGV << "Setting sliders range";
+
     int br_limit = default_brightness;
 
     if(inc) br_limit *= 2;
@@ -355,24 +353,68 @@ void MainWindow::setBrSlidersRange(bool inc)
     ui->offsetSlider->setRange(0, br_limit);
 }
 
+void MainWindow::on_pushButton_clicked()
+{
+    TempScheduler ts(nullptr, temp_cv, force_temp_change);
+    ts.exec();
+}
+
 void MainWindow::setPollingRange(int min, int max)
 {
-   const int poll = cfg[Polling_rate];
+   const int poll = cfg["polling_rate"];
 
    LOGD << "Setting polling rate slider range to: " << min << ", " << max;
 
    ui->pollingSlider->setRange(min, max);
 
    if(poll < min) {
-       cfg[Polling_rate] = min;
+       cfg["polling_rate"] = min;
    }
    else
    if(poll > max) {
-       cfg[Polling_rate] = max;
+       cfg["polling_rate"] = max;
    }
 
    ui->pollingLabel->setText(QString::number(poll));
    ui->pollingSlider->setValue(poll);
+}
+
+void MainWindow::setTempSlider(int val)
+{
+    ui->tempSlider->setValue(val);
+}
+
+void MainWindow::on_tempSlider_sliderPressed()
+{
+
+}
+
+void MainWindow::on_closeButton_clicked(bool set_previous_gamma)
+{
+	// Boolean to be read before quitting the screenshot thread
+	this->set_previous_gamma = set_previous_gamma;
+
+	run_ss_thread = true;
+	quit = true;
+	auto_cv->notify_all();
+
+	run_temp_thread = true;
+	temp_cv->notify_one();
+
+	QCloseEvent e;
+	e.setAccepted(true);
+	emit closeEvent(&e);
+
+	trayIcon->hide();
+}
+
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    this->hide();
+
+    save();
+
+    if(ignore_closeEvent) e->ignore();
 }
 
 MainWindow::~MainWindow()

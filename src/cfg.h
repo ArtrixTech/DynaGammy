@@ -6,45 +6,17 @@
 #ifndef CFG_H
 #define CFG_H
 
-#include <array>
+#include "utils.h"
+#include "json.hpp"
 
-constexpr int cfg_count = 11;
+using json = nlohmann::json;
 
-constexpr std::array<const char*, cfg_count> cfg_str
-{
-    "minBrightness=",
-    "maxBrightness=",
-    "offset=",
-    "temp=",
-    "speed=",
-    "threshold=",
-    "updateRate=",
-    "auto=",
-    "toggleLimit=",
-    "debug=",
-    "curBr="
-};
+extern json cfg;
 
-enum cfg {
-    MinBr,
-    MaxBr,
-    Offset,
-    Temp,
-    Speed,
-    Threshold,
-    Polling_rate,
-    isAuto,
-    toggleLimit,
-    Debug,
-    CurBr
-};
+auto getConfigPath()		-> std::string;
+auto getExecutablePath()	-> std::wstring;
 
-auto getHomePath()          -> std::string;
-auto getExecutablePath()    -> std::wstring;
-
-void readConfig();
-void saveConfig();
-
-extern std::array<int, cfg_count> cfg;
+void read();
+void save();
 
 #endif // CFG_H

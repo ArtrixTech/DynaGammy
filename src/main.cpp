@@ -4,6 +4,7 @@
  */
 
 #include <QApplication>
+#include <QTime>
 
 #include "mainwindow.h"
 #include "main.h"
@@ -30,6 +31,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 // Reflects the current screen brightness
 int scr_br = default_brightness;
@@ -42,15 +44,19 @@ static convar *cv_ptr;
 
 struct Args
 {
-    convar  adjustbr_cv;
+	convar	adjustbr_cv;
+	convar	temp_cv;
+
 #ifndef _WIN32
-    X11         *x11 {};
+	X11 *x11 {};
 #endif
-    MainWindow    *w {};
-    int64_t callcnt = 0;
-    int img_br      = 0;
-    int target_br   = 0;
-    int img_delta   = 0;
+
+	MainWindow *w {};
+
+	int64_t callcnt = 0;
+	int img_br	= 0;
+	int target_br	= 0;
+	int img_delta	= 0;
 };
 
 void adjustBrightness(Args &args)
@@ -70,28 +76,28 @@ void adjustBrightness(Args &args)
 
         LOGD << "Working (" << c << ')';
 
-        int sleeptime = (100 - args.img_delta / 4) / cfg[Speed];
+        int speed = cfg["speed"];
+
+        int sleeptime = (100 - args.img_delta / 4) / speed;
         args.img_delta = 0;
 
         if (scr_br < args.target_br) sleeptime /= 3;
 
-        while (c == args.callcnt && args.w->run)
+        while (c == args.callcnt && args.w->run_ss_thread)
         {
             if     (scr_br < args.target_br) ++scr_br;
             else if(scr_br > args.target_br) --scr_br;
             else break;
 
-            if(!args.w->quit)
+            if(args.w->quit) break;
+
+            if constexpr (os == OS::Windows)
             {
-                if constexpr (os == OS::Windows)
-                {
-                    setGDIGamma(scr_br, cfg[Temp]);
-                }
-#ifndef _WIN32 // @TODO: replace this, as it defeats the whole purpose of the constexpr check
-                else {args.x11->setXF86Gamma(scr_br, cfg[Temp]); }
-#endif
+                setGDIGamma(scr_br, cfg["temp_step"]);
             }
-            else break;
+#ifndef _WIN32
+            else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
+#endif
 
             if(args.w->isVisible()) args.w->updateBrLabel();
 
@@ -102,6 +108,208 @@ void adjustBrightness(Args &args)
     }
 
        LOGD << "Complete (" << c << ')';
+}
+
+void adjustTemperature(Args &args)
+{
+	const auto setTime = [] (QTime &t, const std::string &time_str)
+	{
+		const auto start_hour	= time_str.substr(0, 2);
+		const auto start_min	= time_str.substr(3, 2);
+
+		t = QTime(std::stoi(start_hour), std::stoi(start_min));
+	};
+
+	using namespace std::this_thread;
+	using namespace std::chrono;
+	using namespace std::chrono_literals;
+
+	std::mutex m;
+	std::unique_lock<std::mutex> lk(m);
+
+	bool start_date_reached = false;
+	bool end_date_reached	= false;
+
+	bool force = false;
+	args.w->force_temp_change = &force;
+
+	QTime		time_start;
+	QTime		time_end;
+	QDateTime	datetime_start;
+	QDateTime	datetime_end;
+
+	int64_t		jday_start;
+	int64_t		jday_end;
+
+	const auto setDates = [&] ()
+	{
+		setTime(time_start, cfg["time_start"]);
+		setTime(time_end, cfg["time_end"]);
+
+		datetime_start	= QDateTime(QDate::fromJulianDay(jday_start), time_start);
+		datetime_end	= QDateTime(QDate::fromJulianDay(jday_end), time_end);
+
+		LOGI << "Start: " << datetime_start.toString();
+		LOGI << "End:   " << datetime_end.toString();
+	};
+
+	const auto checkDates = [&] ()
+	{
+		const auto now = QDateTime::currentDateTime();
+
+		start_date_reached	= now > datetime_start;
+		end_date_reached	= now > datetime_end;
+
+		LOGI << "Start reached: " << start_date_reached;
+		LOGI << "End   reached: " << end_date_reached;
+	};
+
+	int64_t today = QDate::currentDate().toJulianDay();
+	int64_t tomorrow = today + 1;
+
+	jday_start = today;
+	jday_end = tomorrow;
+
+	setDates();
+	checkDates();
+
+	enum TempState {
+		HIGH_TEMP,
+		LOW_TEMP
+	};
+
+	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && !end_date_reached)
+	{
+		LOGI << "Starting on low temp, but start date hasn't been reached. End time should be today.";
+		jday_end = today;
+
+		setDates();
+		checkDates();
+	}
+
+	bool needs_change;
+
+	needs_change = true;
+	args.temp_cv.notify_one();
+
+	std::thread clock([&] ()
+	{
+		while(true)
+		{
+			sleep_for(10s);
+
+			checkDates();
+
+			if(start_date_reached || end_date_reached)
+			{
+				needs_change = true;
+				args.temp_cv.notify_one();
+			}
+		}
+	});
+
+	while (!args.w->quit)
+	{
+		args.temp_cv.wait(lk, [&]
+		{
+			return needs_change || force;
+		});
+
+		needs_change = false;
+
+		if(force)
+		{
+			setDates();
+			checkDates();
+
+			if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
+			{
+				cfg["temp_state"] = HIGH_TEMP;
+			}
+
+			force = false;
+		}
+
+		if(cfg["temp_state"] == HIGH_TEMP)
+		{
+			if(start_date_reached)
+			{
+				LOGI << "Start date reached.";
+				cfg["temp_state"] = LOW_TEMP;
+			}
+		}
+		else
+		{
+			if(start_date_reached && end_date_reached)
+			{
+				LOGI << "Start and end reached. Shifting dates.";
+
+				jday_start++;
+				jday_end++;
+				setDates();
+				checkDates();
+
+				cfg["temp_state"] = HIGH_TEMP;
+			}
+			else if(jday_end == today && end_date_reached)
+			{
+				// We get here if the app was started on low temp
+				// but the start date hasn't been reached
+
+				LOGI << "End date reached. Shifting end date.";
+
+				cfg["temp_state"] = HIGH_TEMP;
+
+				jday_end++;
+				setDates();
+				checkDates();
+			}
+		}
+
+		int cur_step = cfg["temp_step"];
+		int target_temp;
+
+		if(cfg["temp_state"] == HIGH_TEMP)
+			target_temp = cfg["temp_high"];
+		else
+			target_temp = cfg["temp_low"];
+
+		const int target_step = kelvinToStep(target_temp);
+
+		int add = 0;
+
+		if(cur_step == target_step)
+		{
+			LOGI << "No change needed.";
+			continue;
+		}
+
+		if(cur_step < target_step)
+		{
+			LOGI << "Decreasing temp...";
+			add = 1;
+		}
+		else
+		{
+			LOGI << "Increasing temp...";
+			add = -1;
+		}
+
+		while (args.w->run_temp_thread)
+		{
+			cur_step += add;
+
+			args.w->setTempSlider(cur_step);
+
+			if(cur_step == target_step)
+			{
+				LOGI << "Done!";
+				break;
+			}
+
+			sleep_for(50ms);
+		}
+	}
 }
 
 void recordScreen(Args &args)
@@ -137,15 +345,16 @@ void recordScreen(Args &args)
     const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
     const uint64_t len = screen_res * 4;
 
-    args.x11->setXF86Gamma(scr_br, cfg[Temp]);
+    args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
 #endif
 
-    LOGD << "Screen bufsize: " << len;
+    LOGD << "Buffer size: " << len;
 
     // Buffer to store screen pixels
     std::vector<uint8_t> buf(len);
 
     std::thread t1(adjustBrightness, std::ref(args));
+    std::thread t2(adjustTemperature, std::ref(args));
 
     std::once_flag f;
     std::mutex m;
@@ -153,10 +362,10 @@ void recordScreen(Args &args)
 
     while (!args.w->quit)
     {
-        args.w->auto_cv->wait(lock, [&]
-        {
-            return args.w->run;
-        });
+	args.adjustbr_cv.wait(lock, [&]
+	{
+		return args.w->run_ss_thread;
+	});
 
         LOGV << "Taking screenshot";
 
@@ -173,7 +382,7 @@ void recordScreen(Args &args)
 #else
         args.x11->getX11Snapshot(buf);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
+        std::this_thread::sleep_for(std::chrono::milliseconds(cfg["polling_rate"]));
 #endif
 
         args.img_br     = calcBrightness(buf);
@@ -181,16 +390,18 @@ void recordScreen(Args &args)
 
         std::call_once(f, [&](){ args.img_delta = 0; });
 
-        if (args.img_delta > cfg[Threshold] || force)
+        if (args.img_delta > cfg["threshold"] || force)
         {
-            args.target_br = default_brightness - args.img_br + cfg[Offset];
+            int offset = cfg["offset"];
 
-            if (args.target_br > cfg[MaxBr]) {
-                args.target_br = cfg[MaxBr];
+            args.target_br = default_brightness - args.img_br + offset;
+
+            if (args.target_br > cfg["max_br"]) {
+                args.target_br = cfg["max_br"];
             }
             else
-            if (args.target_br < cfg[MinBr]) {
-                args.target_br = cfg[MinBr];
+            if (args.target_br < cfg["min_br"]) {
+                args.target_br = cfg["min_br"];
             }
 
             LOGD << scr_br << " -> " << args.target_br << " delta: " << args.img_delta;
@@ -208,15 +419,15 @@ void recordScreen(Args &args)
             force = false;
         }
 
-        if (cfg[MinBr] != prev_min || cfg[MaxBr] != prev_max || cfg[Offset] != prev_offset)
+        if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
         {
             force = true;
         }
 
         prev_imgBr  = args.img_br;
-        prev_min    = cfg[MinBr];
-        prev_max    = cfg[MaxBr];
-        prev_offset = cfg[Offset];
+        prev_min    = cfg["min_br"];
+        prev_max    = cfg["max_br"];
+        prev_offset = cfg["offset"];
     }
 
     if constexpr (os == OS::Windows)
@@ -232,88 +443,91 @@ void recordScreen(Args &args)
 
     LOGD << "Notified children to quit (" << args.callcnt << ')';
 
+    _exit(0);
+
     t1.join();
-    QApplication::quit();
+    t2.join();
 }
 
 int main(int argc, char *argv[])
 {
-    static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 3, 3);
-    static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
+	static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
+	static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
-    readConfig();
+	plog::init(plog::Severity(plog::info), &console_appender);
 
-    // Start with manual brightness set if auto is disabled
-    if(!cfg[isAuto]) scr_br = cfg[CurBr];
+	read();
 
-    plog::init(plog::Severity(cfg[Debug]), &console_appender);
+	// Start with manual brightness setting, if auto brightness is disabled
+	if(!cfg["auto_br"]) scr_br = cfg["brightness"];
 
-    if(cfg[Debug] >= plog::debug) plog::get()->addAppender(&file_appender);
-
-#ifdef _WIN32
-    checkInstance();
-
-    if(cfg[Debug] >= plog::debug)
-    {
-        FILE *f1, *f2, *f3;
-        AllocConsole();
-        freopen_s(&f1, "CONIN$", "r", stdin);
-        freopen_s(&f2, "CONOUT$", "w", stdout);
-        freopen_s(&f3, "CONOUT$", "w", stderr);
-    }
-
-    SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
-
-    checkGammaRange();
-#else
-    signal(SIGINT, sig_handler);
-    signal(SIGQUIT, sig_handler);
-    signal(SIGTERM, sig_handler);
-
-    X11 x11;
-#endif
-
-    QApplication a(argc, argv);
-
-    Args thread_args;
-    convar auto_cv;
+	plog::init(plog::Severity(cfg["log_lvl"]), &console_appender);
+	plog::get()->addAppender(&file_appender);
+	plog::get()->setMaxSeverity(cfg["log_lvl"]);
 
 #ifdef _WIN32
-    MainWindow wnd(nullptr, &auto_cv);
-#else
-    MainWindow wnd(&x11, &auto_cv);
+	checkInstance();
 
-    cv_ptr          = &auto_cv;
-    quit_ptr        = &wnd.quit;
-    run_ptr         = &wnd.run;
-    thread_args.x11 = &x11;
+	if(cfg["log_lvl"] > plog::none)
+	{
+		FILE *f1, *f2, *f3;
+		AllocConsole();
+		freopen_s(&f1, "CONIN$", "r", stdin);
+		freopen_s(&f2, "CONOUT$", "w", stdout);
+		freopen_s(&f3, "CONOUT$", "w", stderr);
+	}
+
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+
+	checkGammaRange();
+#else
+	signal(SIGINT, sig_handler);
+	signal(SIGQUIT, sig_handler);
+	signal(SIGTERM, sig_handler);
+
+	X11 x11;
 #endif
 
-    thread_args.w = &wnd;
+	QApplication a(argc, argv);
 
-    std::thread t1(recordScreen, std::ref(thread_args));
+	Args thr_args;
 
-    a.exec();
-    t1.join();
+#ifdef _WIN32
+	MainWindow wnd(nullptr, &threads_args.auto_cv, &threads_args.temp_cv);
+#else
+	MainWindow wnd(&x11, &thr_args.adjustbr_cv, &thr_args.temp_cv);
 
-    QApplication::quit();
+	cv_ptr		= &thr_args.adjustbr_cv;
+	quit_ptr	= &wnd.quit;
+	run_ptr		= &wnd.run_ss_thread;
+	thr_args.x11	= &x11;
+#endif
+
+	thr_args.w = &wnd;
+
+	std::thread t(recordScreen, std::ref(thr_args));
+
+	a.exec();
+	t.join();
+
+	QApplication::quit();
 }
 
 #ifndef _WIN32
 void sig_handler(int signo)
 {
-    LOGD_IF(signo == SIGINT) << "SIGINT received";
-    LOGD_IF(signo == SIGTERM) << "SIGTERM received";
-    LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
+	LOGD_IF(signo == SIGINT) << "SIGINT received";
+	LOGD_IF(signo == SIGTERM) << "SIGTERM received";
+	LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
 
-    saveConfig();
+	save();
 
-    if(run_ptr && quit_ptr && cv_ptr)
-    {
-        *run_ptr = true;
-        *quit_ptr = true;
-        cv_ptr->notify_one();
-    }
-    else _exit(0);
+	if(run_ptr && quit_ptr && cv_ptr)
+	{
+		*run_ptr = true;
+		*quit_ptr = true;
+		cv_ptr->notify_one();
+	}
+	else _exit(0);
 }
 #endif

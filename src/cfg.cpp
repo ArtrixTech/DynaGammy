@@ -12,132 +12,144 @@
 #include <Windows.h> // GetModuleFileNameW
 #endif
 
-std::array<int, cfg_count> cfg
+json setDefault()
 {
-    192,    // MinBr
-    255,    // MaxBr
-    78,     // Offset
-    0,      // Temp
-    3,      // Speed
-    32,     // Threshold
-    100,    // Polling_Rate
-    1,      // isAuto
-    0,      // toggleLimit
-    3,      // Debug (0: none, 1: fatal, 2: error, 3: warning, 4: info, 5: debug, 6: verbose)
-    255     // CurBr
+	return
+	{
+		{"brightness", 255},
+		{"min_br", 192 },
+		{"max_br", 255 },
+		{"offset", 78 },
+		{"speed", 3 },
+		{"threshold", 32 },
+		{"polling_rate", 100 },
+		{"temp_step", 0 },
+		{"temp_high", max_temp_kelvin },
+		{"temp_low", 3400 },
+		{"temp_state", 0 },
+		{"time_start", "17:00:00" },
+		{"time_end", "06:00:00" },
+		{"auto_br", true },
+		{"auto_temp", false },
+		{"extend_br", false },
+		{"log_lvl", 3 }
+	};
 };
 
-void readConfig()
+json cfg = setDefault();
+
+void save()
 {
 #ifdef _WIN32
-    static const std::wstring path = getExecutablePath();
+	static const std::wstring path = getExecutablePath();
 #else
-    static const std::string path = getHomePath();
+	static const std::string path = getConfigPath();
 #endif
 
-    LOGD << "Opening config...";
+	if(path.empty())
+	{
+		LOGE << "Invalid config path";
+		return;
+	}
 
-    std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
+	std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
 
-    if(!file.is_open())
-    {
-        LOGE << "Unable to open config file";
+	if(!file.good() || !file.is_open())
+	{
+		LOGE << "Unable to open config file";
+		return;
+	}
 
-        return;
-    }
+	try
+	{
+		file << std::setw(4) << cfg;
+	}
+	catch (json::exception &e)
+	{
+		LOGE << e.what() << " id: " << e.id;
+		return;
+	}
 
-    LOGD << "Config opened";
-
-    file.seekg(0, std::ios::end);
-    bool empty = file.tellg() == 0;
-
-    if(empty)
-    {
-        LOGW << "Config empty. Creating one...";
-
-        saveConfig();
-        return;
-    }
-
-    file.seekg(0);
-
-    size_t c = 0;
-    for (std::string line; std::getline(file, line);)
-    {
-        LOGV << line;
-
-        if(!line.empty())
-        {
-            size_t pos = line.find('=') + 1;
-            std::string val = line.substr(pos);
-
-            cfg[c++] = std::stoi(val);
-        }
-    }
-
-    file.close();
+	LOGD << "Settings saved";
 }
 
-void saveConfig()
+void read()
 {
 #ifdef _WIN32
-    static const std::wstring path = getExecutablePath();
+	static const std::wstring path = getExecutablePath();
 #else
-    static const std::string path = getHomePath();
+	static const std::string path = getConfigPath();
 #endif
 
-    if(path.empty())
-    {
-        LOGE << "Invalid config path";
-        return;
-    }
+	LOGD << "Opening config...";
 
-    std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
+	std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
-    if(!file.good() || !file.is_open())
-    {
-        LOGE << "Unable to open config file";
-        return;
-    }
+	if(!file.good() || !file.is_open())
+	{
+		LOGE << "Unable to open config file";
+		return;
+	}
 
-    for(size_t i = 0; i < cfg_count; i++)
-    {
-        file << cfg_str[i] << cfg[i] << '\n';
-    }
+	LOGD << "Config opened";
 
-    LOGI << "Settings saved";
+	file.seekg(0, std::ios::end);
 
-    file.close();
+	if(file.tellg() == 0)
+	{
+		LOGW << "Config empty. Creating one...";
+		save();
+		return;
+	}
+
+	file.seekg(0);
+
+	try
+	{
+		file >> std::setw(4) >> cfg;
+	}
+	catch (json::exception &e)
+	{
+		LOGE << e.what();
+		LOGE << "Resetting config...";
+
+		cfg = setDefault();
+		save();
+
+		return;
+	}
+
+	LOGD << "Settings read";
 }
 
 #ifndef _WIN32
-std::string getHomePath()
+std::string getConfigPath()
 {
-    const char *xdg_cfg_home;
-    const char *home;
+	const char *xdg_cfg_home;
+	const char *home;
 
-    std::string path;
-    std::string cfg_filename = "gammy";
+	std::string path;
+	std::string cfg_filename = "gammy";
 
-    xdg_cfg_home = getenv("XDG_CONFIG_HOME");
+	xdg_cfg_home = getenv("XDG_CONFIG_HOME");
 
-    if (xdg_cfg_home)
-    {
-        path = std::string(xdg_cfg_home) + '/';
-    }
-    else
-    {
-        home = getenv("HOME");
-        if(!home) return "";
+	if (xdg_cfg_home)
+	{
+		path = std::string(xdg_cfg_home) + '/';
+	}
+	else
+	{
+		home = getenv("HOME");
+		if(!home) return "";
 
-        path = std::string(home) + "/.config/";
-    }
+		path = std::string(home) + "/.config/";
+	}
 
-    path += cfg_filename;
+	path += cfg_filename;
 
-    LOGI << "Config path: " + path;
+	LOGI << "Config path: " + path;
 
-    return path;
+	return path;
 }
 #else
 std::wstring getExecutablePath()
