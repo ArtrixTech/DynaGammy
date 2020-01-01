@@ -197,8 +197,11 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::updateBrLabel()
 {
-    int val = scr_br * 100 / 255;
-    ui->statusLabel->setText(QStringLiteral("%1").arg(val));
+	if(isVisible())
+	{
+		int val = scr_br * 100 / 255;
+		ui->statusLabel->setText(QStringLiteral("%1").arg(val));
+	}
 }
 
 void MainWindow::on_hideButton_clicked()

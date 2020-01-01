@@ -61,53 +61,52 @@ struct Args
 
 void adjustBrightness(Args &args)
 {
-    int64_t c = 0, prev_c = 0;
+	int64_t c = 0, prev_c = 0;
 
-    std::mutex m;
-    std::unique_lock<std::mutex> lock(m);
+	std::mutex m;
+	std::unique_lock<std::mutex> lock(m);
 
-    while(!args.w->quit)
-    {
-        LOGD << "Waiting (" << c << ')';
+	while(!args.w->quit)
+	{
+		LOGD << "Waiting (" << c << ')';
 
-        args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
+		args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
-        c = args.callcnt;
+		c = args.callcnt;
 
-        LOGD << "Working (" << c << ')';
+		LOGD << "Working (" << c << ')';
 
-        int speed = cfg["speed"];
+		int speed = cfg["speed"];
 
-        int sleeptime = (100 - args.img_delta / 4) / speed;
-        args.img_delta = 0;
+		int sleeptime = (100 - args.img_delta / 4) / speed;
+		args.img_delta = 0;
 
-        if (scr_br < args.target_br) sleeptime /= 3;
+		if (scr_br < args.target_br) sleeptime /= 3;
 
-        while (c == args.callcnt && args.w->run_ss_thread)
-        {
-            if     (scr_br < args.target_br) ++scr_br;
-            else if(scr_br > args.target_br) --scr_br;
-            else break;
+		while (c == args.callcnt && args.w->run_ss_thread)
+		{
+			if (scr_br < args.target_br) ++scr_br;
+			else if(scr_br > args.target_br) --scr_br;
+			else break;
 
-            if(args.w->quit) break;
+			if(args.w->quit) break;
 
-            if constexpr (os == OS::Windows)
-            {
-                setGDIGamma(scr_br, cfg["temp_step"]);
-            }
+			if constexpr (os == OS::Windows) {
+				setGDIGamma(scr_br, cfg["temp_step"]);
+			}
 #ifndef _WIN32
-            else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
+			else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
 #endif
 
-            if(args.w->isVisible()) args.w->updateBrLabel();
+			args.w->updateBrLabel();
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
-        }
+			std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
+		}
 
-        prev_c = c;
-    }
+	prev_c = c;
+	}
 
-       LOGD << "Complete (" << c << ')';
+	LOGD << "Complete (" << c << ')';
 }
 
 void adjustTemperature(Args &args)
@@ -461,7 +460,6 @@ int main(int argc, char *argv[])
 	// Start with manual brightness setting, if auto brightness is disabled
 	if(!cfg["auto_br"]) scr_br = cfg["brightness"];
 
-	plog::init(plog::Severity(cfg["log_lvl"]), &console_appender);
 	plog::get()->addAppender(&file_appender);
 	plog::get()->setMaxSeverity(cfg["log_lvl"]);
 
