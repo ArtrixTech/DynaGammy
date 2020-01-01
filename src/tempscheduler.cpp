@@ -2,70 +2,76 @@
 #include "ui_tempscheduler.h"
 #include "cfg.h"
 
+static QTime time_start, time_end;
+
 TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_change) :
-    QDialog(parent),
-    ui(new Ui::TempScheduler)
+	QDialog(parent),
+	ui(new Ui::TempScheduler)
 {
-    ui->setupUi(this);
+	ui->setupUi(this);
 
-    this->temp_cv = temp_cv;
-    this->force_change = force_change;
+	this->temp_cv = temp_cv;
+	this->force_change = force_change;
 
-    this->start_temp = cfg["temp_high"];
-    ui->tempStartBox->setValue(start_temp);
+	this->start_temp = cfg["temp_high"];
+	ui->tempStartBox->setValue(start_temp);
 
-    this->target_temp = cfg["temp_low"];
-    ui->tempEndBox->setValue(target_temp);
+	this->target_temp = cfg["temp_low"];
+	ui->tempEndBox->setValue(target_temp);
 
-    {
-        this->time_start = cfg["time_start"].get<std::string>().c_str();
-        auto hr          = QStringRef(&time_start, 0, 2);
-        auto min         = QStringRef(&time_start, 3, 2);
+	const auto setTime = [] (QTime &t, const std::string &time_str)
+	{
+		const auto start_hour	= time_str.substr(0, 2);
+		const auto start_min	= time_str.substr(3, 2);
 
-        ui->timeStartBox->setTime(QTime(hr.toInt(), min.toInt()));
-    }
+		t = QTime(std::stoi(start_hour), std::stoi(start_min));
+	};
 
-    {
-        this->time_end  = cfg["time_end"].get<std::string>().c_str();
-        auto hr         = QStringRef(&time_end, 0, 2);
-        auto min        = QStringRef(&time_end, 3, 2);
+	setTime(time_start, cfg["time_start"]);
+	ui->timeStartBox->setTime(time_start);
 
-        ui->timeEndBox->setTime(QTime(hr.toInt(), min.toInt()));
-    }
+	setTime(time_end, cfg["time_end"]);
+	ui->timeEndBox->setTime(time_end);
 }
 
 void TempScheduler::on_buttonBox_accepted()
 {
-    cfg["time_start"]       = this->time_start.toStdString();
-    cfg["time_end"]         = this->time_end.toStdString();
+	if(time_start < time_end)
+	{
+		time_start = time_end;
+		time_start = time_start.addSecs(3600);
+	}
 
-    cfg["temp_high"]     = this->start_temp;
-    cfg["temp_low"]      = this->target_temp;
+	cfg["time_start"]	= time_start.toString().toStdString();
+	cfg["time_end"] 	= time_end.toString().toStdString();
 
-    save();
+	cfg["temp_high"]	= this->start_temp;
+	cfg["temp_low"] 	= this->target_temp;
 
-    *force_change = true;
-    temp_cv->notify_one();
+	save();
+
+	*force_change = true;
+	temp_cv->notify_one();
 }
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)
 {
-    this->start_temp = val;
+	this->start_temp = val;
 }
 
 void TempScheduler::on_tempEndBox_valueChanged(int val)
 {
-    this->target_temp = val;
+	this->target_temp = val;
 }
 
 void TempScheduler::on_timeStartBox_timeChanged(const QTime &time)
 {
-    this->time_start = time.toString();
+	time_start = time;
 }
 
 void TempScheduler::on_timeEndBox_timeChanged(const QTime &time)
 {
-    this->time_end = time.toString();
+	time_end = time;
 }
 
 TempScheduler::~TempScheduler()

@@ -10,37 +10,34 @@ class TempScheduler;
 
 class TempScheduler : public QDialog
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    explicit TempScheduler(QWidget *parent = nullptr);
-    explicit TempScheduler(QWidget *parent = nullptr, convar *temp_cv = nullptr, bool *force_change = {});
-    ~TempScheduler();
+	explicit TempScheduler(QWidget *parent = nullptr);
+	explicit TempScheduler(QWidget *parent = nullptr, convar *temp_cv = nullptr, bool *force_change = {});
+	~TempScheduler();
 
 private slots:
-    void on_buttonBox_accepted();
+	void on_buttonBox_accepted();
 
-    void on_tempStartBox_valueChanged(int);
+	void on_tempStartBox_valueChanged(int);
 
-    void on_tempEndBox_valueChanged(int);
+	void on_tempEndBox_valueChanged(int);
 
-    void on_timeStartBox_timeChanged(const QTime &time);
+	void on_timeStartBox_timeChanged(const QTime &time);
 
-    void on_timeEndBox_timeChanged(const QTime &time);
+	void on_timeEndBox_timeChanged(const QTime &time);
 
 private:
-    Ui::TempScheduler *ui;
+	Ui::TempScheduler *ui;
 
-    bool *force_change = nullptr;
-    convar *temp_cv;
+	bool *force_change = nullptr;
+	convar *temp_cv;
 
-    int start_temp = max_temp_kelvin;
-    int target_temp = min_temp_kelvin;
+	int start_temp = max_temp_kelvin;
+	int target_temp = min_temp_kelvin;
 
-    QString time_start;
-    QString time_end;
-
-    void setDates();
+	void setDates();
 };
 
 #endif // TEMPSCHEDULER_H
