@@ -12,22 +12,20 @@
 #include "cfg.h"
 
 #ifdef _WIN32
-    #include "dxgidupl.h"
-
-    #pragma comment(lib, "gdi32.lib")
-    #pragma comment(lib, "user32.lib")
-    #pragma comment(lib, "DXGI.lib")
-    #pragma comment(lib, "D3D11.lib")
-    #pragma comment(lib, "Advapi32.lib")
+	#include "dxgidupl.h"
+	#pragma comment(lib, "gdi32.lib")
+	#pragma comment(lib, "user32.lib")
+	#pragma comment(lib, "DXGI.lib")
+	#pragma comment(lib, "D3D11.lib")
+	#pragma comment(lib, "Advapi32.lib")
 #else
-    #include "x11.h"
-    #include <unistd.h>
-    #include <signal.h>
+	#include "x11.h"
+	#include <unistd.h>
+	#include <signal.h>
 #endif
 
 #include <array>
 #include <vector>
-#include <iostream>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -61,33 +59,40 @@ struct Args
 
 void adjustBrightness(Args &args)
 {
-	int64_t c = 0, prev_c = 0;
+	using namespace std::this_thread;
+	using namespace std::chrono;
+
+	int64_t c	= 0;
+	int64_t prev_c	= 0;
 
 	std::mutex m;
 	std::unique_lock<std::mutex> lock(m);
 
 	while(!args.w->quit)
 	{
-		LOGD << "Waiting (" << c << ')';
-
 		args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
 
 		c = args.callcnt;
 
 		LOGD << "Working (" << c << ')';
 
-		int speed = cfg["speed"];
-
-		int sleeptime = (100 - args.img_delta / 4) / speed;
+		int sleeptime = (100 - args.img_delta / 4) / cfg["speed"].get<int>();
 		args.img_delta = 0;
 
-		if (scr_br < args.target_br) sleeptime /= 3;
+		int add = 0;
+
+		// We check if brightness already equals target in the calling thread
+		if (scr_br < args.target_br) {
+			add = 1;
+			sleeptime /= 3;
+		}
+		else {
+			add = -1;
+		}
 
 		while (c == args.callcnt && args.w->run_ss_thread)
 		{
-			if (scr_br < args.target_br) ++scr_br;
-			else if(scr_br > args.target_br) --scr_br;
-			else break;
+			scr_br += add;
 
 			if(args.w->quit) break;
 
@@ -100,10 +105,12 @@ void adjustBrightness(Args &args)
 
 			args.w->updateBrLabel();
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
+			if(scr_br == args.target_br) break;
+
+			sleep_for(milliseconds(sleeptime));
 		}
 
-	prev_c = c;
+		prev_c = c;
 	}
 
 	LOGD << "Complete (" << c << ')';
@@ -313,139 +320,142 @@ void adjustTemperature(Args &args)
 
 void recordScreen(Args &args)
 {
-    PLOGV << "recordScreen() start";
+	using namespace std::this_thread;
+	using namespace std::chrono;
 
-    int prev_imgBr  = 0,
-        prev_min    = 0,
-        prev_max    = 0,
-        prev_offset = 0;
+	PLOGV << "recordScreen() start";
 
-    bool force = false;
-    args.w->force = &force;
+	int	prev_imgBr	= 0,
+		prev_min	= 0,
+		prev_max	= 0,
+		prev_offset	= 0;
+
+	bool force	= false;
+	args.w->force	= &force;
 
 #ifdef _WIN32
-    const uint64_t  w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
-                    h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
-                    len = w * h * 4;
+	const uint64_t	w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
+			h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
+			len = w * h * 4;
 
-    LOGD << "Screen resolution: " << w  << "*" << h;
+	LOGD << "Screen resolution: " << w << "*" << h;
 
-    DXGIDupl dx;
+	DXGIDupl dx;
 
-    bool useDXGI = dx.initDXGI();
+	bool useDXGI = dx.initDXGI();
 
-    if (!useDXGI)
-    {
-        LOGE << "DXGI initialization failed. Using GDI instead";
-        args.w->setPollingRange(1000, 5000);
-    }
-
-#else
-    const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
-    const uint64_t len = screen_res * 4;
-
-    args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
-#endif
-
-    LOGD << "Buffer size: " << len;
-
-    // Buffer to store screen pixels
-    std::vector<uint8_t> buf(len);
-
-    std::thread t1(adjustBrightness, std::ref(args));
-    std::thread t2(adjustTemperature, std::ref(args));
-
-    std::once_flag f;
-    std::mutex m;
-    std::unique_lock<std::mutex> lock(m);
-
-    while (!args.w->quit)
-    {
-	args.adjustbr_cv.wait(lock, [&]
+	if (!useDXGI)
 	{
-		return args.w->run_ss_thread;
-	});
+		LOGE << "DXGI initialization failed. Using GDI instead";
+		args.w->setPollingRange(1000, 5000);
+	}
 
-        LOGV << "Taking screenshot";
+#else
+	const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
+	const uint64_t len = screen_res * 4;
+
+	args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
+#endif
+
+	LOGD << "Buffer size: " << len;
+
+	// Buffer to store screen pixels
+	std::vector<uint8_t> buf(len);
+
+	std::thread t1(adjustBrightness, std::ref(args));
+	std::thread t2(adjustTemperature, std::ref(args));
+
+	std::once_flag f;
+	std::mutex m;
+	std::unique_lock<std::mutex> lock(m);
+
+	while (!args.w->quit)
+	{
+		args.adjustbr_cv.wait(lock, [&]
+		{
+			return args.w->run_ss_thread;
+		});
+
+		LOGV << "Taking screenshot";
 
 #ifdef _WIN32
-        if (useDXGI)
-        {
-            while (!dx.getDXGISnapshot(buf)) dx.restartDXGI();
-        }
-        else
-        {
-            getGDISnapshot(buf);
-            std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
-        }
+		if (useDXGI)
+		{
+			while (!dx.getDXGISnapshot(buf)) dx.restartDXGI();
+		}
+		else
+		{
+			getGDISnapshot(buf);
+			sleep_for(milliseconds(cfg["polling_rate"]));
+		}
 #else
-        args.x11->getX11Snapshot(buf);
+		args.x11->getX11Snapshot(buf);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(cfg["polling_rate"]));
+		sleep_for(milliseconds(cfg["polling_rate"]));
 #endif
 
-        args.img_br     = calcBrightness(buf);
-        args.img_delta += abs(prev_imgBr - args.img_br);
+		args.img_br	= calcBrightness(buf);
+		args.img_delta += abs(prev_imgBr - args.img_br);
 
-        std::call_once(f, [&](){ args.img_delta = 0; });
+		std::call_once(f, [&](){ args.img_delta = 0; });
 
-        if (args.img_delta > cfg["threshold"] || force)
-        {
-            int offset = cfg["offset"];
+		if (args.img_delta > cfg["threshold"] || force)
+		{
+			int offset = cfg["offset"];
 
-            args.target_br = default_brightness - args.img_br + offset;
+			args.target_br = default_brightness - args.img_br + offset;
 
-            if (args.target_br > cfg["max_br"]) {
-                args.target_br = cfg["max_br"];
-            }
-            else
-            if (args.target_br < cfg["min_br"]) {
-                args.target_br = cfg["min_br"];
-            }
+			if (args.target_br > cfg["max_br"]) {
+				args.target_br = cfg["max_br"];
+			}
+			else
+			if (args.target_br < cfg["min_br"]) {
+				args.target_br = cfg["min_br"];
+			}
 
-            LOGD << scr_br << " -> " << args.target_br << " delta: " << args.img_delta;
+			if(args.target_br != scr_br)
+			{
+				LOGD << scr_br << " -> " << args.target_br << ", Δ: " << args.img_delta;
 
-            if(args.target_br != scr_br)
-            {
-                ++args.callcnt;
+				++args.callcnt;
 
-                LOGD << "ready (" << args.callcnt << ')';
+				LOGD << "Notifying (" << args.callcnt << ')';
 
-                args.adjustbr_cv.notify_one();
-            }
-            else args.img_delta = 0;
+				args.adjustbr_cv.notify_one();
+			}
+			else args.img_delta = 0;
 
-            force = false;
-        }
+			force = false;
+		}
 
-        if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
-        {
-            force = true;
-        }
+		if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
+		{
+			force = true;
+		}
 
-        prev_imgBr  = args.img_br;
-        prev_min    = cfg["min_br"];
-        prev_max    = cfg["max_br"];
-        prev_offset = cfg["offset"];
-    }
+		prev_imgBr	= args.img_br;
+		prev_min	= cfg["min_br"];
+		prev_max	= cfg["max_br"];
+		prev_offset	= cfg["offset"];
+	}
 
-    if constexpr (os == OS::Windows)
-    {
-        setGDIGamma(default_brightness, 0);
-    }
-#ifndef _WIN32 // @TODO: replace this
-    else args.x11->setInitialGamma(args.w->set_previous_gamma);
+	if constexpr (os == OS::Windows) {
+		setGDIGamma(default_brightness, 0);
+	}
+#ifndef _WIN32
+	else args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif
 
-    ++args.callcnt;
-    args.adjustbr_cv.notify_one();
+	++args.callcnt;
 
-    LOGD << "Notified children to quit (" << args.callcnt << ')';
+	LOGD << "Notifying to quit (" << args.callcnt << ')';
 
-    _exit(0);
+	args.adjustbr_cv.notify_one();
 
-    t1.join();
-    t2.join();
+	t1.join();
+
+	_exit(0);
+	t2.join();
 }
 
 int main(int argc, char *argv[])
