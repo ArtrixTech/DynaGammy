@@ -144,12 +144,6 @@ void adjustTemperature(Args &args)
 		t = QTime(std::stoi(start_hour), std::stoi(start_min));
 	};
 
-	const auto setJDays = [&] ()
-	{
-		jday_start	= QDate::currentDate().toJulianDay();
-		jday_end	= jday_start + 1;
-	};
-
 	const auto setDatetimes = [&] ()
 	{
 		setTime(time_start, cfg["time_start"]);
@@ -183,21 +177,17 @@ void adjustTemperature(Args &args)
 	int64_t today		= QDate::currentDate().toJulianDay();
 	int64_t tomorrow	= today + 1;
 
-	const auto init = [&] ()
+	jday_start		= today;
+	jday_end		= tomorrow;
+
+	updateTime();
+
+	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && !end_date_reached)
 	{
-		jday_start	= today;
-		jday_end	= tomorrow;
-
+		LOGI << "Starting on low temp, but start date hasn't been reached. End time should be today.";
+		jday_end = today;
 		updateTime();
-
-		if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && !end_date_reached)
-		{
-			jday_end = today;
-			updateTime();
-		}
-	};
-
-	init();
+	}
 
 	bool needs_change;
 
@@ -231,8 +221,13 @@ void adjustTemperature(Args &args)
 
 		if(force)
 		{
-			setJDays();
 			updateTime();
+			force = false;
+
+			if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
+			{
+				cfg["temp_state"] = HIGH_TEMP;
+			}
 		}
 
 		if(cfg["temp_state"] == HIGH_TEMP)
@@ -245,46 +240,31 @@ void adjustTemperature(Args &args)
 		}
 		else
 		{
-			if(start_date_reached)
+			if(start_date_reached && end_date_reached)
 			{
-				LOGI << "Start date reached.";
+				LOGI << "Start and end reached. Shifting dates.";
 
-				if(end_date_reached)
-				{
-					LOGI << "Start and end reached. Shifting both days.";
+				jday_start++;
+				jday_end++;
+				updateTime();
 
-					jday_start++;
-					jday_end++;
-
-					cfg["temp_state"] = HIGH_TEMP;
-				}
-				else
-				{
-					LOGI << "End date not reached yet.";
-					cfg["temp_state"] = LOW_TEMP;
-				}
+				cfg["temp_state"] = HIGH_TEMP;
 			}
-			else
+			else if(jday_end == today && end_date_reached)
 			{
-				LOGI << "Start date not reached.";
+				// We get here if the app was started on low temp
+				// but the start date hasn't been reached
 
-				if((jday_end == today && end_date_reached) || force)
-				{
-					cfg["temp_state"] = HIGH_TEMP;
+				LOGI << "End date reached. Shifting end date.";
 
-					if(!force)
-					{
-						jday_end++;
-					}
-				}
+				cfg["temp_state"] = HIGH_TEMP;
+
+				jday_end++;
+				updateTime();
 			}
-
-			updateTime();
 		}
 
-		force = false;
-
-		int cur_step	= cfg["temp_step"];
+		int cur_step = cfg["temp_step"];
 
 		if(cfg["temp_state"] == HIGH_TEMP)
 			target_temp = cfg["temp_high"];
@@ -298,7 +278,6 @@ void adjustTemperature(Args &args)
 		if(cur_step == target_step)
 		{
 			LOGI << "No change needed.";
-
 			continue;
 		}
 
@@ -322,7 +301,6 @@ void adjustTemperature(Args &args)
 			if(cur_step == target_step)
 			{
 				LOGI << "Done!";
-
 				break;
 			}
 
