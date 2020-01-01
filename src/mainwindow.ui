@@ -1958,6 +1958,7 @@ background-color:rgb(20,22,35);
            <property name="font">
             <font>
              <family>Ubuntu</family>
+             <pointsize>11</pointsize>
             </font>
            </property>
            <property name="styleSheet">
