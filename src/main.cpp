@@ -112,6 +112,14 @@ void adjustBrightness(Args &args)
 
 void adjustTemperature(Args &args)
 {
+	const auto setTime = [] (QTime &t, const std::string &time_str)
+	{
+		const auto start_hour	= time_str.substr(0, 2);
+		const auto start_min	= time_str.substr(3, 2);
+
+		t = QTime(std::stoi(start_hour), std::stoi(start_min));
+	};
+
 	using namespace std::this_thread;
 	using namespace std::chrono;
 	using namespace std::chrono_literals;
@@ -125,68 +133,58 @@ void adjustTemperature(Args &args)
 	bool force = false;
 	args.w->force_temp_change = &force;
 
-	int64_t		jday_start;
-	int64_t		jday_end;
-
-	QDate		date_start;
 	QTime		time_start;
-	QDate		date_end;
 	QTime		time_end;
-
 	QDateTime	datetime_start;
 	QDateTime	datetime_end;
 
-	const auto setTime = [] (QTime &t, const std::string &time_str)
-	{
-		const auto start_hour	= time_str.substr(0, 2);
-		const auto start_min	= time_str.substr(3, 2);
+	int64_t		jday_start;
+	int64_t		jday_end;
 
-		t = QTime(std::stoi(start_hour), std::stoi(start_min));
-	};
-
-	const auto setDatetimes = [&] ()
+	const auto setDates = [&] ()
 	{
 		setTime(time_start, cfg["time_start"]);
 		setTime(time_end, cfg["time_end"]);
 
-		date_start	= QDate::fromJulianDay(jday_start);
-		datetime_start	= QDateTime(date_start, time_start);
+		datetime_start	= QDateTime(QDate::fromJulianDay(jday_start), time_start);
+		datetime_end	= QDateTime(QDate::fromJulianDay(jday_end), time_end);
 
-		date_end	= QDate::fromJulianDay(jday_end);
-		datetime_end	= QDateTime(date_end, time_end);
+		LOGI << "Start: " << datetime_start.toString();
+		LOGI << "End:   " << datetime_end.toString();
 	};
 
-	const auto updateTime = [&] ()
+	const auto checkDates = [&] ()
 	{
-		setDatetimes();
+		const auto now = QDateTime::currentDateTime();
 
-		start_date_reached	= QDateTime::currentDateTime() > datetime_start;
-		end_date_reached	= QDateTime::currentDateTime() > datetime_end;
+		start_date_reached	= now > datetime_start;
+		end_date_reached	= now > datetime_end;
 
-		LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
-		LOGI << "End   reached: " << end_date_reached << " (" << datetime_end.toString() << ')';
+		LOGI << "Start reached: " << start_date_reached;
+		LOGI << "End   reached: " << end_date_reached;
 	};
+
+	int64_t today = QDate::currentDate().toJulianDay();
+	int64_t tomorrow = today + 1;
+
+	jday_start = today;
+	jday_end = tomorrow;
+
+	setDates();
+	checkDates();
 
 	enum TempState {
 		HIGH_TEMP,
 		LOW_TEMP
 	};
 
-	int target_temp;
-
-	int64_t today		= QDate::currentDate().toJulianDay();
-	int64_t tomorrow	= today + 1;
-
-	jday_start		= today;
-	jday_end		= tomorrow;
-
-	updateTime();
-
 	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && !end_date_reached)
 	{
 		LOGI << "Starting on low temp, but start date hasn't been reached. End time should be today.";
 		jday_end = today;
-		updateTime();
+
+		setDates();
+		checkDates();
 	}
 
 	bool needs_change;
@@ -200,7 +198,7 @@ void adjustTemperature(Args &args)
 		{
 			sleep_for(10s);
 
-			updateTime();
+			checkDates();
 
 			if(start_date_reached || end_date_reached)
 			{
@@ -221,13 +219,15 @@ void adjustTemperature(Args &args)
 
 		if(force)
 		{
-			updateTime();
-			force = false;
+			setDates();
+			checkDates();
 
 			if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
 			{
 				cfg["temp_state"] = HIGH_TEMP;
 			}
+
+			force = false;
 		}
 
 		if(cfg["temp_state"] == HIGH_TEMP)
@@ -246,7 +246,8 @@ void adjustTemperature(Args &args)
 
 				jday_start++;
 				jday_end++;
-				updateTime();
+				setDates();
+				checkDates();
 
 				cfg["temp_state"] = HIGH_TEMP;
 			}
@@ -260,18 +261,20 @@ void adjustTemperature(Args &args)
 				cfg["temp_state"] = HIGH_TEMP;
 
 				jday_end++;
-				updateTime();
+				setDates();
+				checkDates();
 			}
 		}
 
 		int cur_step = cfg["temp_step"];
+		int target_temp;
 
 		if(cfg["temp_state"] == HIGH_TEMP)
 			target_temp = cfg["temp_high"];
 		else
 			target_temp = cfg["temp_low"];
 
-		int target_step = kelvinToStep(target_temp);
+		const int target_step = kelvinToStep(target_temp);
 
 		int add = 0;
 
