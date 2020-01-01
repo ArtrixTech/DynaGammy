@@ -180,7 +180,7 @@ void adjustTemperature(Args &args)
 
 	int target_temp;
 
-	int64_t today		=  QDate::currentDate().toJulianDay();
+	int64_t today		= QDate::currentDate().toJulianDay();
 	int64_t tomorrow	= today + 1;
 
 	const auto init = [&] ()
@@ -295,7 +295,7 @@ void adjustTemperature(Args &args)
 		else
 			target_temp = cfg["temp_low"];
 
-		int target_step = kelvinToStep(target_temp) - 1;
+		int target_step = kelvinToStep(target_temp);
 
 		int add = 0;
 
@@ -308,18 +308,22 @@ void adjustTemperature(Args &args)
 
 		if(cur_step < target_step)
 		{
-			LOGI << "Switching to low temp.";
+			LOGI << "Decreasing temp...";
 			add = 1;
 		}
 		else
 		{
-			LOGI << "Switching to high temp.";
+			LOGI << "Increasing temp...";
 			add = -1;
 		}
 
 		while (args.w->run_temp_thread)
 		{
 			cur_step += add;
+
+			if(args.w->quit) break;
+
+			args.w->setTempSlider(cur_step);
 
 			if(cur_step == target_step)
 			{
@@ -329,9 +333,6 @@ void adjustTemperature(Args &args)
 
 				break;
 			}
-
-			if(args.w->quit) break;
-			args.w->setTempSlider(cur_step);
 
 			sleep_for(50ms);
 		}
