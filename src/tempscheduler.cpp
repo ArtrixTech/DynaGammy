@@ -36,10 +36,10 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
 
 void TempScheduler::on_buttonBox_accepted()
 {
-	if(time_start < time_end)
+	if(time_start <= time_end)
 	{
-		time_start = time_end;
-		time_start = time_start.addSecs(3600);
+		LOGW << "Start time is earlier or equal to end. Adding 1 hour to start time.";
+		time_start = time_end.addSecs(3600);
 	}
 
 	cfg["time_start"]	= time_start.toString().toStdString();
