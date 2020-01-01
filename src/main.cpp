@@ -162,12 +162,15 @@ void adjustTemperature(Args &args)
 		datetime_end	= QDateTime(date_end, time_end);
 	};
 
-	const auto checkTime = [&] ()
+	const auto updateTime = [&] ()
 	{
 		setDatetimes();
 
-		start_date_reached = QDateTime::currentDateTime() > datetime_start;
-		end_date_reached   = QDateTime::currentDateTime() > datetime_end;
+		start_date_reached	= QDateTime::currentDateTime() > datetime_start;
+		end_date_reached	= QDateTime::currentDateTime() > datetime_end;
+
+		LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
+		LOGI << "End   reached: " << end_date_reached << " (" << datetime_end.toString() << ')';
 	};
 
 	enum TempState {
@@ -175,17 +178,30 @@ void adjustTemperature(Args &args)
 		LOW_TEMP
 	};
 
-	setJDays();
-	checkTime();
-
 	int target_temp;
 
-	if(cfg["temp_state"] == HIGH_TEMP)
-		target_temp = cfg["temp_high"];
-	else
-		target_temp = cfg["temp_low"];
+	int64_t today		=  QDate::currentDate().toJulianDay();
+	int64_t tomorrow	= today + 1;
 
-	bool needs_change = true;
+	const auto init = [&] ()
+	{
+		jday_start	= today;
+		jday_end	= tomorrow;
+
+		updateTime();
+
+		if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && !end_date_reached)
+		{
+			jday_end = today;
+			updateTime();
+		}
+	};
+
+	init();
+
+	bool needs_change;
+
+	needs_change = true;
 	args.w->temp_cv->notify_one();
 
 	std::thread clock([&] ()
@@ -194,11 +210,16 @@ void adjustTemperature(Args &args)
 		{
 			sleep_for(10s);
 
-			checkTime();
+			updateTime();
 
-			LOGI << "State: " << cfg["temp_state"];
-			LOGI << "Start reached: " << start_date_reached << " (" << datetime_start.toString() << ')';
-			LOGI << "End   reached: " << end_date_reached << " (" << datetime_end.toString() << ')';
+			if(start_date_reached && end_date_reached)
+			{
+				LOGI << "Start and end reached. Shifting both days.";
+
+				jday_start++;
+				jday_end++;
+				updateTime();
+			}
 
 			if(start_date_reached || end_date_reached)
 			{
@@ -219,54 +240,81 @@ void adjustTemperature(Args &args)
 
 		if(force)
 		{
-			force = false;
-
-			setJDays(); // Reset the dates to today
-			checkTime();
+			setJDays();
+			updateTime();
 		}
 
-		if(start_date_reached)
+		if(cfg["temp_state"] == HIGH_TEMP)
 		{
-			LOGI << "Start date reached.";
-
-			target_temp = cfg["temp_low"];
-			cfg["temp_state"] = LOW_TEMP;
+			if(start_date_reached)
+			{
+				LOGI << "Start date reached.";
+				cfg["temp_state"] = LOW_TEMP;
+			}
 		}
 		else
 		{
-			LOGI << "Start date not reached.";
-
-			target_temp = cfg["temp_high"];
-
-			if(cfg["temp_state"] == LOW_TEMP) // If it's true, start date shifted to tomorrow
+			if(start_date_reached)
 			{
-				// So when we reach tomorrow, switch to high temp
-				if(QDate::currentDate().toJulianDay() == jday_start) cfg["temp_state"] = HIGH_TEMP;
+				LOGI << "Start date reached.";
+
+				if(end_date_reached)
+				{
+					LOGI << "End date reached.";
+					cfg["temp_state"] = HIGH_TEMP;
+				}
+				else
+				{
+					LOGI << "End date not reached yet.";
+					cfg["temp_state"] = LOW_TEMP;
+				}
 			}
 			else
 			{
-				// If we're on high temp, and neither start or end have been reached, skip
-				if(!end_date_reached && !force) continue;
+				LOGI << "Start date not reached.";
+
+				if((jday_end == today && end_date_reached) || force)
+				{
+					cfg["temp_state"] = HIGH_TEMP;
+
+					if(!force)
+					{
+						jday_end++;
+						updateTime();
+					}
+				}
 			}
 		}
 
+		force = false;
+
 		int cur_step	= cfg["temp_step"];
+
+		if(cfg["temp_state"] == HIGH_TEMP)
+			target_temp = cfg["temp_high"];
+		else
+			target_temp = cfg["temp_low"];
+
 		int target_step = kelvinToStep(target_temp) - 1;
 
 		int add = 0;
 
-		if(cur_step != target_step)
+		if(cur_step == target_step)
 		{
-			if(cur_step < target_step)
-			{
-				LOGI << "Temperature should be decreased.";
-				add = 1;
-			}
-			else
-			{
-				LOGI << "Temperature should be increased.";
-				add = -1;
-			}
+			LOGI << "No change needed.";
+
+			continue;
+		}
+
+		if(cur_step < target_step)
+		{
+			LOGI << "Switching to low temp.";
+			add = 1;
+		}
+		else
+		{
+			LOGI << "Switching to high temp.";
+			add = -1;
 		}
 
 		while (args.w->run_temp_thread)
@@ -275,37 +323,19 @@ void adjustTemperature(Args &args)
 
 			if(cur_step == target_step)
 			{
-				LOGI << "Done.";
+				LOGI << "Done!";
 
 				cfg["temp_step"] = cur_step;
-
-				int64_t tomorrow = QDate::currentDate().addDays(1).toJulianDay();
-
-				if(cfg["temp_state"] == HIGH_TEMP)
-				{
-					jday_end = tomorrow;
-				}
-				else
-				{
-					jday_start = tomorrow;
-				}
 
 				break;
 			}
 
 			if(args.w->quit) break;
-
-			if constexpr (os == OS::Windows) setGDIGamma(scr_br, cur_step);
-#ifndef _WIN32
-			else args.x11->setXF86Gamma(scr_br, cur_step);
-#endif
-
 			args.w->setTempSlider(cur_step);
+
 			sleep_for(50ms);
 		}
 	}
-
-	clock.join();
 }
 
 void recordScreen(Args &args)
