@@ -321,15 +321,11 @@ void adjustTemperature(Args &args)
 		{
 			cur_step += add;
 
-			if(args.w->quit) break;
-
 			args.w->setTempSlider(cur_step);
 
 			if(cur_step == target_step)
 			{
 				LOGI << "Done!";
-
-				cfg["temp_step"] = cur_step;
 
 				break;
 			}

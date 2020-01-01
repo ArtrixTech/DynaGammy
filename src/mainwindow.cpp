@@ -244,20 +244,22 @@ void MainWindow::on_speedSlider_valueChanged(int val)
 
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
-    cfg["temp_step"] = val;
+	cfg["temp_step"] = val;
 
-    if constexpr(os == OS::Windows)
-    {
-        setGDIGamma(scr_br, val);
-    }
-#ifndef _WIN32 // @TODO: replace this
-    else x11->setXF86Gamma(scr_br, val);
+	if(this->quit) return;
+
+	if constexpr(os == OS::Windows) {
+		setGDIGamma(scr_br, val);
+	}
+#ifndef _WIN32
+	else x11->setXF86Gamma(scr_br, val);
 #endif
 
-    int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
-    temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
+	int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
 
-    ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
+	temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
+
+	ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
