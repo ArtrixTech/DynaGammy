@@ -28,24 +28,24 @@
 #ifndef _WIN32
 
 MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
-    : ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+	: ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    this->auto_cv = auto_cv;
-    this->temp_cv = temp_cv;
+	this->auto_cv = auto_cv;
+	this->temp_cv = temp_cv;
 
-    this->x11 = x11;
+	this->x11 = x11;
 
-    init();
+	init();
 }
 #endif
 
 MainWindow::MainWindow(QWidget *parent, convar *auto_cv, convar *temp_cv)
-    : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
+	: QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-    this->auto_cv = auto_cv;
-    this->temp_cv = temp_cv;
+	this->auto_cv = auto_cv;
+	this->temp_cv = temp_cv;
 
-    init();
+	init();
 }
 
 void MainWindow::init()
@@ -118,17 +118,19 @@ void MainWindow::init()
         ui->pollingSlider->setValue(cfg["polling_rate"]);
     }
 
-    // Set auto brightness/temp toggles
-    {
-        ui->autoCheck->setChecked(cfg["auto_br"]);
-        run_ss_thread = cfg["auto_br"];
-        auto_cv->notify_one();
-        toggleSliders(cfg["auto_br"]);
+	// Set auto brightness/temp toggles
+	{
+		ui->autoCheck->setChecked(cfg["auto_br"]);
 
-        ui->autoTempCheck->setChecked(cfg["auto_temp"]);
-    }
+		run_ss_thread = cfg["auto_br"];
+		auto_cv->notify_one();
 
-    LOGI << "Qt window initialized";
+		toggleSliders(cfg["auto_br"]);
+
+		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
+	}
+
+	LOGI << "Qt window initialized";
 }
 
 QMenu* MainWindow::createMenu()
@@ -272,43 +274,34 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
     cfg["polling_rate"] = val;
 }
 
-void MainWindow::on_autoCheck_stateChanged(int state)
+void MainWindow::on_autoCheck_toggled(bool checked)
 {
-    if(state == 2)
-    {
-        cfg["auto_br"] = true;
-        run_ss_thread = true;
-        if(force) *force = true;
-    }
-    else
-    {
-        cfg["auto_br"] = false;
-        run_ss_thread = false;
-    }
+	run_ss_thread		= checked;
+	if(force) *force	= checked;
+	auto_cv->notify_all();
 
-    toggleSliders(run_ss_thread);
-    auto_cv->notify_one();
+	toggleSliders(checked);
+	cfg["auto_br"]		= checked;
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-    cfg["auto_temp"] = checked;
-    run_temp_thread = checked;
+	cfg["auto_temp"]	= checked;
+	run_temp_thread		= checked;
 
-    ui->tempSlider->setDisabled(checked);
+	ui->tempSlider->setDisabled(checked);
 
-    if (checked)
-    {
-        LOGI << "Resuming temperature thread";
+	if (checked)
+	{
+		LOGI << "Resuming temperature thread";
+		if(force_temp_change) *force_temp_change = true;
+	}
+	else
+	{
+		LOGI << "Pausing temperature thread";
+	}
 
-        if(force_temp_change) *force_temp_change = true;
-    }
-    else
-    {
-        LOGI << "Pausing temperature thread";
-    }
-
-    temp_cv->notify_one();
+	temp_cv->notify_one();
 }
 
 void MainWindow::toggleSliders(bool is_auto)

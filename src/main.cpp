@@ -190,7 +190,7 @@ void adjustTemperature(Args &args)
 	bool needs_change;
 
 	needs_change = true;
-	args.w->temp_cv->notify_one();
+	args.temp_cv.notify_one();
 
 	std::thread clock([&] ()
 	{
@@ -203,14 +203,14 @@ void adjustTemperature(Args &args)
 			if(start_date_reached || end_date_reached)
 			{
 				needs_change = true;
-				args.w->temp_cv->notify_one();
+				args.temp_cv.notify_one();
 			}
 		}
 	});
 
 	while (!args.w->quit)
 	{
-		args.w->temp_cv->wait(lk, [&]
+		args.temp_cv.wait(lk, [&]
 		{
 			return needs_change || force;
 		});
@@ -354,7 +354,6 @@ void recordScreen(Args &args)
     std::vector<uint8_t> buf(len);
 
     std::thread t1(adjustBrightness, std::ref(args));
-
     std::thread t2(adjustTemperature, std::ref(args));
 
     std::once_flag f;
@@ -363,10 +362,10 @@ void recordScreen(Args &args)
 
     while (!args.w->quit)
     {
-        args.w->auto_cv->wait(lock, [&]
-        {
-            return args.w->run_ss_thread;
-        });
+	args.adjustbr_cv.wait(lock, [&]
+	{
+		return args.w->run_ss_thread;
+	});
 
         LOGV << "Taking screenshot";
 
@@ -485,21 +484,19 @@ int main(int argc, char *argv[])
     X11 x11;
 #endif
 
-    QApplication a(argc, argv);
+	QApplication a(argc, argv);
 
-    Args thread_args;
-    convar auto_cv;
-    convar temp_cv;
+	Args thread_args;
 
 #ifdef _WIN32
-    MainWindow wnd(nullptr, &auto_cv, $temp_cv);
+	MainWindow wnd(nullptr, &threads_args.auto_cv, &threads_args.temp_cv);
 #else
-    MainWindow wnd(&x11, &auto_cv, &temp_cv);
+	MainWindow wnd(&x11, &thread_args.adjustbr_cv, &thread_args.temp_cv);
 
-    cv_ptr          = &auto_cv;
-    quit_ptr        = &wnd.quit;
-    run_ptr         = &wnd.run_ss_thread;
-    thread_args.x11 = &x11;
+	cv_ptr		= &thread_args.adjustbr_cv;
+	quit_ptr	= &wnd.quit;
+	run_ptr		= &wnd.run_ss_thread;
+	thread_args.x11	= &x11;
 #endif
 
     thread_args.w = &wnd;

@@ -14,25 +14,25 @@
 
 json setDefault()
 {
-    return
-    {
-        {"min_br", 192},
-        {"max_br", 255},
-        {"offset", 78},
-        {"speed", 3 },
-        {"threshold", 32},
-        {"polling_rate", 100},
-        {"temp_step", 0},
-        {"temp_initial", max_temp_kelvin},
-        {"temp_target", 3400},
-        {"temp_state", 0},
-        {"time_start", "17:00:00"},
-        {"time_end", "06:00:00"},
-        {"auto_br", true},
-        {"auto_temp", false},
-        {"extend_br", false},
-        {"log_lvl", 3}
-    };
+	return
+	{
+		{"min_br", 192 },
+		{"max_br", 255 },
+		{"offset", 78 },
+		{"speed", 3 },
+		{"threshold", 32 },
+		{"polling_rate", 100 },
+		{"temp_step", 0 },
+		{"temp_high", max_temp_kelvin },
+		{"temp_low", 3400 },
+		{"temp_state", 0 },
+		{"time_start", "17:00:00" },
+		{"time_end", "06:00:00" },
+		{"auto_br", true },
+		{"auto_temp", false },
+		{"extend_br", false },
+		{"log_lvl", 3 }
+	};
 }
 
 json cfg = setDefault();
@@ -69,7 +69,7 @@ void save()
         return;
     }
 
-    LOGI << "Settings saved";
+    LOGD << "Settings saved";
 }
 
 void read()

@@ -13,11 +13,8 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
 	this->temp_cv = temp_cv;
 	this->force_change = force_change;
 
-	this->start_temp = cfg["temp_high"];
-	ui->tempStartBox->setValue(start_temp);
-
-	this->target_temp = cfg["temp_low"];
-	ui->tempEndBox->setValue(target_temp);
+	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
+	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
 
 	const auto setTime = [] (QTime &t, const std::string &time_str)
 	{
@@ -45,8 +42,8 @@ void TempScheduler::on_buttonBox_accepted()
 	cfg["time_start"]	= time_start.toString().toStdString();
 	cfg["time_end"] 	= time_end.toString().toStdString();
 
-	cfg["temp_high"]	= this->start_temp;
-	cfg["temp_low"] 	= this->target_temp;
+	cfg["temp_high"]	= high_temp;
+	cfg["temp_low"] 	= low_temp;
 
 	save();
 
@@ -56,12 +53,12 @@ void TempScheduler::on_buttonBox_accepted()
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)
 {
-	this->start_temp = val;
+	this->high_temp = val;
 }
 
 void TempScheduler::on_tempEndBox_valueChanged(int val)
 {
-	this->target_temp = val;
+	this->low_temp = val;
 }
 
 void TempScheduler::on_timeStartBox_timeChanged(const QTime &time)

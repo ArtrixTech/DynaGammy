@@ -34,8 +34,8 @@ private:
 	bool *force_change = nullptr;
 	convar *temp_cv;
 
-	int start_temp = max_temp_kelvin;
-	int target_temp = min_temp_kelvin;
+	int high_temp;
+	int low_temp;
 
 	void setDates();
 };
