@@ -52,6 +52,7 @@ struct Args
 	MainWindow *w {};
 
 	int64_t callcnt = 0;
+
 	int img_br	= 0;
 	int target_br	= 0;
 	int img_delta	= 0;
@@ -176,11 +177,11 @@ void adjustTemperature(Args &args)
 		start_date_reached	= now > datetime_start;
 		end_date_reached	= now > datetime_end;
 
-		LOGI << "Start reached: " << start_date_reached;
-		LOGI << "End   reached: " << end_date_reached;
+		LOGD << "Start reached: " << start_date_reached;
+		LOGD << "End   reached: " << end_date_reached;
 	};
 
-	LOGD << "Initializing temp schedules";
+	LOGD << "Initializing temp schedule";
 
 	int64_t today = QDate::currentDate().toJulianDay();
 	int64_t tomorrow = today + 1;
@@ -208,11 +209,21 @@ void adjustTemperature(Args &args)
 		args.temp_cv.notify_one();
 	}
 
-	std::thread clock([&] ()
+	convar clock_cv;
+	std::mutex clock_m;
+
+	std::thread clock ([&]
 	{
-		while(!args.w->quit)
+		while(true)
 		{
-			sleep_for(30s);
+			{
+				std::unique_lock<std::mutex> lk(clock_m);
+				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] () { return args.w->quit; });
+			}
+
+			if(args.w->quit) break;
+
+			LOGD << "Clock tick";
 
 			if(!args.w->run_temp_thread)
 			{
@@ -222,12 +233,14 @@ void adjustTemperature(Args &args)
 
 			checkDates();
 
-			if((start_date_reached || end_date_reached))
+			if(start_date_reached || end_date_reached)
 			{
 				needs_change = true;
 				args.temp_cv.notify_one();
 			}
 		}
+
+		LOGD << "Clock quit";
 	});
 
 	std::mutex m;
@@ -254,11 +267,14 @@ void adjustTemperature(Args &args)
 
 			if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
 			{
+				LOGD << "Forcing to high temp";
 				cfg["temp_state"] = HIGH_TEMP;
 			}
 
 			force = false;
 		}
+
+		if(!cfg["auto_temp"]) continue;
 
 		if(cfg["temp_state"] == HIGH_TEMP)
 		{
@@ -339,6 +355,11 @@ void adjustTemperature(Args &args)
 			sleep_for(50ms);
 		}
 	}
+
+	LOGD << "Notifying clock to quit";
+
+	clock_cv.notify_one();
+	clock.join();
 }
 
 void recordScreen(Args &args)
@@ -489,7 +510,14 @@ void recordScreen(Args &args)
 	args.adjustbr_cv.notify_one();
 
 	t1.join();
+
+	LOGD << "Brightness thread joined";
+
 	t2.join();
+
+	LOGD << "Temp thread joined";
+
+	QApplication::quit();
 }
 
 int main(int argc, char **argv)
@@ -497,7 +525,7 @@ int main(int argc, char **argv)
 	static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
-	plog::init(plog::Severity(plog::info), &console_appender);
+	plog::init(plog::Severity(plog::debug), &console_appender);
 
 	read();
 
@@ -552,7 +580,9 @@ int main(int argc, char **argv)
 	a.exec();
 	t.join();
 
-	QApplication::quit();
+	LOGD << "Application quit";
+
+	return EXIT_SUCCESS;
 }
 
 #ifndef _WIN32
