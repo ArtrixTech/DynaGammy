@@ -36,8 +36,9 @@ int scr_br = default_brightness;
 
 #ifndef _WIN32
 // To be used in unix signal handler
-static bool *run_ptr, *quit_ptr;
-static convar *cv_ptr;
+static bool *quit_ptr;
+static convar *brcv_ptr;
+static convar *tempcv_ptr;
 #endif
 
 struct Args
@@ -51,20 +52,16 @@ struct Args
 
 	MainWindow *w {};
 
-	int64_t callcnt = 0;
-
-	int img_br	= 0;
 	int target_br	= 0;
 	int img_delta	= 0;
+
+	bool br_needs_change = false;
 };
 
 void adjustBrightness(Args &args)
 {
 	using namespace std::this_thread;
 	using namespace std::chrono;
-
-	int64_t c	= 0;
-	int64_t prev_c	= 0;
 
 	std::mutex m;
 
@@ -75,15 +72,13 @@ void adjustBrightness(Args &args)
 
 			args.adjustbr_cv.wait(lock, [&]
 			{
-				return args.callcnt > prev_c || args.w->quit;
+				return args.br_needs_change || args.w->quit;
 			});
 		}
 
+		args.br_needs_change = false;
+
 		if(args.w->quit) break;
-
-		c = args.callcnt;
-
-		LOGD << "Working (" << c << ')';
 
 		int sleeptime = (100 - args.img_delta / 4) / cfg["speed"].get<int>();
 		args.img_delta = 0;
@@ -99,7 +94,7 @@ void adjustBrightness(Args &args)
 			add = -1;
 		}
 
-		while (c == args.callcnt && args.w->run_ss_thread)
+		while (!args.br_needs_change && args.w->run_ss_thread)
 		{
 			scr_br += add;
 
@@ -118,11 +113,7 @@ void adjustBrightness(Args &args)
 
 			sleep_for(milliseconds(sleeptime));
 		}
-
-		prev_c = c;
 	}
-
-	LOGD << "Complete (" << c << ')';
 }
 
 void adjustTemperature(Args &args)
@@ -367,7 +358,7 @@ void recordScreen(Args &args)
 	using namespace std::this_thread;
 	using namespace std::chrono;
 
-	PLOGV << "recordScreen() start";
+	LOGV << "recordScreen() start";
 
 	int	prev_imgBr	= 0,
 		prev_min	= 0,
@@ -450,8 +441,8 @@ void recordScreen(Args &args)
 		{
 			getSnapshot();
 
-			args.img_br	= calcBrightness(buf);
-			args.img_delta += abs(prev_imgBr - args.img_br);
+			int img_br	= calcBrightness(buf);
+			args.img_delta += abs(prev_imgBr - img_br);
 
 			std::call_once(f, [&] { args.img_delta = 0; });
 
@@ -459,7 +450,7 @@ void recordScreen(Args &args)
 			{
 				int offset = cfg["offset"];
 
-				args.target_br = default_brightness - args.img_br + offset;
+				args.target_br = default_brightness - img_br + offset;
 
 				if (args.target_br > cfg["max_br"]) {
 					args.target_br = cfg["max_br"];
@@ -473,10 +464,7 @@ void recordScreen(Args &args)
 				{
 					LOGD << scr_br << " -> " << args.target_br << ", Δ: " << args.img_delta;
 
-					++args.callcnt;
-
-					LOGD << "Notifying (" << args.callcnt << ')';
-
+					args.br_needs_change = true;
 					args.adjustbr_cv.notify_one();
 				}
 				else args.img_delta = 0;
@@ -489,7 +477,7 @@ void recordScreen(Args &args)
 				force = true;
 			}
 
-			prev_imgBr	= args.img_br;
+			prev_imgBr	= img_br;
 			prev_min	= cfg["min_br"];
 			prev_max	= cfg["max_br"];
 			prev_offset	= cfg["offset"];
@@ -503,10 +491,9 @@ void recordScreen(Args &args)
 	else args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif
 
-	++args.callcnt;
+	LOGD << "Notifying brightness thread to quit";
 
-	LOGD << "Notifying to quit (" << args.callcnt << ')';
-
+	args.br_needs_change = true;
 	args.adjustbr_cv.notify_one();
 
 	t1.join();
@@ -567,10 +554,11 @@ int main(int argc, char **argv)
 #else
 	MainWindow wnd(&x11, &thr_args.adjustbr_cv, &thr_args.temp_cv);
 
-	cv_ptr		= &thr_args.adjustbr_cv;
-	quit_ptr	= &wnd.quit;
-	run_ptr		= &wnd.run_ss_thread;
 	thr_args.x11	= &x11;
+
+	brcv_ptr	= &thr_args.adjustbr_cv;
+	tempcv_ptr	= &thr_args.temp_cv;
+	quit_ptr	= &wnd.quit;
 #endif
 
 	thr_args.w = &wnd;
@@ -580,7 +568,7 @@ int main(int argc, char **argv)
 	a.exec();
 	t.join();
 
-	LOGD << "Application quit";
+	LOGD << "Exiting";
 
 	return EXIT_SUCCESS;
 }
@@ -594,12 +582,10 @@ void sig_handler(int signo)
 
 	save();
 
-	if(run_ptr && quit_ptr && cv_ptr)
-	{
-		*run_ptr = true;
-		*quit_ptr = true;
-		cv_ptr->notify_one();
-	}
-	else _exit(0);
+	if(!quit_ptr || ! brcv_ptr || !tempcv_ptr) _exit(0);
+
+	*quit_ptr = true;
+	brcv_ptr->notify_all();
+	tempcv_ptr->notify_one();
 }
 #endif

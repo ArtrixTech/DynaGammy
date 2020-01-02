@@ -386,7 +386,7 @@ void MainWindow::on_closeButton_clicked(bool set_previous_gamma)
 	this->set_previous_gamma = set_previous_gamma;
 
 	quit = true;
-	auto_cv->notify_one();
+	auto_cv->notify_all();
 	temp_cv->notify_one();
 
 	QCloseEvent e;
