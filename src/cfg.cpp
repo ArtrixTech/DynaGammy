@@ -106,7 +106,7 @@ void read()
 
 	try
 	{
-		file >> std::setw(4) >> cfg;
+		file >> cfg;
 	}
 	catch (json::exception &e)
 	{
