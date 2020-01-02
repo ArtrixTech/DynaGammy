@@ -231,7 +231,7 @@ void adjustTemperature(Args &args)
 			}
 		}
 
-		LOGD << "Clock quit";
+		LOGD << "Clock stopped";
 	});
 
 	std::mutex m;
@@ -347,7 +347,7 @@ void adjustTemperature(Args &args)
 		}
 	}
 
-	LOGD << "Notifying clock to quit";
+	LOGD << "Notifying clock thread to quit";
 
 	clock_cv.notify_one();
 	clock.join();
