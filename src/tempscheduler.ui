@@ -542,7 +542,6 @@ selection-background-color: rgb(60, 82, 125);</string>
    </item>
   </layout>
   <zorder>tempStartBox</zorder>
-  <zorder>label_6</zorder>
   <zorder>label</zorder>
   <zorder>timeStartBox</zorder>
   <zorder>label_2</zorder>
@@ -550,10 +549,7 @@ selection-background-color: rgb(60, 82, 125);</string>
   <zorder>tempEndBox</zorder>
   <zorder>timeEndBox</zorder>
   <zorder>label_3</zorder>
-  <zorder>label_5</zorder>
   <zorder>buttonBox</zorder>
-  <zorder></zorder>
-  <zorder>verticalSpacer</zorder>
  </widget>
  <resources>
   <include location="../res.qrc"/>
