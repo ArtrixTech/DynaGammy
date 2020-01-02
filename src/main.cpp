@@ -126,6 +126,10 @@ void adjustBrightness(Args &args)
 
 void adjustTemperature(Args &args)
 {
+	using namespace std::this_thread;
+	using namespace std::chrono;
+	using namespace std::chrono_literals;
+
 	const auto setTime = [] (QTime &t, const std::string &time_str)
 	{
 		const auto start_hour	= time_str.substr(0, 2);
@@ -134,15 +138,13 @@ void adjustTemperature(Args &args)
 		t = QTime(std::stoi(start_hour), std::stoi(start_min));
 	};
 
-	using namespace std::this_thread;
-	using namespace std::chrono;
-	using namespace std::chrono_literals;
+	enum TempState {
+		HIGH_TEMP,
+		LOW_TEMP
+	};
 
-	std::mutex m;
-	std::unique_lock<std::mutex> lk(m);
-
-	bool start_date_reached = false;
-	bool end_date_reached	= false;
+	bool start_date_reached;
+	bool end_date_reached;
 
 	bool force = false;
 	args.w->force_temp_change = &force;
@@ -155,7 +157,7 @@ void adjustTemperature(Args &args)
 	int64_t		jday_start;
 	int64_t		jday_end;
 
-	const auto setDates = [&] ()
+	const auto setDates = [&]
 	{
 		setTime(time_start, cfg["time_start"]);
 		setTime(time_end, cfg["time_end"]);
@@ -163,11 +165,11 @@ void adjustTemperature(Args &args)
 		datetime_start	= QDateTime(QDate::fromJulianDay(jday_start), time_start);
 		datetime_end	= QDateTime(QDate::fromJulianDay(jday_end), time_end);
 
-		LOGI << "Start: " << datetime_start.toString();
-		LOGI << "End:   " << datetime_end.toString();
+		LOGD << "Start: " << datetime_start.toString();
+		LOGD << "End:   " << datetime_end.toString();
 	};
 
-	const auto checkDates = [&] ()
+	const auto checkDates = [&]
 	{
 		const auto now = QDateTime::currentDateTime();
 
@@ -178,6 +180,8 @@ void adjustTemperature(Args &args)
 		LOGI << "End   reached: " << end_date_reached;
 	};
 
+	LOGD << "Initializing temp schedules";
+
 	int64_t today = QDate::currentDate().toJulianDay();
 	int64_t tomorrow = today + 1;
 
@@ -187,14 +191,9 @@ void adjustTemperature(Args &args)
 	setDates();
 	checkDates();
 
-	enum TempState {
-		HIGH_TEMP,
-		LOW_TEMP
-	};
-
-	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && !end_date_reached)
+	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached)
 	{
-		LOGI << "Starting on low temp, but start date hasn't been reached. End time should be today.";
+		LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
 		jday_end = today;
 
 		setDates();
@@ -203,18 +202,27 @@ void adjustTemperature(Args &args)
 
 	bool needs_change;
 
-	needs_change = true;
-	args.temp_cv.notify_one();
+	if(args.w->run_temp_thread)
+	{
+		needs_change = true;
+		args.temp_cv.notify_one();
+	}
 
 	std::thread clock([&] ()
 	{
-		while(true)
+		while(!args.w->quit)
 		{
-			sleep_for(10s);
+			sleep_for(30s);
+
+			if(!args.w->run_temp_thread)
+			{
+				LOGD << "Autotemp disabled. Skipping date check";
+				continue;
+			}
 
 			checkDates();
 
-			if(start_date_reached || end_date_reached)
+			if((start_date_reached || end_date_reached))
 			{
 				needs_change = true;
 				args.temp_cv.notify_one();
@@ -222,12 +230,20 @@ void adjustTemperature(Args &args)
 		}
 	});
 
-	while (!args.w->quit)
+	std::mutex m;
+
+	while (true)
 	{
-		args.temp_cv.wait(lk, [&]
 		{
-			return needs_change || force;
-		});
+			std::unique_lock<std::mutex> lk(m);
+
+			args.temp_cv.wait(lk, [&]
+			{
+				return needs_change || force || args.w->quit;
+			});
+		}
+
+		if(args.w->quit) break;
 
 		needs_change = false;
 
@@ -248,7 +264,7 @@ void adjustTemperature(Args &args)
 		{
 			if(start_date_reached)
 			{
-				LOGI << "Start date reached.";
+				LOGD << "Start date reached.";
 				cfg["temp_state"] = LOW_TEMP;
 			}
 		}
@@ -256,7 +272,7 @@ void adjustTemperature(Args &args)
 		{
 			if(start_date_reached && end_date_reached)
 			{
-				LOGI << "Start and end reached. Shifting dates.";
+				LOGD << "Start and end reached. Shifting dates.";
 
 				jday_start++;
 				jday_end++;
@@ -270,7 +286,7 @@ void adjustTemperature(Args &args)
 				// We get here if the app was started on low temp
 				// but the start date hasn't been reached
 
-				LOGI << "End date reached. Shifting end date.";
+				LOGD << "End date reached. Shifting end date.";
 
 				cfg["temp_state"] = HIGH_TEMP;
 
@@ -294,22 +310,21 @@ void adjustTemperature(Args &args)
 
 		if(cur_step == target_step)
 		{
-			LOGI << "No change needed.";
 			continue;
 		}
 
 		if(cur_step < target_step)
 		{
-			LOGI << "Decreasing temp...";
+			LOGD << "Decreasing temp...";
 			add = 1;
 		}
 		else
 		{
-			LOGI << "Increasing temp...";
+			LOGD << "Increasing temp...";
 			add = -1;
 		}
 
-		while (args.w->run_temp_thread)
+		while (args.w->run_temp_thread && !force)
 		{
 			cur_step += add;
 
@@ -317,7 +332,7 @@ void adjustTemperature(Args &args)
 
 			if(cur_step == target_step)
 			{
-				LOGI << "Done!";
+				LOGD << "Done!";
 				break;
 			}
 
@@ -357,7 +372,6 @@ void recordScreen(Args &args)
 		LOGE << "DXGI initialization failed. Using GDI instead";
 		args.w->setPollingRange(1000, 5000);
 	}
-
 #else
 	const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
 	const uint64_t len = screen_res * 4;
@@ -418,7 +432,7 @@ void recordScreen(Args &args)
 			args.img_br	= calcBrightness(buf);
 			args.img_delta += abs(prev_imgBr - args.img_br);
 
-			std::call_once(f, [&](){ args.img_delta = 0; });
+			std::call_once(f, [&] { args.img_delta = 0; });
 
 			if (args.img_delta > cfg["threshold"] || force)
 			{
@@ -475,12 +489,10 @@ void recordScreen(Args &args)
 	args.adjustbr_cv.notify_one();
 
 	t1.join();
-
-	_exit(0);
 	t2.join();
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
 	static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;

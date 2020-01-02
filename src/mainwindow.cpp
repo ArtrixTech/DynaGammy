@@ -300,7 +300,7 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 		LOGI << "Pausing temp thread";
 	}
 
-	temp_cv->notify_one();
+	temp_cv->notify_all();
 }
 
 void MainWindow::toggleSliders(bool is_auto)
