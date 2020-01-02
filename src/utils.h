@@ -18,7 +18,7 @@ typedef std::condition_variable convar;
 
 enum OS
 {
-    Windows, Unix
+	Windows, Unix
 };
 
 #ifdef _WIN32
@@ -27,12 +27,12 @@ constexpr OS os = Windows;
 constexpr OS os = Unix;
 #endif
 
-constexpr int   default_brightness = 255,
-                min_temp_kelvin = 2000,
-                max_temp_kelvin = 6500,
-                temp_arr_entries = 46,
-                temp_mult = 3, // min: 3
-                temp_steps = temp_arr_entries * 3;
+constexpr int	default_brightness = 255,
+		min_temp_kelvin = 2000,
+		max_temp_kelvin = 6500,
+		temp_arr_entries = 46,
+		temp_mult = 3, // min: 3
+		temp_steps = temp_arr_entries * 3;
 
 /*
  * Color ramp by Ingo Thies, from Redshift
@@ -88,21 +88,12 @@ constexpr std::array<double, temp_steps> ingo_thies_table
     1.00000000,  1.00000000,  1.00000000 /* 6500K */
 };
 
+int convertRange(int, int, int, int, int);
 int kelvinToStep(int);
 
 void setColors(int temp, std::array<double, 3> &c);
 
 int calcBrightness(const std::vector<uint8_t> &buf);
-
-template <class T>
-constexpr T convertRange(T old_val,
-                         int old_min, int old_max,
-                         int new_min, int new_max)
-{
-    T val = (((old_val - old_min) * (new_max - new_min)) / old_max - old_min) + new_min;
-
-    return val;
-}
 
 // Windows functions
 

@@ -17,52 +17,63 @@
 
 void setColors(int temp, std::array<double, 3> &c)
 {
-    size_t tick = size_t(temp / temp_mult);
+	size_t tick = size_t(temp / temp_mult);
 
-    if(tick > temp_arr_entries) tick = temp_arr_entries;
-    else if(tick < 1) tick = 1;
+	if(tick > temp_arr_entries)
+	{
+		tick = temp_arr_entries;
+	}
+	else if(tick < 1)
+	{
+		tick = 1;
+	}
 
-    size_t rpos = (temp_arr_entries - tick) * 3 + 0,
-           gpos = (temp_arr_entries - tick) * 3 + 1,
-           bpos = (temp_arr_entries - tick) * 3 + 2;
+	size_t	rpos = (temp_arr_entries - tick) * 3 + 0,
+		gpos = (temp_arr_entries - tick) * 3 + 1,
+		bpos = (temp_arr_entries - tick) * 3 + 2;
 
-    c[0] = ingo_thies_table[rpos];
-    c[1] = ingo_thies_table[gpos];
-    c[2] = ingo_thies_table[bpos];
+	c[0] = ingo_thies_table[rpos];
+	c[1] = ingo_thies_table[gpos];
+	c[2] = ingo_thies_table[bpos];
 };
 
 int calcBrightness(const std::vector<uint8_t> &buf)
 {
-    LOGV << "Calculating brightness";
-    uint64_t r{}, g{}, b{};
+	LOGV << "Calculating brightness";
+	uint64_t r{}, g{}, b{};
 
-    static const uint64_t len = buf.size();
+	static const uint64_t len = buf.size();
 
-    // Remove the last 4 bits to avoid going out of bounds
-    for (auto i = len - 4; i > 0; i -= 4)
-    {
-        r += buf[i + 2];
-        g += buf[i + 1];
-        b += buf[i];
-    }
+	// Remove the last 4 bits to avoid going out of bounds
+	for (auto i = len - 4; i > 0; i -= 4)
+	{
+		r += buf[i + 2];
+		g += buf[i + 1];
+		b += buf[i];
+	}
 
-    /*
-     * The proper way would be to calculate perceived lightness as explained here: stackoverflow.com/a/56678483
-     * But that's too heavy. We calculate luminance only, which still gives okay results.
-     * Here it's converted to a 0-255 range by the RGB sums.
-    */
+	/*
+	* The proper way would be to calculate perceived lightness as explained here: stackoverflow.com/a/56678483
+	* But that's too heavy. We calculate luminance only, which still gives okay results.
+	* Here it's converted to a 0-255 range by the RGB sums.
+	*/
+	const static auto screen_res = len / 4;
 
-    const static auto screen_res = len / 4;
+	int brightness = int((r * 0.2126 + g * 0.7152 + b * 0.0722) / screen_res);
 
-    int brightness = (r * 0.2126 + g * 0.7152 + b * 0.0722) / screen_res;
+	return brightness;
+}
 
-    return brightness;
+int convertRange(int old_val, int old_min, int old_max, int new_min, int new_max)
+{
+	return (((old_val - old_min) * (new_max - new_min)) / old_max - old_min) + new_min;
 }
 
 // Map kelvin temperature to a step in the temperature array
 int kelvinToStep(int temp)
 {
-    return ((max_temp_kelvin - temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
+	// @TODO: Use convertRange function here
+	return ((max_temp_kelvin - temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
 }
 
 #ifdef _WIN32
