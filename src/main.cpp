@@ -369,13 +369,8 @@ void recordScreen(Args &args)
 	std::mutex m;
 	std::unique_lock<std::mutex> lock(m);
 
-	while (!args.w->quit)
+	const auto getSnapshot = [&]
 	{
-		args.adjustbr_cv.wait(lock, [&]
-		{
-			return args.w->run_ss_thread;
-		});
-
 		LOGV << "Taking screenshot";
 
 #ifdef _WIN32
@@ -393,50 +388,64 @@ void recordScreen(Args &args)
 
 		sleep_for(milliseconds(cfg["polling_rate"]));
 #endif
+	};
 
-		args.img_br	= calcBrightness(buf);
-		args.img_delta += abs(prev_imgBr - args.img_br);
 
-		std::call_once(f, [&](){ args.img_delta = 0; });
-
-		if (args.img_delta > cfg["threshold"] || force)
+	while (!args.w->quit)
+	{
+		args.adjustbr_cv.wait(lock, [&]
 		{
-			int offset = cfg["offset"];
+			return args.w->run_ss_thread;
+		});
 
-			args.target_br = default_brightness - args.img_br + offset;
+		while(args.w->run_ss_thread)
+		{
+			getSnapshot();
 
-			if (args.target_br > cfg["max_br"]) {
-				args.target_br = cfg["max_br"];
-			}
-			else
-			if (args.target_br < cfg["min_br"]) {
-				args.target_br = cfg["min_br"];
-			}
+			args.img_br	= calcBrightness(buf);
+			args.img_delta += abs(prev_imgBr - args.img_br);
 
-			if(args.target_br != scr_br)
+			std::call_once(f, [&](){ args.img_delta = 0; });
+
+			if (args.img_delta > cfg["threshold"] || force)
 			{
-				LOGD << scr_br << " -> " << args.target_br << ", Δ: " << args.img_delta;
+				int offset = cfg["offset"];
 
-				++args.callcnt;
+				args.target_br = default_brightness - args.img_br + offset;
 
-				LOGD << "Notifying (" << args.callcnt << ')';
+				if (args.target_br > cfg["max_br"]) {
+					args.target_br = cfg["max_br"];
+				}
+				else
+				if (args.target_br < cfg["min_br"]) {
+					args.target_br = cfg["min_br"];
+				}
 
-				args.adjustbr_cv.notify_one();
+				if(args.target_br != scr_br)
+				{
+					LOGD << scr_br << " -> " << args.target_br << ", Δ: " << args.img_delta;
+
+					++args.callcnt;
+
+					LOGD << "Notifying (" << args.callcnt << ')';
+
+					args.adjustbr_cv.notify_one();
+				}
+				else args.img_delta = 0;
+
+				force = false;
 			}
-			else args.img_delta = 0;
 
-			force = false;
+			if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
+			{
+				force = true;
+			}
+
+			prev_imgBr	= args.img_br;
+			prev_min	= cfg["min_br"];
+			prev_max	= cfg["max_br"];
+			prev_offset	= cfg["offset"];
 		}
-
-		if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
-		{
-			force = true;
-		}
-
-		prev_imgBr	= args.img_br;
-		prev_min	= cfg["min_br"];
-		prev_max	= cfg["max_br"];
-		prev_offset	= cfg["offset"];
 	}
 
 	if constexpr (os == OS::Windows) {
