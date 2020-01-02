@@ -32,7 +32,7 @@ json setDefault()
 		{"auto_br", true },
 		{"auto_temp", false },
 		{"extend_br", false },
-		{"log_lvl", 3 }
+		{"log_lvl", plog::debug }
 	};
 };
 
@@ -81,23 +81,19 @@ void read()
 	static const std::string path = getConfigPath();
 #endif
 
-	LOGD << "Opening config...";
-
 	std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
 	if(!file.good() || !file.is_open())
 	{
-		LOGE << "Unable to open config file";
+		LOGE << "Unable to open config.";
 		return;
 	}
-
-	LOGD << "Config opened";
 
 	file.seekg(0, std::ios::end);
 
 	if(file.tellg() == 0)
 	{
-		LOGW << "Config empty. Creating one...";
+		LOGW << "Config empty. Creating one.";
 		save();
 		return;
 	}
@@ -111,7 +107,7 @@ void read()
 	catch (json::exception &e)
 	{
 		LOGE << e.what();
-		LOGE << "Resetting config...";
+		LOGI << "Resetting config.";
 
 		cfg = setDefault();
 		save();
@@ -119,7 +115,7 @@ void read()
 		return;
 	}
 
-	LOGD << "Settings read";
+	LOGD << "Settings parsed";
 }
 
 #ifndef _WIN32
