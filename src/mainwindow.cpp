@@ -288,17 +288,9 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 	cfg["auto_temp"]	= checked;
 	run_temp_thread		= checked;
 
-	ui->tempSlider->setDisabled(checked);
+	if(force_temp_change) *force_temp_change = checked;
 
-	if (checked)
-	{
-		LOGI << "Resuming temp thread";
-		if(force_temp_change) *force_temp_change = true;
-	}
-	else
-	{
-		LOGI << "Pausing temp thread";
-	}
+	ui->tempSlider->setDisabled(checked);
 
 	temp_cv->notify_all();
 }
