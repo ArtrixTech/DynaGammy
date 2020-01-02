@@ -66,11 +66,19 @@ void adjustBrightness(Args &args)
 	int64_t prev_c	= 0;
 
 	std::mutex m;
-	std::unique_lock<std::mutex> lock(m);
 
-	while(!args.w->quit)
+	while(true)
 	{
-		args.adjustbr_cv.wait(lock, [&]{ return args.callcnt > prev_c; });
+		{
+			std::unique_lock<std::mutex> lock(m);
+
+			args.adjustbr_cv.wait(lock, [&]
+			{
+				return args.callcnt > prev_c || args.w->quit;
+			});
+		}
+
+		if(args.w->quit) break;
 
 		c = args.callcnt;
 
@@ -366,8 +374,6 @@ void recordScreen(Args &args)
 	std::thread t2(adjustTemperature, std::ref(args));
 
 	std::once_flag f;
-	std::mutex m;
-	std::unique_lock<std::mutex> lock(m);
 
 	const auto getSnapshot = [&]
 	{
@@ -390,15 +396,22 @@ void recordScreen(Args &args)
 #endif
 	};
 
+	std::mutex m;
 
-	while (!args.w->quit)
+	while (true)
 	{
-		args.adjustbr_cv.wait(lock, [&]
 		{
-			return args.w->run_ss_thread;
-		});
+			std::unique_lock<std::mutex> lock(m);
 
-		while(args.w->run_ss_thread)
+			args.adjustbr_cv.wait(lock, [&]
+			{
+				return args.w->run_ss_thread || args.w->quit;
+			});
+		}
+
+		if(args.w->quit) break;
+
+		while(args.w->run_ss_thread && !args.w->quit)
 		{
 			getSnapshot();
 
