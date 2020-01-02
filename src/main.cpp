@@ -212,15 +212,6 @@ void adjustTemperature(Args &args)
 
 			updateTime();
 
-			if(start_date_reached && end_date_reached)
-			{
-				LOGI << "Start and end reached. Shifting both days.";
-
-				jday_start++;
-				jday_end++;
-				updateTime();
-			}
-
 			if(start_date_reached || end_date_reached)
 			{
 				needs_change = true;
@@ -260,7 +251,11 @@ void adjustTemperature(Args &args)
 
 				if(end_date_reached)
 				{
-					LOGI << "End date reached.";
+					LOGI << "Start and end reached. Shifting both days.";
+
+					jday_start++;
+					jday_end++;
+
 					cfg["temp_state"] = HIGH_TEMP;
 				}
 				else
@@ -280,10 +275,11 @@ void adjustTemperature(Args &args)
 					if(!force)
 					{
 						jday_end++;
-						updateTime();
 					}
 				}
 			}
+
+			updateTime();
 		}
 
 		force = false;
