@@ -25,10 +25,10 @@
 
 #ifndef _WIN32
 
-MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
+MainWindow::MainWindow(X11 *x11, convar *ss_cv, convar *temp_cv)
 	: ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-	this->ss_cv = auto_cv;
+	this->ss_cv = ss_cv;
 	this->temp_cv = temp_cv;
 
 	this->x11 = x11;
@@ -37,10 +37,10 @@ MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
 }
 #endif
 
-MainWindow::MainWindow(QWidget *parent, convar *auto_cv, convar *temp_cv)
+MainWindow::MainWindow(QWidget *parent, convar *ss_cv, convar *temp_cv)
 	: QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-	this->ss_cv = auto_cv;
+	this->ss_cv = ss_cv;
 	this->temp_cv = temp_cv;
 
 	init();
@@ -115,15 +115,18 @@ void MainWindow::init()
 		ui->pollingSlider->setValue(cfg["polling_rate"]);
 	}
 
-	// Set auto brightness/temp toggles
+	// Set auto brightness/temp checks
 	{
+		// Doesn't fire the toggle event if 0
 		ui->autoCheck->setChecked(cfg["auto_br"]);
 
+		// So we need to notify the screenshot thread
 		auto_br_checked = cfg["auto_br"];
-		ss_cv->notify_all();
+		ss_cv->notify_one();
 
 		toggleSliders(cfg["auto_br"]);
 
+		// Auto temp is off by default, no need to notify
 		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
 	}
 
@@ -275,23 +278,23 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 
 void MainWindow::on_autoCheck_toggled(bool checked)
 {
-	auto_br_checked		= checked;
-	ss_cv->notify_all();
-
 	toggleSliders(checked);
-	cfg["auto_br"]		= checked;
+
+	auto_br_checked = checked;
+	ss_cv->notify_one();
+
+	cfg["auto_br"] = checked;
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-	cfg["auto_temp"]	= checked;
-	auto_temp_checked	= checked;
-
+	auto_temp_checked = checked;
 	if(force_temp_change) *force_temp_change = checked;
+	temp_cv->notify_one();
 
 	ui->tempSlider->setDisabled(checked);
 
-	temp_cv->notify_all();
+	cfg["auto_temp"] = checked;
 }
 
 void MainWindow::toggleSliders(bool is_auto)
@@ -385,8 +388,8 @@ void MainWindow::on_closeButton_clicked(bool set_previous_gamma)
 	this->set_previous_gamma = set_previous_gamma;
 
 	quit = true;
-	ss_cv->notify_all();
 	temp_cv->notify_one();
+	ss_cv->notify_one();
 
 	QCloseEvent e;
 	e.setAccepted(true);

@@ -36,10 +36,10 @@
 int scr_br = default_brightness;
 
 #ifndef _WIN32
-// To be used in unix signal handler
-static bool *quit_ptr;
-static convar *brcv_ptr;
-static convar *tempcv_ptr;
+// Pointers for quitting normally in signal handler
+static bool	*p_quit;
+static convar	*p_ss_cv;
+static convar	*p_temp_cv;
 #endif
 
 void adjustTemperature(convar &temp_cv, MainWindow &w)
@@ -290,14 +290,12 @@ struct Args
 	X11 *x11 {};
 #endif
 
-	MainWindow *w {};
-
-	int target_br	= 0;
-	int img_delta	= 0;
+	int target_br = 0;
+	int img_delta = 0;
 	bool br_needs_change = false;
 };
 
-void adjustBrightness(Args &args)
+void adjustBrightness(Args &args, MainWindow &w)
 {
 	using namespace std::this_thread;
 	using namespace std::chrono;
@@ -312,16 +310,16 @@ void adjustBrightness(Args &args)
 
 			args.br_cv.wait(lock, [&]
 			{
-				return args.br_needs_change || args.w->quit;
+				return args.br_needs_change;
 			});
+
+			if(w.quit) break;
 
 			args.br_needs_change = false;
 
 			target	= args.target_br;
 			delta	= args.img_delta;
 		}
-
-		if(args.w->quit) break;
 
 		int sleeptime = (100 - delta / 4) / cfg["speed"].get<int>();
 		args.img_delta = 0;
@@ -342,11 +340,11 @@ void adjustBrightness(Args &args)
 			add = -1;
 		}
 
-		while (!args.br_needs_change && args.w->auto_br_checked)
+		while (!args.br_needs_change && w.auto_br_checked)
 		{
 			scr_br += add;
 
-			if(args.w->quit) break;
+			if(w.quit) break;
 
 			if constexpr (os == OS::Windows) {
 				setGDIGamma(scr_br, cfg["temp_step"]);
@@ -355,7 +353,7 @@ void adjustBrightness(Args &args)
 			else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
 #endif
 
-			args.w->updateBrLabel();
+			w.updateBrLabel();
 
 			if(scr_br == target) break;
 
@@ -364,7 +362,7 @@ void adjustBrightness(Args &args)
 	}
 }
 
-void recordScreen(Args &args)
+void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 {
 	using namespace std::this_thread;
 	using namespace std::chrono;
@@ -404,7 +402,7 @@ void recordScreen(Args &args)
 	// Buffer to store screen pixels
 	std::vector<uint8_t> buf(len);
 
-	std::thread br_thr(adjustBrightness, std::ref(args));
+	std::thread br_thr(adjustBrightness, std::ref(args), std::ref(w));
 
 	std::once_flag f;
 
@@ -440,21 +438,24 @@ void recordScreen(Args &args)
 		{
 			std::unique_lock<std::mutex> lock(m);
 
-			args.br_cv.wait(lock, [&]
+			ss_cv.wait(lock, [&]
 			{
-				return args.w->auto_br_checked || args.w->quit;
+				return w.auto_br_checked || w.quit;
 			});
 		}
 
-		if(args.w->quit) break;
+		if(w.quit)
+		{
+			break;
+		}
 
-		if(args.w->auto_br_checked)
+		if(w.auto_br_checked)
 		{
 			force = true;
 		}
 		else continue;
 
-		while(args.w->auto_br_checked && !args.w->quit)
+		while(w.auto_br_checked && !w.quit)
 		{
 			getSnapshot();
 
@@ -487,7 +488,7 @@ void recordScreen(Args &args)
 						args.br_needs_change = true;
 					}
 
-					args.br_cv.notify_all();
+					args.br_cv.notify_one();
 				}
 				else img_delta = 0;
 
@@ -508,11 +509,18 @@ void recordScreen(Args &args)
 
 	LOGD << "Exited screenshot loop. Notifying adjustBrightness";
 
+	{
+		std::lock_guard<std::mutex> lock (args.br_mtx);
+		args.br_needs_change = true;
+	}
+
 	args.br_cv.notify_one();
 
 	br_thr.join();
 
 	LOGD << "adjustBrightness joined";
+
+	LOGD << "Notifying QApplication";
 
 	QApplication::quit();
 }
@@ -557,28 +565,27 @@ int main(int argc, char **argv)
 
 	QApplication a(argc, argv);
 
+	convar ss_cv;
 	convar temp_cv;
-	tempcv_ptr = &temp_cv;
+	p_temp_cv = &temp_cv;
 
 	Args thr_args;
 
 #ifdef _WIN32
-	MainWindow wnd(nullptr, &thr_args.br_cv, &temp_cv);
+	MainWindow wnd(nullptr, &ss_cv, &temp_cv);
 #else
-	MainWindow wnd(&x11, &thr_args.br_cv, &temp_cv);
+	MainWindow wnd(&x11, &ss_cv, &temp_cv);
 
-	quit_ptr = &wnd.quit;
+	p_quit = &wnd.quit;
 
 	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
 
 	thr_args.x11 = &x11;
 
-	brcv_ptr = &thr_args.br_cv;
+	p_ss_cv = &thr_args.br_cv;
 #endif
 
-	thr_args.w = &wnd;
-
-	std::thread br_thr(recordScreen, std::ref(thr_args));
+	std::thread ss_thr(recordScreen, std::ref(thr_args), std::ref(ss_cv), std::ref(wnd));
 
 	a.exec();
 
@@ -588,7 +595,7 @@ int main(int argc, char **argv)
 
 	LOGD << "adjustTemperature joined";
 
-	br_thr.join();
+	ss_thr.join();
 
 	LOGD << "recordScreen joined";
 
@@ -613,10 +620,10 @@ void sig_handler(int signo)
 
 	save();
 
-	if(!quit_ptr || ! brcv_ptr || !tempcv_ptr) _exit(0);
+	if(!p_quit || ! p_ss_cv || !p_temp_cv) _exit(0);
 
-	*quit_ptr = true;
-	brcv_ptr->notify_all();
-	tempcv_ptr->notify_one();
+	*p_quit = true;
+	p_ss_cv->notify_one();
+	p_temp_cv->notify_one();
 }
 #endif
