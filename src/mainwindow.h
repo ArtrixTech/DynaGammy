@@ -61,20 +61,11 @@ private slots:
 	void on_tempSlider_valueChanged(int val);
 	void on_thresholdSlider_valueChanged(int val);
 	void on_pollingSlider_valueChanged(int val);
-
-	void on_closeButton_clicked(bool set_previous_gamma);
-	void on_hideButton_clicked();
-
 	void on_manBrSlider_valueChanged(int value);
-
 	void on_extendBr_clicked(bool checked);
-
 	void on_autoCheck_toggled(bool checked);
-
 	void on_autoTempCheck_toggled(bool checked);
-
 	void on_pushButton_clicked();
-
 	void on_tempSlider_sliderPressed();
 
 private:

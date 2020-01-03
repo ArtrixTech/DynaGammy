@@ -62,10 +62,6 @@ void MainWindow::init()
 
 		this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
-		// Deprecated buttons, to be removed altogether
-		ui->closeButton->hide();
-		ui->hideButton->hide();
-
 		if constexpr(os == OS::Windows)
 		{
 			// Extending brightness range doesn't work yet on Windows
@@ -172,13 +168,29 @@ QMenu* MainWindow::createMenu()
 
 	menu->addSeparator();
 
+	const auto exit = [this] (bool set_previous_gamma)
+	{
+		// Boolean read before quitting
+		this->set_previous_gamma = set_previous_gamma;
+
+		quit = true;
+		temp_cv->notify_one();
+		ss_cv->notify_one();
+
+		QCloseEvent e;
+		e.setAccepted(true);
+		emit closeEvent(&e);
+
+		trayIcon->hide();
+	};
+
 	QAction *quit_prev = new QAction("&Quit", this);
-	connect(quit_prev, &QAction::triggered, this, [&]() { on_closeButton_clicked(true); });
+	connect(quit_prev, &QAction::triggered, this, [=] { exit(true); });
 	menu->addAction(quit_prev);
 
 #ifndef _WIN32
 	QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
-	connect(quit_pure, &QAction::triggered, this, [&]() { on_closeButton_clicked(false); });
+	connect(quit_pure, &QAction::triggered, this, [=] { exit(false); });
 	menu->addAction(quit_pure);
 #endif
 
@@ -201,11 +213,6 @@ void MainWindow::updateBrLabel()
 		int val = scr_br * 100 / 255;
 		ui->statusLabel->setText(QStringLiteral("%1").arg(val));
 	}
-}
-
-void MainWindow::on_hideButton_clicked()
-{
-	this->hide();
 }
 
 //___________________________________________________________
@@ -382,28 +389,15 @@ void MainWindow::on_tempSlider_sliderPressed()
 	// @TODO: Something
 }
 
-void MainWindow::on_closeButton_clicked(bool set_previous_gamma)
-{
-	// Boolean read by screenshot thread before quitting
-	this->set_previous_gamma = set_previous_gamma;
-
-	quit = true;
-	temp_cv->notify_one();
-	ss_cv->notify_one();
-
-	QCloseEvent e;
-	e.setAccepted(true);
-	emit closeEvent(&e);
-
-	trayIcon->hide();
-}
-
 void MainWindow::closeEvent(QCloseEvent *e)
 {
+	// This event gets fired when we close the window or we quit.
+	// If we have a system tray, this event gets ignored
+	// Meaning we only hide the window and save the config,
+	// while quitting the app gets done elsewhere
+
 	this->hide();
-
 	save();
-
 	if(ignore_closeEvent) e->ignore();
 }
 
