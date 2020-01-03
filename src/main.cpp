@@ -406,7 +406,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	std::once_flag f;
 
-	const auto getSnapshot = [&]
+	const auto getSnapshot = [&args] (std::vector<uint8_t> &buf)
 	{
 		LOGV << "Taking screenshot";
 
@@ -451,13 +451,19 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 		if(w.auto_br_checked)
 		{
+			buf.resize(len);
 			force = true;
 		}
-		else continue;
+		else
+		{
+			buf.clear();
+			buf.shrink_to_fit();
+			continue;
+		}
 
 		while(w.auto_br_checked && !w.quit)
 		{
-			getSnapshot();
+			getSnapshot(buf);
 
 			int img_br = calcBrightness(buf);
 			img_delta += abs(prev_imgBr - img_br);
@@ -505,6 +511,9 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 			prev_max	= cfg["max_br"];
 			prev_offset	= cfg["offset"];
 		}
+
+		buf.clear();
+		buf.shrink_to_fit();
 	}
 
 	LOGD << "Exited screenshot loop. Notifying adjustBrightness";
