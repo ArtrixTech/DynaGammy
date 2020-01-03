@@ -28,6 +28,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
 #include <chrono>
 
@@ -40,6 +41,245 @@ static bool *quit_ptr;
 static convar *brcv_ptr;
 static convar *tempcv_ptr;
 #endif
+
+void adjustTemperature(convar &temp_cv, MainWindow &w)
+{
+	using namespace std::this_thread;
+	using namespace std::chrono;
+	using namespace std::chrono_literals;
+
+	const auto setTime = [] (QTime &t, const std::string &time_str)
+	{
+		const auto start_hour	= time_str.substr(0, 2);
+		const auto start_min	= time_str.substr(3, 2);
+
+		t = QTime(std::stoi(start_hour), std::stoi(start_min));
+	};
+
+	enum TempState {
+		HIGH_TEMP,
+		LOW_TEMP
+	};
+
+	bool start_date_reached;
+	bool end_date_reached;
+
+	bool force = false;
+	w.force_temp_change = &force;
+
+	QTime		time_start;
+	QTime		time_end;
+	QDateTime	datetime_start;
+	QDateTime	datetime_end;
+
+	int64_t		jday_start;
+	int64_t		jday_end;
+
+	const auto setDates = [&]
+	{
+		setTime(time_start, cfg["time_start"]);
+		setTime(time_end, cfg["time_end"]);
+
+		datetime_start	= QDateTime(QDate::fromJulianDay(jday_start), time_start);
+		datetime_end	= QDateTime(QDate::fromJulianDay(jday_end), time_end);
+
+		LOGD << "Start: " << datetime_start.toString();
+		LOGD << "End:   " << datetime_end.toString();
+	};
+
+	const auto checkDates = [&]
+	{
+		const auto now = QDateTime::currentDateTime();
+
+		start_date_reached	= now > datetime_start;
+		end_date_reached	= now > datetime_end;
+
+		LOGV << "Start reached: " << start_date_reached;
+		LOGV << "End   reached: " << end_date_reached;
+	};
+
+	LOGD << "Initializing temp schedule";
+
+	int64_t today = QDate::currentDate().toJulianDay();
+	int64_t tomorrow = today + 1;
+
+	jday_start = today;
+	jday_end = tomorrow;
+
+	setDates();
+	checkDates();
+
+	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached)
+	{
+		LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
+		jday_end = today;
+
+		setDates();
+		checkDates();
+	}
+
+	std::mutex temp_mtx;
+
+	bool needs_change;
+
+	if(w.auto_temp_checked)
+	{
+		needs_change = true;
+	}
+
+	convar		clock_cv;
+	std::mutex	clock_mtx;
+
+	std::thread clock ([&]
+	{
+		while(true)
+		{
+			{
+				std::unique_lock<std::mutex> lk(clock_mtx);
+				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] { return w.quit; });
+			}
+
+			if(w.quit) break;
+
+			if(!w.auto_temp_checked)
+			{
+				LOGD << "Skipping date check (adaptive temp disabled)";
+				continue;
+			}
+
+			LOGD << "Checking time";
+
+			checkDates();
+
+			{
+				std::lock_guard<std::mutex> lock(temp_mtx);
+
+				bool is_high = cfg["temp_state"] == HIGH_TEMP;
+				needs_change = (start_date_reached && is_high) || (end_date_reached && !is_high);
+			}
+
+			temp_cv.notify_one();
+		}
+	});
+
+	while (true)
+	{
+		{
+			std::unique_lock<std::mutex> lock(temp_mtx);
+
+			temp_cv.wait(lock, [&]
+			{
+				return needs_change || force || w.quit;
+			});
+
+			if(w.quit)
+			{
+				break;
+			}
+			if(force)
+			{
+				setDates();
+				checkDates();
+
+				if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
+				{
+					LOGD << "Forcing high temp";
+					cfg["temp_state"] = HIGH_TEMP;
+				}
+
+				force = false;
+			}
+			else
+			{
+				needs_change = false;
+			}
+		}
+
+
+		if(!cfg["auto_temp"]) continue;
+
+		if(cfg["temp_state"] == HIGH_TEMP)
+		{
+			if(start_date_reached)
+			{
+				LOGD << "Start date reached.";
+				cfg["temp_state"] = LOW_TEMP;
+			}
+		}
+		else
+		{
+			if(start_date_reached && end_date_reached)
+			{
+				LOGD << "Start and end reached. Shifting dates.";
+
+				jday_start++;
+				jday_end++;
+				setDates();
+				checkDates();
+
+				cfg["temp_state"] = HIGH_TEMP;
+			}
+			else if(jday_end == today && end_date_reached)
+			{
+				// We get here if the app was started on low temp
+				// but the start date hasn't been reached
+
+				LOGD << "End date reached. Shifting end date.";
+
+				cfg["temp_state"] = HIGH_TEMP;
+
+				jday_end++;
+				setDates();
+				checkDates();
+			}
+		}
+
+		const int target_step = kelvinToStep(cfg["temp_state"] == HIGH_TEMP ? cfg["temp_high"] : cfg["temp_low"]);
+
+		int cur_step = cfg["temp_step"];
+		int add = 0;
+
+		if(target_step == cur_step)
+		{
+			LOGD << "Temperature is already at target.";
+			continue;
+		}
+		else if(target_step > cur_step)
+		{
+			LOGD << "Decreasing temp...";
+			add = 1;
+		}
+		else
+		{
+			LOGD << "Increasing temp...";
+			add = -1;
+		}
+
+		while (w.auto_temp_checked)
+		{
+			if(w.quit || force) break;
+
+			cur_step += add;
+
+			w.setTempSlider(cur_step);
+
+			if(cur_step == target_step)
+			{
+				LOGD << "Done!";
+				break;
+			}
+
+			sleep_for(50ms);
+		}
+	}
+
+	LOGD << "Notifying clock thread";
+
+	clock_cv.notify_one();
+	clock.join();
+
+	LOGD << "Clock thread joined";
+}
 
 struct Args
 {
@@ -122,246 +362,6 @@ void adjustBrightness(Args &args)
 			sleep_for(milliseconds(sleeptime));
 		}
 	}
-}
-
-void adjustTemperature(convar &temp_cv, MainWindow &w)
-{
-	using namespace std::this_thread;
-	using namespace std::chrono;
-	using namespace std::chrono_literals;
-
-	const auto setTime = [] (QTime &t, const std::string &time_str)
-	{
-		const auto start_hour	= time_str.substr(0, 2);
-		const auto start_min	= time_str.substr(3, 2);
-
-		t = QTime(std::stoi(start_hour), std::stoi(start_min));
-	};
-
-	enum TempState {
-		HIGH_TEMP,
-		LOW_TEMP
-	};
-
-	bool start_date_reached;
-	bool end_date_reached;
-
-	bool force = false;
-	w.force_temp_change = &force;
-
-	QTime		time_start;
-	QTime		time_end;
-	QDateTime	datetime_start;
-	QDateTime	datetime_end;
-
-	int64_t		jday_start;
-	int64_t		jday_end;
-
-	const auto setDates = [&]
-	{
-		setTime(time_start, cfg["time_start"]);
-		setTime(time_end, cfg["time_end"]);
-
-		datetime_start	= QDateTime(QDate::fromJulianDay(jday_start), time_start);
-		datetime_end	= QDateTime(QDate::fromJulianDay(jday_end), time_end);
-
-		LOGD << "Start: " << datetime_start.toString();
-		LOGD << "End:   " << datetime_end.toString();
-	};
-
-	const auto checkDates = [&]
-	{
-		const auto now = QDateTime::currentDateTime();
-
-		start_date_reached	= now > datetime_start;
-		end_date_reached	= now > datetime_end;
-
-		LOGD << "Start reached: " << start_date_reached;
-		LOGD << "End   reached: " << end_date_reached;
-	};
-
-	LOGD << "Initializing temp schedule";
-
-	int64_t today = QDate::currentDate().toJulianDay();
-	int64_t tomorrow = today + 1;
-
-	jday_start = today;
-	jday_end = tomorrow;
-
-	setDates();
-	checkDates();
-
-	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached)
-	{
-		LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
-		jday_end = today;
-
-		setDates();
-		checkDates();
-	}
-
-	bool needs_change;
-
-	if(w.auto_temp_checked)
-	{
-		needs_change = true;
-		temp_cv.notify_one();
-	}
-
-	convar		clock_cv;
-	std::mutex	clock_mtx;
-
-	std::mutex temp_mtx;
-
-	std::thread clock ([&]
-	{
-		while(true)
-		{
-			{
-				std::unique_lock<std::mutex> lk(clock_mtx);
-				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] { return w.quit; });
-			}
-
-			if(w.quit) break;
-
-			LOGD << "Checking dates";
-
-			if(!w.auto_temp_checked)
-			{
-				LOGD << "Autotemp disabled. Skipping";
-				continue;
-			}
-
-			checkDates();
-
-			if(start_date_reached || end_date_reached)
-			{
-				{
-					std::lock_guard<std::mutex> lock(temp_mtx);
-					needs_change = true;
-				}
-
-				temp_cv.notify_one();
-			}
-		}
-	});
-
-	while (true)
-	{
-		{
-			std::unique_lock<std::mutex> lk(temp_mtx);
-
-			temp_cv.wait(lk, [&]
-			{
-				return needs_change || force || w.quit;
-			});
-
-			needs_change = false;
-		}
-
-		if(w.quit) break;
-
-		if(force)
-		{
-			setDates();
-			checkDates();
-
-			if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
-			{
-				LOGD << "Forcing to high temp";
-				cfg["temp_state"] = HIGH_TEMP;
-			}
-
-			force = false;
-		}
-
-		if(!cfg["auto_temp"]) continue;
-
-		if(cfg["temp_state"] == HIGH_TEMP)
-		{
-			if(start_date_reached)
-			{
-				LOGD << "Start date reached.";
-				cfg["temp_state"] = LOW_TEMP;
-			}
-		}
-		else
-		{
-			if(start_date_reached && end_date_reached)
-			{
-				LOGD << "Start and end reached. Shifting dates.";
-
-				jday_start++;
-				jday_end++;
-				setDates();
-				checkDates();
-
-				cfg["temp_state"] = HIGH_TEMP;
-			}
-			else if(jday_end == today && end_date_reached)
-			{
-				// We get here if the app was started on low temp
-				// but the start date hasn't been reached
-
-				LOGD << "End date reached. Shifting end date.";
-
-				cfg["temp_state"] = HIGH_TEMP;
-
-				jday_end++;
-				setDates();
-				checkDates();
-			}
-		}
-
-		int cur_step = cfg["temp_step"];
-		int target_temp;
-
-		if(cfg["temp_state"] == HIGH_TEMP)
-			target_temp = cfg["temp_high"];
-		else
-			target_temp = cfg["temp_low"];
-
-		const int target_step = kelvinToStep(target_temp);
-
-		int add = 0;
-
-		if(target_step == cur_step)
-		{
-			continue;
-		}
-		else if(target_step > cur_step)
-		{
-			LOGD << "Decreasing temp...";
-			add = 1;
-		}
-		else
-		{
-			LOGD << "Increasing temp...";
-			add = -1;
-		}
-
-		while (w.auto_temp_checked && !force)
-		{
-			cur_step += add;
-
-			w.setTempSlider(cur_step);
-
-			if(cur_step == target_step)
-			{
-				LOGD << "Done!";
-				break;
-			}
-
-			sleep_for(50ms);
-		}
-	}
-
-	LOGD << "Notifying clock thread";
-
-	clock_cv.notify_one();
-	clock.join();
-
-	LOGD << "Clock thread joined";
 }
 
 void recordScreen(Args &args)
@@ -448,7 +448,11 @@ void recordScreen(Args &args)
 
 		if(args.w->quit) break;
 
-		if(args.w->auto_br_checked) force = true;
+		if(args.w->auto_br_checked)
+		{
+			force = true;
+		}
+		else continue;
 
 		while(args.w->auto_br_checked && !args.w->quit)
 		{
