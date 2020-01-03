@@ -244,11 +244,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				temp_cv.notify_one();
 			}
 		}
-
-		LOGD << "Clock thread stopped";
 	});
-
-
 
 	while (true)
 	{
@@ -360,10 +356,12 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		}
 	}
 
-	LOGD << "Notifying clock thread to quit";
+	LOGD << "Notifying clock thread";
 
 	clock_cv.notify_one();
 	clock.join();
+
+	LOGD << "Clock thread joined";
 }
 
 void recordScreen(Args &args)
@@ -512,13 +510,6 @@ void recordScreen(Args &args)
 
 	LOGD << "adjustBrightness joined";
 
-	if constexpr (os == OS::Windows) {
-		setGDIGamma(default_brightness, 0);
-	}
-#ifndef _WIN32
-	else args.x11->setInitialGamma(args.w->set_previous_gamma);
-#endif
-
 	QApplication::quit();
 }
 
@@ -586,13 +577,23 @@ int main(int argc, char **argv)
 	std::thread br_thr(recordScreen, std::ref(thr_args));
 
 	a.exec();
-	br_thr.join();
 
-	LOGD << "recordScreen joined";
+	LOGD << "QApplication joined";
 
 	temp_thr.join();
 
 	LOGD << "adjustTemperature joined";
+
+	br_thr.join();
+
+	LOGD << "recordScreen joined";
+
+	if constexpr (os == OS::Windows) {
+		setGDIGamma(default_brightness, 0);
+	}
+#ifndef _WIN32
+	else x11.setInitialGamma(wnd.set_previous_gamma);
+#endif
 
 	LOGD << "Exiting";
 
