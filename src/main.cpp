@@ -46,8 +46,6 @@ struct Args
 	convar br_cv;
 	std::mutex br_mtx;
 
-	convar temp_cv;
-
 #ifndef _WIN32
 	X11 *x11 {};
 #endif
@@ -126,7 +124,7 @@ void adjustBrightness(Args &args)
 	}
 }
 
-void adjustTemperature(Args &args)
+void adjustTemperature(convar &temp_cv, MainWindow &w)
 {
 	using namespace std::this_thread;
 	using namespace std::chrono;
@@ -149,7 +147,7 @@ void adjustTemperature(Args &args)
 	bool end_date_reached;
 
 	bool force = false;
-	args.w->force_temp_change = &force;
+	w.force_temp_change = &force;
 
 	QTime		time_start;
 	QTime		time_end;
@@ -204,29 +202,31 @@ void adjustTemperature(Args &args)
 
 	bool needs_change;
 
-	if(args.w->auto_temp_checked)
+	if(w.auto_temp_checked)
 	{
 		needs_change = true;
-		args.temp_cv.notify_one();
+		temp_cv.notify_one();
 	}
 
-	convar clock_cv;
-	std::mutex clock_m;
+	convar		clock_cv;
+	std::mutex	clock_mtx;
+
+	std::mutex temp_mtx;
 
 	std::thread clock ([&]
 	{
 		while(true)
 		{
 			{
-				std::unique_lock<std::mutex> lk(clock_m);
-				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] { return args.w->quit; });
+				std::unique_lock<std::mutex> lk(clock_mtx);
+				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] { return w.quit; });
 			}
 
-			if(args.w->quit) break;
+			if(w.quit) break;
 
 			LOGD << "Checking dates";
 
-			if(!args.w->auto_temp_checked)
+			if(!w.auto_temp_checked)
 			{
 				LOGD << "Autotemp disabled. Skipping";
 				continue;
@@ -236,30 +236,34 @@ void adjustTemperature(Args &args)
 
 			if(start_date_reached || end_date_reached)
 			{
-				needs_change = true;
-				args.temp_cv.notify_one();
+				{
+					std::lock_guard<std::mutex> lock(temp_mtx);
+					needs_change = true;
+				}
+
+				temp_cv.notify_one();
 			}
 		}
 
 		LOGD << "Clock thread stopped";
 	});
 
-	std::mutex m;
+
 
 	while (true)
 	{
 		{
-			std::unique_lock<std::mutex> lk(m);
+			std::unique_lock<std::mutex> lk(temp_mtx);
 
-			args.temp_cv.wait(lk, [&]
+			temp_cv.wait(lk, [&]
 			{
-				return needs_change || force || args.w->quit;
+				return needs_change || force || w.quit;
 			});
+
+			needs_change = false;
 		}
 
-		if(args.w->quit) break;
-
-		needs_change = false;
+		if(w.quit) break;
 
 		if(force)
 		{
@@ -340,11 +344,11 @@ void adjustTemperature(Args &args)
 			add = -1;
 		}
 
-		while (args.w->auto_temp_checked && !force)
+		while (w.auto_temp_checked && !force)
 		{
 			cur_step += add;
 
-			args.w->setTempSlider(cur_step);
+			w.setTempSlider(cur_step);
 
 			if(cur_step == target_step)
 			{
@@ -403,7 +407,6 @@ void recordScreen(Args &args)
 	std::vector<uint8_t> buf(len);
 
 	std::thread br_thr(adjustBrightness, std::ref(args));
-	std::thread temp_thr(adjustTemperature, std::ref(args));
 
 	std::once_flag f;
 
@@ -501,17 +504,13 @@ void recordScreen(Args &args)
 		}
 	}
 
-	LOGD << "Exited screenshot loop. Notifying brightness thread to quit";
+	LOGD << "Exited screenshot loop. Notifying adjustBrightness";
 
 	args.br_cv.notify_one();
 
 	br_thr.join();
 
-	LOGD << "Brightness thread joined";
-
-	temp_thr.join();
-
-	LOGD << "Temperature thread joined";
+	LOGD << "adjustBrightness joined";
 
 	if constexpr (os == OS::Windows) {
 		setGDIGamma(default_brightness, 0);
@@ -563,26 +562,37 @@ int main(int argc, char **argv)
 
 	QApplication a(argc, argv);
 
+	convar temp_cv;
+	tempcv_ptr = &temp_cv;
+
 	Args thr_args;
 
 #ifdef _WIN32
-	MainWindow wnd(nullptr, &threads_args.auto_cv, &threads_args.temp_cv);
+	MainWindow wnd(nullptr, &thr_args.br_cv, &temp_cv);
 #else
-	MainWindow wnd(&x11, &thr_args.br_cv, &thr_args.temp_cv);
+	MainWindow wnd(&x11, &thr_args.br_cv, &temp_cv);
 
-	thr_args.x11	= &x11;
+	quit_ptr = &wnd.quit;
 
-	brcv_ptr	= &thr_args.br_cv;
-	tempcv_ptr	= &thr_args.temp_cv;
-	quit_ptr	= &wnd.quit;
+	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
+
+	thr_args.x11 = &x11;
+
+	brcv_ptr = &thr_args.br_cv;
 #endif
 
 	thr_args.w = &wnd;
 
-	std::thread t(recordScreen, std::ref(thr_args));
+	std::thread br_thr(recordScreen, std::ref(thr_args));
 
 	a.exec();
-	t.join();
+	br_thr.join();
+
+	LOGD << "recordScreen joined";
+
+	temp_thr.join();
+
+	LOGD << "adjustTemperature joined";
 
 	LOGD << "Exiting";
 
