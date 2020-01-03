@@ -43,8 +43,10 @@ static convar *tempcv_ptr;
 
 struct Args
 {
-	convar	adjustbr_cv;
-	convar	temp_cv;
+	convar br_cv;
+	std::mutex br_mtx;
+
+	convar temp_cv;
 
 #ifndef _WIN32
 	X11 *x11 {};
@@ -54,7 +56,6 @@ struct Args
 
 	int target_br	= 0;
 	int img_delta	= 0;
-
 	bool br_needs_change = false;
 };
 
@@ -63,38 +64,47 @@ void adjustBrightness(Args &args)
 	using namespace std::this_thread;
 	using namespace std::chrono;
 
-	std::mutex m;
-
 	while(true)
 	{
-		{
-			std::unique_lock<std::mutex> lock(m);
+		int target;
+		int delta;
 
-			args.adjustbr_cv.wait(lock, [&]
+		{
+			std::unique_lock<std::mutex> lock(args.br_mtx);
+
+			args.br_cv.wait(lock, [&]
 			{
 				return args.br_needs_change || args.w->quit;
 			});
-		}
 
-		args.br_needs_change = false;
+			args.br_needs_change = false;
+
+			target	= args.target_br;
+			delta	= args.img_delta;
+		}
 
 		if(args.w->quit) break;
 
-		int sleeptime = (100 - args.img_delta / 4) / cfg["speed"].get<int>();
+		int sleeptime = (100 - delta / 4) / cfg["speed"].get<int>();
 		args.img_delta = 0;
 
 		int add = 0;
 
-		// We check if brightness already equals target in the calling thread
-		if (scr_br < args.target_br) {
+		if (target == scr_br)
+		{
+			continue;
+		}
+		else if (target > scr_br)
+		{
 			add = 1;
 			sleeptime /= 3;
 		}
-		else {
+		else
+		{
 			add = -1;
 		}
 
-		while (!args.br_needs_change && args.w->run_ss_thread)
+		while (!args.br_needs_change && args.w->auto_br_checked)
 		{
 			scr_br += add;
 
@@ -109,7 +119,7 @@ void adjustBrightness(Args &args)
 
 			args.w->updateBrLabel();
 
-			if(scr_br == args.target_br) break;
+			if(scr_br == target) break;
 
 			sleep_for(milliseconds(sleeptime));
 		}
@@ -194,7 +204,7 @@ void adjustTemperature(Args &args)
 
 	bool needs_change;
 
-	if(args.w->run_temp_thread)
+	if(args.w->auto_temp_checked)
 	{
 		needs_change = true;
 		args.temp_cv.notify_one();
@@ -209,16 +219,16 @@ void adjustTemperature(Args &args)
 		{
 			{
 				std::unique_lock<std::mutex> lk(clock_m);
-				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] () { return args.w->quit; });
+				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] { return args.w->quit; });
 			}
 
 			if(args.w->quit) break;
 
-			LOGD << "Clock tick";
+			LOGD << "Checking dates";
 
-			if(!args.w->run_temp_thread)
+			if(!args.w->auto_temp_checked)
 			{
-				LOGD << "Autotemp disabled. Skipping date check";
+				LOGD << "Autotemp disabled. Skipping";
 				continue;
 			}
 
@@ -231,7 +241,7 @@ void adjustTemperature(Args &args)
 			}
 		}
 
-		LOGD << "Clock stopped";
+		LOGD << "Clock thread stopped";
 	});
 
 	std::mutex m;
@@ -315,12 +325,11 @@ void adjustTemperature(Args &args)
 
 		int add = 0;
 
-		if(cur_step == target_step)
+		if(target_step == cur_step)
 		{
 			continue;
 		}
-
-		if(cur_step < target_step)
+		else if(target_step > cur_step)
 		{
 			LOGD << "Decreasing temp...";
 			add = 1;
@@ -331,7 +340,7 @@ void adjustTemperature(Args &args)
 			add = -1;
 		}
 
-		while (args.w->run_temp_thread && !force)
+		while (args.w->auto_temp_checked && !force)
 		{
 			cur_step += add;
 
@@ -365,9 +374,6 @@ void recordScreen(Args &args)
 		prev_max	= 0,
 		prev_offset	= 0;
 
-	bool force	= false;
-	args.w->force	= &force;
-
 #ifdef _WIN32
 	const uint64_t	w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
 			h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
@@ -396,8 +402,8 @@ void recordScreen(Args &args)
 	// Buffer to store screen pixels
 	std::vector<uint8_t> buf(len);
 
-	std::thread t1(adjustBrightness, std::ref(args));
-	std::thread t2(adjustTemperature, std::ref(args));
+	std::thread br_thr(adjustBrightness, std::ref(args));
+	std::thread temp_thr(adjustTemperature, std::ref(args));
 
 	std::once_flag f;
 
@@ -424,50 +430,61 @@ void recordScreen(Args &args)
 
 	std::mutex m;
 
+	int img_delta = 0;
+
+	bool force = false;
+
 	while (true)
 	{
 		{
 			std::unique_lock<std::mutex> lock(m);
 
-			args.adjustbr_cv.wait(lock, [&]
+			args.br_cv.wait(lock, [&]
 			{
-				return args.w->run_ss_thread || args.w->quit;
+				return args.w->auto_br_checked || args.w->quit;
 			});
 		}
 
 		if(args.w->quit) break;
 
-		while(args.w->run_ss_thread && !args.w->quit)
+		if(args.w->auto_br_checked) force = true;
+
+		while(args.w->auto_br_checked && !args.w->quit)
 		{
 			getSnapshot();
 
-			int img_br	= calcBrightness(buf);
-			args.img_delta += abs(prev_imgBr - img_br);
+			int img_br = calcBrightness(buf);
+			img_delta += abs(prev_imgBr - img_br);
 
-			std::call_once(f, [&] { args.img_delta = 0; });
+			std::call_once(f, [&] { img_delta = 0; });
 
-			if (args.img_delta > cfg["threshold"] || force)
+			if (img_delta > cfg["threshold"] || force)
 			{
-				int offset = cfg["offset"];
+				int target = default_brightness - img_br + cfg["offset"].get<int>();
 
-				args.target_br = default_brightness - img_br + offset;
-
-				if (args.target_br > cfg["max_br"]) {
-					args.target_br = cfg["max_br"];
+				if (target > cfg["max_br"]) {
+					target = cfg["max_br"];
 				}
 				else
-				if (args.target_br < cfg["min_br"]) {
-					args.target_br = cfg["min_br"];
+				if (target < cfg["min_br"]) {
+					target = cfg["min_br"];
 				}
 
-				if(args.target_br != scr_br)
+				if((target != scr_br && target != args.target_br) || force)
 				{
-					LOGD << scr_br << " -> " << args.target_br << ", Δ: " << args.img_delta;
+					LOGD << scr_br << " -> " << target << ", Δ: " << img_delta;
 
-					args.br_needs_change = true;
-					args.adjustbr_cv.notify_one();
+					{
+						std::lock_guard lock (args.br_mtx);
+
+						args.target_br = target;
+						args.img_delta = img_delta;
+						args.br_needs_change = true;
+					}
+
+					args.br_cv.notify_all();
 				}
-				else args.img_delta = 0;
+				else img_delta = 0;
 
 				force = false;
 			}
@@ -484,25 +501,24 @@ void recordScreen(Args &args)
 		}
 	}
 
+	LOGD << "Exited screenshot loop. Notifying brightness thread to quit";
+
+	args.br_cv.notify_one();
+
+	br_thr.join();
+
+	LOGD << "Brightness thread joined";
+
+	temp_thr.join();
+
+	LOGD << "Temperature thread joined";
+
 	if constexpr (os == OS::Windows) {
 		setGDIGamma(default_brightness, 0);
 	}
 #ifndef _WIN32
 	else args.x11->setInitialGamma(args.w->set_previous_gamma);
 #endif
-
-	LOGD << "Notifying brightness thread to quit";
-
-	args.br_needs_change = true;
-	args.adjustbr_cv.notify_one();
-
-	t1.join();
-
-	LOGD << "Brightness thread joined";
-
-	t2.join();
-
-	LOGD << "Temp thread joined";
 
 	QApplication::quit();
 }
@@ -552,11 +568,11 @@ int main(int argc, char **argv)
 #ifdef _WIN32
 	MainWindow wnd(nullptr, &threads_args.auto_cv, &threads_args.temp_cv);
 #else
-	MainWindow wnd(&x11, &thr_args.adjustbr_cv, &thr_args.temp_cv);
+	MainWindow wnd(&x11, &thr_args.br_cv, &thr_args.temp_cv);
 
 	thr_args.x11	= &x11;
 
-	brcv_ptr	= &thr_args.adjustbr_cv;
+	brcv_ptr	= &thr_args.br_cv;
 	tempcv_ptr	= &thr_args.temp_cv;
 	quit_ptr	= &wnd.quit;
 #endif

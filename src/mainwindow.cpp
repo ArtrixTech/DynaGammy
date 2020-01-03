@@ -28,7 +28,7 @@
 MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
 	: ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-	this->auto_cv = auto_cv;
+	this->ss_cv = auto_cv;
 	this->temp_cv = temp_cv;
 
 	this->x11 = x11;
@@ -40,7 +40,7 @@ MainWindow::MainWindow(X11 *x11, convar *auto_cv, convar *temp_cv)
 MainWindow::MainWindow(QWidget *parent, convar *auto_cv, convar *temp_cv)
 	: QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-	this->auto_cv = auto_cv;
+	this->ss_cv = auto_cv;
 	this->temp_cv = temp_cv;
 
 	init();
@@ -119,8 +119,8 @@ void MainWindow::init()
 	{
 		ui->autoCheck->setChecked(cfg["auto_br"]);
 
-		run_ss_thread = cfg["auto_br"];
-		auto_cv->notify_one();
+		auto_br_checked = cfg["auto_br"];
+		ss_cv->notify_all();
 
 		toggleSliders(cfg["auto_br"]);
 
@@ -275,9 +275,8 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 
 void MainWindow::on_autoCheck_toggled(bool checked)
 {
-	run_ss_thread		= checked;
-	if(force) *force	= checked;
-	auto_cv->notify_all();
+	auto_br_checked		= checked;
+	ss_cv->notify_all();
 
 	toggleSliders(checked);
 	cfg["auto_br"]		= checked;
@@ -286,7 +285,7 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
 	cfg["auto_temp"]	= checked;
-	run_temp_thread		= checked;
+	auto_temp_checked	= checked;
 
 	if(force_temp_change) *force_temp_change = checked;
 
@@ -386,7 +385,7 @@ void MainWindow::on_closeButton_clicked(bool set_previous_gamma)
 	this->set_previous_gamma = set_previous_gamma;
 
 	quit = true;
-	auto_cv->notify_all();
+	ss_cv->notify_all();
 	temp_cv->notify_one();
 
 	QCloseEvent e;

@@ -25,10 +25,10 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget *parent = nullptr, convar *auto_cv = nullptr, convar *temp_cv = nullptr);
+	explicit MainWindow(QWidget *parent = nullptr, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
 
 #ifndef _WIN32
-	explicit MainWindow(X11 *x11, convar *auto_cv = nullptr, convar *temp_cv = nullptr);
+	explicit MainWindow(X11 *x11, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
 #endif
 
 	~MainWindow();
@@ -40,11 +40,11 @@ public:
 	void updateBrLabel();
 	void setPollingRange(int, int);
 
-	bool run_ss_thread	= true;
+	bool auto_br_checked	= true;
 	bool *force		= nullptr;
-	convar *auto_cv		= nullptr;
+	convar *ss_cv		= nullptr;
 
-	bool run_temp_thread	= false;
+	bool auto_temp_checked	= false;
 	bool *force_temp_change = nullptr;
 	convar *temp_cv		= nullptr;
 
