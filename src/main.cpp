@@ -581,7 +581,7 @@ int main(int argc, char **argv)
 
 	thr_args.x11 = &x11;
 	p_quit = &wnd.quit;
-	p_ss_cv = &thr_args.br_cv;
+	p_ss_cv = &ss_cv;
 	p_temp_cv = &temp_cv;
 #endif
 
