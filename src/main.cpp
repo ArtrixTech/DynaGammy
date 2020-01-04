@@ -543,12 +543,13 @@ int main(int argc, char **argv)
 	if(!cfg["auto_br"]) scr_br = cfg["brightness"];
 
 	plog::get()->addAppender(&file_appender);
-	plog::get()->setMaxSeverity(cfg["log_lvl"]);
+	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));
 
 #ifdef _WIN32
 	checkInstance();
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
-	if(cfg["log_lvl"] > plog::none)
+	if(cfg["log_lvl"] == plog::verbose)
 	{
 		FILE *f1, *f2, *f3;
 		AllocConsole();
@@ -556,8 +557,6 @@ int main(int argc, char **argv)
 		freopen_s(&f2, "CONOUT$", "w", stdout);
 		freopen_s(&f3, "CONOUT$", "w", stderr);
 	}
-
-	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	checkGammaRange();
 #else

@@ -32,7 +32,7 @@ json setDefault()
 		{"auto_br", true },
 		{"auto_temp", false },
 		{"extend_br", false },
-		{"log_lvl", plog::debug }
+		{"log_lvl", plog::warning }
 	};
 };
 
