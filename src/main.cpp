@@ -375,11 +375,11 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 		prev_offset	= 0;
 
 #ifdef _WIN32
-	const uint64_t	w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
-			h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN),
-			len = w * h * 4;
+	const uint64_t width = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
+	const uint64_t height = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
+	const uint64_t len = width * height * 4;
 
-	LOGD << "Screen resolution: " << w << "*" << h;
+	LOGD << "Screen resolution: " << width << '*' << height;
 
 	DXGIDupl dx;
 
@@ -388,7 +388,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 	if (!useDXGI)
 	{
 		LOGE << "DXGI initialization failed. Using GDI instead";
-		args.w->setPollingRange(1000, 5000);
+		w.setPollingRange(1000, 5000);
 	}
 #else
 	const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
@@ -406,7 +406,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	std::once_flag f;
 
-	const auto getSnapshot = [&args] (std::vector<uint8_t> &buf)
+	const auto getSnapshot = [&] (std::vector<uint8_t> &buf)
 	{
 		LOGV << "Taking screenshot";
 
@@ -576,8 +576,6 @@ int main(int argc, char **argv)
 
 	convar ss_cv;
 	convar temp_cv;
-	p_temp_cv = &temp_cv;
-
 	Args thr_args;
 
 #ifdef _WIN32
@@ -585,15 +583,13 @@ int main(int argc, char **argv)
 #else
 	MainWindow wnd(&x11, &ss_cv, &temp_cv);
 
-	p_quit = &wnd.quit;
-
-	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
-
 	thr_args.x11 = &x11;
-
+	p_quit = &wnd.quit;
 	p_ss_cv = &thr_args.br_cv;
+	p_temp_cv = &temp_cv;
 #endif
 
+	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
 	std::thread ss_thr(recordScreen, std::ref(thr_args), std::ref(ss_cv), std::ref(wnd));
 
 	a.exec();

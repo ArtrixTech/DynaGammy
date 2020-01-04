@@ -285,7 +285,7 @@ bool DXGIDupl::getDXGISnapshot(std::vector<uint8_t> &buf) noexcept
 
     do
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(cfg[Polling_rate]));
+        std::this_thread::sleep_for(std::chrono::milliseconds(cfg["polling_rate"]));
     }
     while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING);
 
