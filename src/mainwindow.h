@@ -75,6 +75,9 @@ private:
 	#ifndef _WIN32
 	X11 *x11;
 	#endif
+
+	int wnd_offset_x = 17;
+	int wnd_offset_y = 35;
 };
 
 #endif // MAINWINDOW_H

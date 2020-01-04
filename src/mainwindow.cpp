@@ -56,7 +56,7 @@ void MainWindow::init()
 	{
 		this->setWindowTitle("Gammy");
 		this->setWindowIcon(icon);
-		resize(335, 333);
+		resize(335, 332);
 
 		QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
 
@@ -72,7 +72,7 @@ void MainWindow::init()
 
 		// Move window to bottom right
 		QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
-		move(scr.width() - this->width(), scr.height() - this->height());
+		move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
 	}
 
 	// Create tray icon
@@ -146,10 +146,9 @@ QMenu* MainWindow::createMenu()
 
 		setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
-		// Move the window to bottom right again.
-		// For some reason it moves up otherwise.
+		// Move the window to bottom right again. For some reason it moves up.
 		QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
-		move(scr.width() - this->width(), scr.height() - this->height());
+		move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
 
 		show();
 		updateBrLabel();
@@ -190,14 +189,7 @@ QMenu* MainWindow::createMenu()
 	return menu;
 }
 
-void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-	if (reason == QSystemTrayIcon::Trigger)
-	{
-		MainWindow::updateBrLabel();
-		MainWindow::show();
-	}
-}
+//___________________________________________________________
 
 void MainWindow::updateBrLabel()
 {
@@ -208,7 +200,14 @@ void MainWindow::updateBrLabel()
 	}
 }
 
-//___________________________________________________________
+void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+	if (reason == QSystemTrayIcon::Trigger)
+	{
+		MainWindow::updateBrLabel();
+		MainWindow::show();
+	}
+}
 
 void MainWindow::on_minBrSlider_valueChanged(int val)
 {
