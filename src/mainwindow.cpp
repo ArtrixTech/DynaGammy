@@ -98,6 +98,8 @@ void MainWindow::init()
 
 	// Set slider properties
 	{
+		ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br * 100 / 255));
+		
 		ui->extendBr->setChecked(cfg["extend_br"]);
 		setBrSlidersRange(cfg["extend_br"]);
 
