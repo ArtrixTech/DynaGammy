@@ -295,6 +295,11 @@ color: rgb(255, 255, 255);</string>
        </property>
        <item>
         <widget class="QLabel" name="label_3">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>From:</string>
          </property>
@@ -356,6 +361,11 @@ selection-background-color: rgb(60, 82, 125);</string>
        </item>
        <item>
         <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>Start:</string>
          </property>
@@ -413,6 +423,11 @@ selection-background-color: rgb(120, 62, 75);</string>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>To:</string>
          </property>
@@ -477,6 +492,11 @@ selection-background-color: rgb(120, 62, 75);</string>
        </item>
        <item>
         <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>End:</string>
          </property>
