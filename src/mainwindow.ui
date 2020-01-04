@@ -1126,7 +1126,7 @@ font-size: 17px;
      <item>
       <layout class="QVBoxLayout" name="minBrVL">
        <item>
-        <layout class="QHBoxLayout" name="minBrHL">
+        <layout class="QHBoxLayout" name="minBrHL" stretch="0,0,1">
          <item>
           <widget class="QLabel" name="text1">
            <property name="font">
@@ -1159,19 +1159,6 @@ font-size: 17px;
             <string>%</string>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="hSpacer1">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
@@ -1211,7 +1198,7 @@ font-size: 17px;
      <item>
       <layout class="QVBoxLayout" name="maxBrVL">
        <item>
-        <layout class="QHBoxLayout" name="maxBrHL">
+        <layout class="QHBoxLayout" name="maxBrHL" stretch="0,0,1,0">
          <item>
           <widget class="QLabel" name="text2">
            <property name="font">
@@ -1310,19 +1297,6 @@ background-color:rgb(20,22,35);
            </property>
           </widget>
          </item>
-         <item>
-          <spacer name="hSpacer2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
         </layout>
        </item>
        <item>
@@ -1349,7 +1323,7 @@ background-color:rgb(20,22,35);
      <item>
       <layout class="QVBoxLayout" name="offsetVL">
        <item>
-        <layout class="QHBoxLayout" name="offsetHL">
+        <layout class="QHBoxLayout" name="offsetHL" stretch="0,0,1">
          <item>
           <widget class="QLabel" name="text3">
            <property name="font">
@@ -1383,19 +1357,6 @@ background-color:rgb(20,22,35);
            </property>
           </widget>
          </item>
-         <item>
-          <spacer name="hSpacer3">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
         </layout>
        </item>
        <item>
@@ -1422,7 +1383,7 @@ background-color:rgb(20,22,35);
         <enum>QLayout::SetFixedSize</enum>
        </property>
        <item>
-        <layout class="QHBoxLayout" name="tempHL">
+        <layout class="QHBoxLayout" name="tempHL" stretch="0,0,1,8,0">
          <item>
           <widget class="QLabel" name="tempText">
            <property name="text">
@@ -1930,19 +1891,6 @@ color:white;</string>
            </property>
           </widget>
          </item>
-         <item>
-          <spacer name="hSpacer4">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
         </layout>
        </item>
        <item>
@@ -1973,7 +1921,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
      <item>
       <layout class="QVBoxLayout" name="speedVL">
        <item>
-        <layout class="QHBoxLayout" name="speedHL">
+        <layout class="QHBoxLayout" name="speedHL" stretch="0,1">
          <item>
           <widget class="QLabel" name="speedText">
            <property name="text">
@@ -1987,19 +1935,6 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
             <string>255</string>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="hSpacer5">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
@@ -2021,7 +1956,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
      <item>
       <layout class="QVBoxLayout" name="threshVL">
        <item>
-        <layout class="QHBoxLayout" name="threshHL">
+        <layout class="QHBoxLayout" name="threshHL" stretch="0,1">
          <item>
           <widget class="QLabel" name="label_6">
            <property name="font">
@@ -2047,19 +1982,6 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
             <string>255</string>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="hSpacer6">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
@@ -2087,7 +2009,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
      <item>
       <layout class="QVBoxLayout" name="pollingVL">
        <item>
-        <layout class="QHBoxLayout" name="pollingHL">
+        <layout class="QHBoxLayout" name="pollingHL" stretch="0,1">
          <item>
           <widget class="QLabel" name="label_7">
            <property name="font">
@@ -2113,19 +2035,6 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
             <string>500</string>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="hSpacer7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
