@@ -120,12 +120,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	std::mutex temp_mtx;
 
-	bool needs_change;
-
-	if(w.auto_temp_checked)
-	{
-		needs_change = true;
-	}
+	bool needs_change = cfg["auto_temp"];
 
 	convar		clock_cv;
 	std::mutex	clock_mtx;
@@ -141,7 +136,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			if(w.quit) break;
 
-			if(!w.auto_temp_checked)
+			if(!cfg["auto_temp"])
 			{
 				LOGD << "Skipping date check (adaptive temp disabled)";
 				continue;
@@ -255,7 +250,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			add = -1;
 		}
 
-		while (w.auto_temp_checked)
+		while (cfg["auto_temp"])
 		{
 			if(w.quit || force) break;
 
@@ -340,7 +335,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 			add = -1;
 		}
 
-		while (!args.br_needs_change && w.auto_br_checked)
+		while (!args.br_needs_change && cfg["auto_br"])
 		{
 			scr_br += add;
 
@@ -369,15 +364,10 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	LOGV << "recordScreen() start";
 
-	int	prev_imgBr	= 0,
-		prev_min	= 0,
-		prev_max	= 0,
-		prev_offset	= 0;
-
 #ifdef _WIN32
-	const uint64_t width = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
-	const uint64_t height = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-	const uint64_t len = width * height * 4;
+	const uint64_t width	= GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
+	const uint64_t height	= GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
+	const uint64_t len	= width * height * 4;
 
 	LOGD << "Screen resolution: " << width << '*' << height;
 
@@ -433,6 +423,12 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	bool force = false;
 
+	int
+	prev_img_br	= 0,
+	prev_min	= 0,
+	prev_max	= 0,
+	prev_offset	= 0;
+
 	while (true)
 	{
 		{
@@ -440,7 +436,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 			ss_cv.wait(lock, [&]
 			{
-				return w.auto_br_checked || w.quit;
+				return cfg["auto_br"] || w.quit;
 			});
 		}
 
@@ -449,7 +445,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 			break;
 		}
 
-		if(w.auto_br_checked)
+		if(cfg["auto_br"])
 		{
 			buf.resize(len);
 			force = true;
@@ -461,12 +457,12 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 			continue;
 		}
 
-		while(w.auto_br_checked && !w.quit)
+		while(cfg["auto_br"] && !w.quit)
 		{
 			getSnapshot(buf);
 
 			int img_br = calcBrightness(buf);
-			img_delta += abs(prev_imgBr - img_br);
+			img_delta += abs(prev_img_br - img_br);
 
 			std::call_once(f, [&] { img_delta = 0; });
 
@@ -506,7 +502,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 				force = true;
 			}
 
-			prev_imgBr	= img_br;
+			prev_img_br	= img_br;
 			prev_min	= cfg["min_br"];
 			prev_max	= cfg["max_br"];
 			prev_offset	= cfg["offset"];

@@ -33,22 +33,18 @@ public:
 
 	~MainWindow();
 
+	convar *ss_cv		= nullptr;
+	convar *temp_cv		= nullptr;
+	bool *force_br_change	= nullptr;
+	bool *force_temp_change = nullptr;
+
 	bool quit		= false;
 	bool set_previous_gamma = true;
 	bool ignore_closeEvent	= true;
 
+	void setTempSlider(int);
 	void updateBrLabel();
 	void setPollingRange(int, int);
-
-	bool auto_br_checked	= true;
-	bool *force		= nullptr;
-	convar *ss_cv		= nullptr;
-
-	bool auto_temp_checked	= false;
-	bool *force_temp_change = nullptr;
-	convar *temp_cv		= nullptr;
-
-	void setTempSlider(int);
 
 private slots:
 	void init();

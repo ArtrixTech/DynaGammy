@@ -111,18 +111,11 @@ void MainWindow::init()
 		ui->pollingSlider->setValue(cfg["polling_rate"]);
 	}
 
-	// Set auto brightness/temp checks
+	// Set auto checks
 	{
-		// Doesn't fire the toggle event if 0
 		ui->autoCheck->setChecked(cfg["auto_br"]);
-
-		// So we need to notify the screenshot thread
-		auto_br_checked = cfg["auto_br"];
-		ss_cv->notify_one();
-
 		toggleSliders(cfg["auto_br"]);
 
-		// Auto temp is off by default, no need to notify
 		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
 	}
 
@@ -287,21 +280,24 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 {
 	toggleSliders(checked);
 
-	auto_br_checked = checked;
-	ss_cv->notify_one();
-
 	cfg["auto_br"] = checked;
+	ss_cv->notify_one();
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-	auto_temp_checked = checked;
-	if(force_temp_change) *force_temp_change = checked;
+	cfg["auto_temp"] = checked;
+
+	if(force_temp_change)
+	{
+		*force_temp_change = checked;
+	}
+
 	temp_cv->notify_one();
 
 	ui->tempSlider->setDisabled(checked);
 
-	cfg["auto_temp"] = checked;
+
 }
 
 void MainWindow::toggleSliders(bool is_auto)
