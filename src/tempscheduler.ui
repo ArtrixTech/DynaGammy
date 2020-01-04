@@ -258,6 +258,11 @@ color:white;
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
      <property name="styleSheet">
       <string notr="true">background-color: rgb(20,22,35);
 selection-background-color: rgb(96,96,96);
@@ -318,6 +323,11 @@ color: rgb(255, 255, 255);</string>
            <width>80</width>
            <height>35</height>
           </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
          </property>
          <property name="styleSheet">
           <string notr="true">background-color:rgb(30,32,45);
@@ -385,6 +395,11 @@ selection-background-color: rgb(60, 82, 125);</string>
            <height>35</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
          <property name="styleSheet">
           <string notr="true">background-color:rgb(30,32,45);
 selection-background-color: rgb(120, 62, 75);</string>
@@ -446,6 +461,11 @@ selection-background-color: rgb(120, 62, 75);</string>
            <width>80</width>
            <height>35</height>
           </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
          </property>
          <property name="styleSheet">
           <string notr="true">background-color:rgb(30,32,45);
@@ -521,6 +541,11 @@ selection-background-color: rgb(120, 62, 75);</string>
            <width>16777215</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
          </property>
          <property name="styleSheet">
           <string notr="true">background-color:rgb(30,32,45);

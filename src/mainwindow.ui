@@ -1046,6 +1046,7 @@ font-size: 17px;
        <property name="font">
         <font>
          <family>Ubuntu</family>
+         <pointsize>12</pointsize>
         </font>
        </property>
        <property name="styleSheet">
