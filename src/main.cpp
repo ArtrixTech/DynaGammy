@@ -390,7 +390,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 	LOGD << "Buffer size: " << len;
 
 	// Buffer to store screen pixels
-	std::vector<uint8_t> buf(len);
+	std::vector<uint8_t> buf;
 
 	std::thread br_thr(adjustBrightness, std::ref(args), std::ref(w));
 
