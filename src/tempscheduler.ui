@@ -85,9 +85,9 @@
      <colorrole role="PlaceholderText">
       <brush brushstyle="NoBrush">
        <color alpha="128">
-        <red>208</red>
-        <green>208</green>
-        <blue>208</blue>
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
        </color>
       </brush>
      </colorrole>
@@ -233,9 +233,9 @@
      <colorrole role="PlaceholderText">
       <brush brushstyle="NoBrush">
        <color alpha="128">
-        <red>208</red>
-        <green>208</green>
-        <blue>208</blue>
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
        </color>
       </brush>
      </colorrole>
@@ -253,8 +253,6 @@
    <string notr="true">background-color: rgb(20,22,35);
 alternate-background-color: rgb(79,255,255);
 color:white;
-font-family:&quot;Ubuntu&quot;, &quot;Segoe UI&quot;, sans-serif;
-
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -541,15 +539,6 @@ selection-background-color: rgb(60, 82, 125);</string>
     </spacer>
    </item>
   </layout>
-  <zorder>tempStartBox</zorder>
-  <zorder>label</zorder>
-  <zorder>timeStartBox</zorder>
-  <zorder>label_2</zorder>
-  <zorder>label_4</zorder>
-  <zorder>tempEndBox</zorder>
-  <zorder>timeEndBox</zorder>
-  <zorder>label_3</zorder>
-  <zorder>buttonBox</zorder>
  </widget>
  <resources>
   <include location="../res.qrc"/>
