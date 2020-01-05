@@ -2,8 +2,6 @@
 #include "ui_tempscheduler.h"
 #include "cfg.h"
 
-static QTime time_start, time_end;
-
 TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_change) :
 	QDialog(parent),
 	ui(new Ui::TempScheduler)
@@ -16,31 +14,28 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
 
-	const auto setTime = [] (QTime &t, const std::string &time_str)
-	{
-		const auto start_hour	= time_str.substr(0, 2);
-		const auto start_min	= time_str.substr(3, 2);
+	this->start_hr	= std::stoi(cfg["time_start"].get<std::string>().substr(0, 2));
+	this->end_hr	= std::stoi(cfg["time_start"].get<std::string>().substr(3, 2));
+	this->start_min	= std::stoi(cfg["time_end"].get<std::string>().substr(0, 2));
+	this->end_min	= std::stoi(cfg["time_end"].get<std::string>().substr(3, 2));
 
-		t = QTime(std::stoi(start_hour), std::stoi(start_min));
-	};
-
-	setTime(time_start, cfg["time_start"]);
-	ui->timeStartBox->setTime(time_start);
-
-	setTime(time_end, cfg["time_end"]);
-	ui->timeEndBox->setTime(time_end);
+	ui->timeStartBox->setTime(QTime(start_hr, end_hr));
+	ui->timeEndBox->setTime(QTime(start_min, end_min));
 }
 
 void TempScheduler::on_buttonBox_accepted()
 {
-	if(time_start <= time_end)
+	QTime t_start = QTime(start_hr, end_hr);
+	QTime t_end = QTime(start_min, end_min);
+
+	if(t_start <= t_end)
 	{
-		LOGW << "Start time is earlier or equal to end. Adding 1 hour to start time.";
-		time_start = time_end.addSecs(3600);
+		LOGW << "Start time is earlier or equal to end, setting to end time + 1";
+		t_start = t_end.addSecs(3600);
 	}
 
-	cfg["time_start"]	= time_start.toString().toStdString();
-	cfg["time_end"] 	= time_end.toString().toStdString();
+	cfg["time_start"]	= t_start.toString().toStdString();
+	cfg["time_end"] 	= t_end.toString().toStdString();
 
 	cfg["temp_high"]	= high_temp;
 	cfg["temp_low"] 	= low_temp;
@@ -63,15 +58,17 @@ void TempScheduler::on_tempEndBox_valueChanged(int val)
 
 void TempScheduler::on_timeStartBox_timeChanged(const QTime &time)
 {
-	time_start = time;
+	this->start_hr = time.hour();
+	this->end_hr = time.minute();
 }
 
 void TempScheduler::on_timeEndBox_timeChanged(const QTime &time)
 {
-	time_end = time;
+	this->start_min = time.hour();
+	this->end_min = time.minute();
 }
 
 TempScheduler::~TempScheduler()
 {
-    delete ui;
+	delete ui;
 }

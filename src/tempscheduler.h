@@ -31,11 +31,14 @@ private slots:
 private:
 	Ui::TempScheduler *ui;
 
-	bool *force_change = nullptr;
-	convar *temp_cv;
+	int start_hr, start_min;
+	int end_hr, end_min;
 
 	int high_temp;
 	int low_temp;
+
+	convar *temp_cv;
+	bool *force_change = nullptr;
 
 	void setDates();
 };
