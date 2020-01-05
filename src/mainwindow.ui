@@ -1897,9 +1897,7 @@ color:white;</string>
        <item>
         <widget class="QSlider" name="tempSlider">
          <property name="styleSheet">
-          <string notr="true">QSlider::groove:horizontal 
-{
-
+          <string notr="true">QSlider::groove:horizontal {
 background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb(35, 112, 145), stop:1 rgb(215, 112, 25));
 }</string>
          </property>
