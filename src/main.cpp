@@ -142,7 +142,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				continue;
 			}
 
-			LOGD << "Checking time";
+			LOGV << "Checking time";
 
 			checkDates();
 
@@ -312,8 +312,8 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 			args.br_needs_change = false;
 
-			img_br	= args.img_br;
-			delta	= args.img_delta;
+			img_br = args.img_br;
+			delta = args.img_delta;
 			args.img_delta = 0;
 		}
 
@@ -329,6 +329,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 		if (target == scr_br)
 		{
+			LOGD << "Brightness is already at target.";
 			continue;
 		}
 
@@ -344,6 +345,8 @@ void adjustBrightness(Args &args, MainWindow &w)
 		{
 			add = -1;
 		}
+
+		LOGD << scr_br << "->" << target;
 
 		while (!args.br_needs_change && cfg["auto_br"])
 		{
