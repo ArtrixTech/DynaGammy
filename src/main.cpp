@@ -394,8 +394,6 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	std::thread br_thr(adjustBrightness, std::ref(args), std::ref(w));
 
-	std::once_flag f;
-
 	const auto getSnapshot = [&] (std::vector<uint8_t> &buf)
 	{
 		LOGV << "Taking screenshot";
@@ -463,8 +461,6 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 			int img_br = calcBrightness(buf);
 			img_delta += abs(prev_img_br - img_br);
-
-			std::call_once(f, [&] { img_delta = 0; });
 
 			if (img_delta > cfg["threshold"] || force)
 			{
