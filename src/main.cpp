@@ -285,7 +285,7 @@ struct Args
 	X11 *x11 {};
 #endif
 
-	int target_br = 0;
+	int img_br = 0;
 	int img_delta = 0;
 	bool br_needs_change = false;
 };
@@ -297,7 +297,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 	while(true)
 	{
-		int target;
+		int img_br;
 		int delta;
 
 		{
@@ -312,20 +312,30 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 			args.br_needs_change = false;
 
-			target	= args.target_br;
+			img_br	= args.img_br;
 			delta	= args.img_delta;
+			args.img_delta = 0;
 		}
 
-		int sleeptime = (100 - delta / 4) / cfg["speed"].get<int>();
-		args.img_delta = 0;
+		int target = default_brightness - img_br + cfg["offset"].get<int>();
 
-		int add = 0;
+		if (target > cfg["max_br"]) {
+			target = cfg["max_br"];
+		}
+		else
+		if (target < cfg["min_br"]) {
+			target = cfg["min_br"];
+		}
 
 		if (target == scr_br)
 		{
 			continue;
 		}
-		else if (target > scr_br)
+
+		int sleeptime = (100 - delta / 4) / cfg["speed"].get<int>();
+		int add = 0;
+
+		if (target > scr_br)
 		{
 			add = 1;
 			sleeptime /= 3;
@@ -345,7 +355,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 				setGDIGamma(scr_br, cfg["temp_step"]);
 			}
 #ifndef _WIN32
-			else { args.x11->setXF86Gamma(scr_br, cfg["temp_step"]); }
+			else args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
 #endif
 
 			w.updateBrLabel();
@@ -464,33 +474,19 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 			if (img_delta > cfg["threshold"] || force)
 			{
-				int target = default_brightness - img_br + cfg["offset"].get<int>();
-
-				if (target > cfg["max_br"]) {
-					target = cfg["max_br"];
-				}
-				else
-				if (target < cfg["min_br"]) {
-					target = cfg["min_br"];
-				}
-
-				if((target != scr_br && target != args.target_br) || force)
-				{
-					LOGD << scr_br << " -> " << target << ", Δ: " << img_delta;
-
-					{
-						std::lock_guard lock (args.br_mtx);
-
-						args.target_br = target;
-						args.img_delta = img_delta;
-						args.br_needs_change = true;
-					}
-
-					args.br_cv.notify_one();
-				}
-				else img_delta = 0;
-
 				force = false;
+
+				{
+					std::lock_guard lock (args.br_mtx);
+
+					args.img_br = img_br;
+					args.img_delta = img_delta;
+					args.br_needs_change = true;
+				}
+
+				img_delta = 0;
+
+				args.br_cv.notify_one();
 			}
 
 			if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
