@@ -16,232 +16,6 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <property name="palette">
-   <palette>
-    <active>
-     <colorrole role="WindowText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Text">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="ButtonText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Base">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Window">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="AlternateBase">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>79</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="NoBrush">
-       <color alpha="128">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-    </active>
-    <inactive>
-     <colorrole role="WindowText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Text">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="ButtonText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Base">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Window">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="AlternateBase">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>79</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="NoBrush">
-       <color alpha="128">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-    </inactive>
-    <disabled>
-     <colorrole role="WindowText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Text">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="ButtonText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Base">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Window">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>20</red>
-        <green>22</green>
-        <blue>35</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="AlternateBase">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>79</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="NoBrush">
-       <color alpha="128">
-        <red>255</red>
-        <green>255</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-    </disabled>
-   </palette>
-  </property>
   <property name="windowTitle">
    <string>Temperature schedule</string>
   </property>
@@ -250,10 +24,7 @@
     <normaloff>:/res/icons/64x64ball.ico</normaloff>:/res/icons/64x64ball.ico</iconset>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(20,22,35);
-alternate-background-color: rgb(79,255,255);
-color:white;
-</string>
+   <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="0" colspan="2">
@@ -264,9 +35,9 @@ color:white;
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color: rgb(20,22,35);
+      <string notr="true">
 selection-background-color: rgb(96,96,96);
-color: rgb(255, 255, 255);</string>
+</string>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -302,7 +73,7 @@ color: rgb(255, 255, 255);</string>
         <widget class="QLabel" name="label_3">
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <pointsize>12</pointsize>
           </font>
          </property>
          <property name="text">
@@ -320,18 +91,21 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="minimumSize">
           <size>
-           <width>80</width>
+           <width>95</width>
            <height>35</height>
           </size>
          </property>
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>11</pointsize>
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(30,32,45);
-selection-background-color: rgb(60, 82, 125);</string>
+          <string notr="true">selection-background-color:rgb(10, 120, 240);
+selection-color:white;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::PlusMinus</enum>
@@ -373,7 +147,7 @@ selection-background-color: rgb(60, 82, 125);</string>
         <widget class="QLabel" name="label">
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <pointsize>12</pointsize>
           </font>
          </property>
          <property name="text">
@@ -391,18 +165,22 @@ selection-background-color: rgb(60, 82, 125);</string>
          </property>
          <property name="minimumSize">
           <size>
-           <width>80</width>
+           <width>95</width>
            <height>35</height>
           </size>
          </property>
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>11</pointsize>
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(30,32,45);
-selection-background-color: rgb(120, 62, 75);</string>
+          <string notr="true">selection-color:white;
+selection-background-color: rgb(255, 120, 60);
+</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
          <property name="timeSpec">
           <enum>Qt::LocalTime</enum>
@@ -440,7 +218,7 @@ selection-background-color: rgb(120, 62, 75);</string>
         <widget class="QLabel" name="label_4">
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <pointsize>12</pointsize>
           </font>
          </property>
          <property name="text">
@@ -458,21 +236,25 @@ selection-background-color: rgb(120, 62, 75);</string>
          </property>
          <property name="minimumSize">
           <size>
-           <width>80</width>
+           <width>95</width>
            <height>35</height>
           </size>
          </property>
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>11</pointsize>
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(30,32,45);
-selection-background-color: rgb(120, 62, 75);</string>
+          <string notr="true">selection-color:white;
+selection-background-color: rgb(255, 120, 60);
+</string>
          </property>
          <property name="wrapping">
           <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::PlusMinus</enum>
@@ -514,7 +296,7 @@ selection-background-color: rgb(120, 62, 75);</string>
         <widget class="QLabel" name="label_2">
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <pointsize>12</pointsize>
           </font>
          </property>
          <property name="text">
@@ -532,7 +314,7 @@ selection-background-color: rgb(120, 62, 75);</string>
          </property>
          <property name="minimumSize">
           <size>
-           <width>80</width>
+           <width>95</width>
            <height>35</height>
           </size>
          </property>
@@ -544,12 +326,15 @@ selection-background-color: rgb(120, 62, 75);</string>
          </property>
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>11</pointsize>
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(30,32,45);
-selection-background-color: rgb(60, 82, 125);</string>
+          <string notr="true">selection-background-color:rgb(10, 120, 240);
+selection-color:white;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
          <property name="timeSpec">
           <enum>Qt::LocalTime</enum>
