@@ -6,15 +6,20 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QHelpEvent>
+
+#ifndef _WIN32
+	#include "x11.h"
+	#undef Status
+	#undef Bool
+	#undef CursorShape
+#endif
+
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
-#ifndef _WIN32
-#include "x11.h"
-#undef Bool
-#endif
 
-#include "utils.h"
+#include "defs.h"
 
 namespace Ui {
 class MainWindow;
@@ -72,9 +77,9 @@ private:
 	void setBrSlidersRange(bool);
 	void closeEvent(QCloseEvent *);
 
-	#ifndef _WIN32
+#ifndef _WIN32
 	X11 *x11;
-	#endif
+#endif
 
 	int wnd_offset_x = 17;
 	int wnd_offset_y = 35;

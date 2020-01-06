@@ -3,25 +3,18 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "ui_mainwindow.h"
-#include "main.h"
-#include "utils.h"
-#include "cfg.h"
-
 #ifdef _WIN32
 	#include <Windows.h>
 #endif
 
-#include <QScreen>
-#include <QSystemTrayIcon>
-#include <QToolTip>
-#include <QHelpEvent>
-#include <QAction>
-#include <QMenu>
-#include <QTime>
-
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
 #include "tempscheduler.h"
+#include "cfg.h"
+#include "defs.h"
+
+#include <QScreen>
+#include <QMenu>
 
 #ifndef _WIN32
 
@@ -30,7 +23,6 @@ MainWindow::MainWindow(X11 *x11, convar *ss_cv, convar *temp_cv)
 {
 	this->ss_cv = ss_cv;
 	this->temp_cv = temp_cv;
-
 	this->x11 = x11;
 
 	init();

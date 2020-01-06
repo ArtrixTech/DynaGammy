@@ -5,6 +5,7 @@
 
 #include "cfg.h"
 #include "utils.h"
+#include "defs.h"
 #include <fstream>
 #include <iostream>
 
