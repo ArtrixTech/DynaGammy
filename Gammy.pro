@@ -45,7 +45,7 @@ unix:{
 RESOURCES += res.qrc
 
 RCC_DIR = $$PWD/res
-UI_DIR = $$PWD/res
+UI_DIR = $$PWD/src
 MOC_DIR = $$PWD/res/tmp
 OBJECTS_DIR = $$PWD/res/tmp
 
