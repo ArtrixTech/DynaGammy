@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "utils.h"
+#include "defs.h"
 
 namespace Ui {
 class TempScheduler;

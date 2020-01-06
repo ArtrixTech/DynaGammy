@@ -1936,6 +1936,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
       </spacer>
      </item>
      <item>
+      <widget class="RangeSlider" name="widget" native="true"/>
+     </item>
+     <item>
       <layout class="QVBoxLayout" name="speedVL">
        <item>
         <layout class="QHBoxLayout" name="speedHL" stretch="0,1">
@@ -2107,6 +2110,14 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>RangeSlider</class>
+   <extends>QWidget</extends>
+   <header>RangeSlider.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../res.qrc"/>
  </resources>

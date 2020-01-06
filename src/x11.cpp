@@ -9,6 +9,7 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
 #include "utils.h"
+#include "defs.h"
 
 X11::X11()
 {

@@ -7,13 +7,9 @@
 #include <Windows.h>
 #endif
 
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <vector>
-
 #include "utils.h"
 #include "cfg.h"
+#include "defs.h"
 
 void setColors(int temp, std::array<double, 3> &c)
 {

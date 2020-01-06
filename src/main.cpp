@@ -3,14 +3,6 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include <QApplication>
-#include <QTime>
-
-#include "mainwindow.h"
-#include "main.h"
-#include "utils.h"
-#include "cfg.h"
-
 #ifdef _WIN32
 	#include "dxgidupl.h"
 	#pragma comment(lib, "gdi32.lib")
@@ -19,18 +11,18 @@
 	#pragma comment(lib, "D3D11.lib")
 	#pragma comment(lib, "Advapi32.lib")
 #else
-	#include "x11.h"
-	#include <unistd.h>
 	#include <signal.h>
 #endif
 
-#include <array>
-#include <vector>
+#include "cfg.h"
+#include "utils.h"
+
 #include <thread>
 #include <mutex>
-#include <shared_mutex>
-#include <condition_variable>
 #include <chrono>
+#include <QApplication>
+#include <QTime>
+#include "mainwindow.h"
 
 // Reflects the current screen brightness
 int scr_br = default_brightness;
@@ -524,6 +516,8 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	QApplication::quit();
 }
+
+void sig_handler(int signo);
 
 int main(int argc, char **argv)
 {
