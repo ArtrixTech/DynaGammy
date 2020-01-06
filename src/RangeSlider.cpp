@@ -5,7 +5,7 @@ namespace
 {
 
 const int scHandleSideLength = 11;
-const int scSliderBarHeight = 5;
+const int scSliderBarHeight = 3;
 const int scLeftRightMargin = 1;
 
 }
@@ -20,8 +20,8 @@ RangeSlider::RangeSlider(QWidget* aParent)
       mFirstHandlePressed(false),
       mSecondHandlePressed(false),
       mInterval(mMaximum - mMinimum),
-      mBackgroudColorEnabled(QColor(0x1E, 0x90, 0xFF)),
-      mBackgroudColorDisabled(Qt::darkGray),
+      mBackgroudColorEnabled(QColor(35, 112, 145)),
+      mBackgroudColorDisabled(QColor(15, 92, 125)),
       mBackgroudColor(mBackgroudColorEnabled)
 {
     setMouseTracking(true);
@@ -29,40 +29,44 @@ RangeSlider::RangeSlider(QWidget* aParent)
 
 void RangeSlider::paintEvent(QPaintEvent* aEvent)
 {
-    Q_UNUSED(aEvent);
-    QPainter painter(this);
+	Q_UNUSED(aEvent);
+	QPainter painter(this);
+	painter.setRenderHint(QPainter::Antialiasing);
 
-    // Background
-    QRectF backgroundRect = QRectF(scLeftRightMargin, (height() - scSliderBarHeight) / 2, width() - scLeftRightMargin * 2, scSliderBarHeight);
-    QPen pen(Qt::gray, 0.8);
-    painter.setPen(pen);
-    painter.setRenderHint(QPainter::Qt4CompatiblePainting);
-    QBrush backgroundBrush(QColor(0xD0, 0xD0, 0xD0));
-    painter.setBrush(backgroundBrush);
-    painter.drawRoundedRect(backgroundRect, 1, 1);
+	// Background
+	QRectF backgroundRect = QRectF(scLeftRightMargin, (height() - scSliderBarHeight) / 2,
+				   width() - scLeftRightMargin * 2, scSliderBarHeight);
 
-    // First value handle rect
-    pen.setColor(Qt::darkGray);
-    pen.setWidth(0.5);
-    painter.setPen(pen);
-    painter.setRenderHint(QPainter::Antialiasing);
-    QBrush handleBrush(QColor(0xFA, 0xFA, 0xFA));
-    painter.setBrush(handleBrush);
-    QRectF leftHandleRect = firstHandleRect();
-    painter.drawRoundedRect(leftHandleRect, 2, 2);
+	QColor grey = QColor(135, 135, 135);
+	QColor teal = QColor(35, 112, 145);
+	QColor whiteblue = QColor(235, 225, 255);
 
-    // Second value handle rect
-    QRectF rightHandleRect = secondHandleRect();
-    painter.drawRoundedRect(rightHandleRect, 2, 2);
+	{
+		painter.setPen(QPen(QColor(15, 92, 125), qreal(0)));
+		painter.setBrush(QColor(15, 92, 125));
+		painter.drawRoundedRect(backgroundRect, qreal(1), qreal(1));
+	}
 
-    // Handles
-    painter.setRenderHint(QPainter::Antialiasing, false);
-    QRectF selectedRect(backgroundRect);
-    selectedRect.setLeft(leftHandleRect.right() + 0.5);
-    selectedRect.setRight(rightHandleRect.left() - 0.5);
-    QBrush selectedBrush(mBackgroudColor);
-    painter.setBrush(selectedBrush);
-    painter.drawRect(selectedRect);
+	{
+
+		painter.setPen(QPen(whiteblue, qreal(0)));
+		painter.setBrush(whiteblue);
+
+		QRectF leftHandleRect = firstHandleRect();
+		painter.drawRoundedRect(leftHandleRect, 4, 4);
+		QRectF rightHandleRect = secondHandleRect();
+		painter.drawRoundedRect(rightHandleRect, 4, 4);
+
+		painter.setPen(QPen(teal, qreal(0)));
+		painter.setBrush(QBrush(teal));
+
+		QRectF selectedRect(backgroundRect);
+		selectedRect.setLeft(leftHandleRect.right() + 0.5);
+		selectedRect.setRight(rightHandleRect.left() - 0.5);
+
+		painter.drawRect(selectedRect);
+	}
+
 }
 
 QRectF RangeSlider::firstHandleRect() const
