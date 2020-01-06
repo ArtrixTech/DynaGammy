@@ -15,13 +15,16 @@ TEMPLATE = app
 CONFIG += c++11 c++17
 CONFIG += optimize_full
 
-HEADERS += src/main.h src/mainwindow.h src/utils.h \
+HEADERS += src/mainwindow.h src/utils.h \
     src/tempscheduler.h \
-    src/cfg.h
+    src/cfg.h \
+    src/RangeSlider.h \
+    src/defs.h
 
 SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
     src/tempscheduler.cpp \
-    src/cfg.cpp
+    src/cfg.cpp \
+    src/RangeSlider.cpp
 
 FORMS   += src/mainwindow.ui \
     src/tempscheduler.ui \
