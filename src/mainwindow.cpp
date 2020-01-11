@@ -66,7 +66,6 @@ void MainWindow::init()
 		ui->threshWidget->hide();
 		ui->pollingWidget->hide();
 
-
 		// Move window to bottom right
 		QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
 		move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
@@ -269,6 +268,23 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 
 	cfg["auto_br"] = checked;
 	ss_cv->notify_one();
+
+	ui->rangeWidget->setVisible(checked);
+	ui->offsetWidget->setVisible(checked);
+
+	if(checked) {
+		this->setMinimumHeight(wnd_height);
+		this->setMaximumHeight(wnd_height);
+
+		ui->advBrSettingsBtn->show();
+	}
+	else {
+		ui->advBrSettingsBtn->setChecked(false);
+		ui->advBrSettingsBtn->hide();
+
+		this->setMinimumHeight(170);
+		this->setMaximumHeight(170);
+	}
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
@@ -287,14 +303,17 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 
 void MainWindow::toggleSliders(bool is_auto)
 {
-	if(is_auto)
-	{
-		ui->manBrSlider->hide();
-	}
-	else
+	ui->manBrSlider->setVisible(!is_auto);
+	ui->rangeWidget->setVisible(is_auto);
+	ui->offsetWidget->setVisible(is_auto);
+	ui->advBrSettingsBtn->setVisible(is_auto);
+
+	if(!is_auto)
 	{
 		ui->manBrSlider->setValue(scr_br);
-		ui->manBrSlider->show();
+
+		this->setMinimumHeight(170);
+		this->setMaximumHeight(170);
 	}
 }
 
@@ -335,6 +354,7 @@ void MainWindow::setBrSlidersRange(bool inc)
 	ui->brRange->setUpperValue(max);
 	ui->brRange->setLowerValue(min);
 
+	ui->manBrSlider->setRange(64, br_limit);
 	ui->offsetSlider->setRange(0, br_limit);
 }
 
