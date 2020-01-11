@@ -1,5 +1,7 @@
 
 #include "RangeSlider.h"
+#include "defs.h"
+#include "cfg.h"
 
 namespace
 {
@@ -13,10 +15,10 @@ const int scLeftRightMargin = 1;
 
 RangeSlider::RangeSlider(QWidget* aParent)
     : QWidget(aParent),
-      mMinimum(0),
-      mMaximum(100),
-      mLowerValue(0),
-      mUpperValue(100),
+      mMinimum(64),
+      mMaximum(default_brightness),
+      mLowerValue(cfg["min_br"]),
+      mUpperValue(cfg["max_br"]),
       mFirstHandlePressed(false),
       mSecondHandlePressed(false),
       mInterval(mMaximum - mMinimum),
@@ -24,7 +26,7 @@ RangeSlider::RangeSlider(QWidget* aParent)
       mBackgroudColorDisabled(QColor(15, 92, 125)),
       mBackgroudColor(mBackgroudColorEnabled)
 {
-    setMouseTracking(true);
+    setMouseTracking(false);
 }
 
 void RangeSlider::paintEvent(QPaintEvent* aEvent)

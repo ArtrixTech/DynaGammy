@@ -18,7 +18,6 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
-
 #include "defs.h"
 
 namespace Ui {
@@ -55,8 +54,8 @@ private slots:
 	void init();
 	void iconActivated(QSystemTrayIcon::ActivationReason reason);
 
-	void on_minBrSlider_valueChanged(int val);
-	void on_maxBrSlider_valueChanged(int val);
+	void on_brRange_lowerValueChanged(int val);
+	void on_brRange_upperValueChanged(int val);
 	void on_offsetSlider_valueChanged(int val);
 	void on_speedSlider_valueChanged(int val);
 	void on_tempSlider_valueChanged(int val);
