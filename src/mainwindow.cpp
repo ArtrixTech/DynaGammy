@@ -91,14 +91,16 @@ void MainWindow::init()
 	// Set slider properties
 	{
 		ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br * 100 / 255));
-		
+		ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg["min_br"].get<int>() * 100 / 255));
+		ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg["max_br"].get<int>() * 100 / 255));
+
 		ui->extendBr->setChecked(cfg["extend_br"]);
 		setBrSlidersRange(cfg["extend_br"]);
 
-		ui->tempSlider->setRange(0, temp_arr_entries * temp_mult);
-		ui->minBrSlider->setValue(cfg["min_br"]);
-		ui->maxBrSlider->setValue(cfg["max_br"]);
 		ui->offsetSlider->setValue(cfg["offset"]);
+
+		ui->tempSlider->setRange(0, temp_arr_entries * temp_mult);
+
 		ui->speedSlider->setValue(cfg["speed"]);
 		ui->tempSlider->setValue(cfg["temp_step"]);
 		ui->thresholdSlider->setValue(cfg["threshold"]);
@@ -185,13 +187,24 @@ QMenu* MainWindow::createMenu()
 
 //___________________________________________________________
 
+void MainWindow::on_brRange_lowerValueChanged(int val)
+{
+	ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
+
+	cfg["min_br"] = val;
+}
+
+void MainWindow::on_brRange_upperValueChanged(int val)
+{
+	ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
+
+	cfg["max_br"] = val;
+}
+
 void MainWindow::updateBrLabel()
 {
-	if(isVisible())
-	{
-		int val = scr_br * 100 / 255;
-		ui->statusLabel->setText(QStringLiteral("%1").arg(val));
-	}
+	int val = scr_br * 100 / 255;
+	ui->statusLabel->setText(QStringLiteral("%1").arg(val));
 }
 
 void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -201,30 +214,6 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 		MainWindow::updateBrLabel();
 		MainWindow::show();
 	}
-}
-
-void MainWindow::on_minBrSlider_valueChanged(int val)
-{
-	ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
-
-	if(val > cfg["max_br"])
-	{
-		ui->maxBrSlider->setValue(cfg["max_br"] = val);
-	}
-
-	cfg["min_br"] = val;
-}
-
-void MainWindow::on_maxBrSlider_valueChanged(int val)
-{
-	ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
-
-	if(val < cfg["min_br"])
-	{
-		ui->minBrSlider->setValue(cfg["min_br"] = val);
-	}
-
-	cfg["max_br"] = val;
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
@@ -289,8 +278,6 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 	temp_cv->notify_one();
 
 	ui->tempSlider->setDisabled(checked);
-
-
 }
 
 void MainWindow::toggleSliders(bool is_auto)
@@ -330,15 +317,19 @@ void MainWindow::on_extendBr_clicked(bool checked)
 
 void MainWindow::setBrSlidersRange(bool inc)
 {
-	LOGV << "Setting sliders range";
-
 	int br_limit = default_brightness;
 
 	if(inc) br_limit *= 2;
 
-	ui->manBrSlider->setRange(64, br_limit);
-	ui->minBrSlider->setRange(64, br_limit);
-	ui->maxBrSlider->setRange(64, br_limit);
+	int max = cfg["max_br"];
+	int min = cfg["min_br"];
+
+	ui->brRange->setMaximum(br_limit);
+
+	// We set the upper/lower values again because they reset after setMaximum
+	ui->brRange->setUpperValue(max);
+	ui->brRange->setLowerValue(min);
+
 	ui->offsetSlider->setRange(0, br_limit);
 }
 
