@@ -48,7 +48,8 @@ void MainWindow::init()
 	{
 		this->setWindowTitle("Gammy");
 		this->setWindowIcon(icon);
-		resize(335, 332);
+		this->setMinimumHeight(wnd_height);
+		this->setMaximumHeight(wnd_height);
 
 		QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
 
@@ -61,6 +62,10 @@ void MainWindow::init()
 		}
 
 		ui->manBrSlider->hide();
+		ui->speedWidget->hide();
+		ui->threshWidget->hide();
+		ui->pollingWidget->hide();
+
 
 		// Move window to bottom right
 		QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
@@ -384,4 +389,23 @@ void MainWindow::closeEvent(QCloseEvent *e)
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
+{
+	ui->speedWidget->setVisible(checked);
+	ui->threshWidget->setVisible(checked);
+	ui->pollingWidget->setVisible(checked);
+
+	if(checked)
+	{
+		this->setMinimumHeight(485);
+		ui->advBrSettingsBtn->setText("↑");
+	}
+	else
+	{
+		ui->advBrSettingsBtn->setText("↓");
+		this->setMinimumHeight(wnd_height);
+		this->setMaximumHeight(wnd_height);
+	}
 }

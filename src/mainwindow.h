@@ -68,6 +68,8 @@ private slots:
 	void on_pushButton_clicked();
 	void on_tempSlider_sliderPressed();
 
+	void on_advBrSettingsBtn_toggled(bool checked);
+
 private:
 	Ui::MainWindow *ui;
 	QSystemTrayIcon *trayIcon;
@@ -82,6 +84,8 @@ private:
 
 	int wnd_offset_x = 17;
 	int wnd_offset_y = 35;
+
+	int wnd_height = 300;
 };
 
 #endif // MAINWINDOW_H
