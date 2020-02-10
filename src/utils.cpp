@@ -10,27 +10,41 @@
 #include "utils.h"
 #include "cfg.h"
 #include "defs.h"
+#include <algorithm>
 
-void setColors(int temp, std::array<double, 3> &c)
+double lerp(double start, double end, double factor)
 {
-	size_t tick = size_t(temp / temp_mult);
+	return start * (1 - factor) + end * factor;
+}
 
-	if(tick > temp_arr_entries)
-	{
-		tick = temp_arr_entries;
-	}
-	else if(tick < 1)
-	{
-		tick = 1;
-	}
+double normalize(double start, double end, double value)
+{
+	return (value - start) / (end - start);
+}
 
-	size_t	rpos = (temp_arr_entries - tick) * 3 + 0,
-		gpos = (temp_arr_entries - tick) * 3 + 1,
-		bpos = (temp_arr_entries - tick) * 3 + 2;
+double mapValue(double value, double from_min, double from_max, double to_min, double to_max)
+{
+	 return lerp(to_min, to_max, normalize(from_min, from_max, value));
+}
+
+int roundUp(int val, int multiple)
+{
+	assert(multiple);
+	return ((val + multiple - 1) / multiple) * multiple;
+}
+
+void setColors(int temp_step, std::array<double, 3> &c)
+{
+	double factor = normalize(0, 255, 255 - temp_step);
+
+	int pos = std::clamp(int(lerp(0, temp_arr_len, factor)), 0, temp_arr_len - 3);
+	pos     = roundUp(pos, 3);
+
+	size_t rpos = size_t(pos);
 
 	c[0] = ingo_thies_table[rpos];
-	c[1] = ingo_thies_table[gpos];
-	c[2] = ingo_thies_table[bpos];
+	c[1] = ingo_thies_table[rpos + 1];
+	c[2] = ingo_thies_table[rpos + 2];
 };
 
 int calcBrightness(const std::vector<uint8_t> &buf)
@@ -58,18 +72,6 @@ int calcBrightness(const std::vector<uint8_t> &buf)
 	int brightness = int((r * 0.2126 + g * 0.7152 + b * 0.0722) / screen_res);
 
 	return brightness;
-}
-
-int convertRange(int old_val, int old_min, int old_max, int new_min, int new_max)
-{
-	return (((old_val - old_min) * (new_max - new_min)) / old_max - old_min) + new_min;
-}
-
-// Map kelvin temperature to a step in the temperature array
-int kelvinToStep(int temp)
-{
-	// @TODO: Use convertRange function here
-	return ((max_temp_kelvin - temp) * temp_steps) / (max_temp_kelvin - min_temp_kelvin) + temp_mult;
 }
 
 #ifdef _WIN32

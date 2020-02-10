@@ -103,7 +103,7 @@ void MainWindow::init()
 
 		ui->offsetSlider->setValue(cfg["offset"]);
 
-		ui->tempSlider->setRange(0, temp_arr_entries * temp_mult);
+		ui->tempSlider->setRange(0, 255);
 
 		ui->speedSlider->setValue(cfg["speed"]);
 		ui->tempSlider->setValue(cfg["temp_step"]);
@@ -245,9 +245,9 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 	else x11->setXF86Gamma(scr_br, val);
 #endif
 
-	int temp_kelvin = convertRange(temp_arr_entries * temp_mult - val, 0, temp_arr_entries * temp_mult, min_temp_kelvin, max_temp_kelvin);
+	int temp_kelvin = int(mapValue(255 - val, 0, 255, min_temp_kelvin, max_temp_kelvin));
 
-	temp_kelvin = ((temp_kelvin - 1) / 100 + 1) * 100;
+	temp_kelvin = roundUp(temp_kelvin, 100);
 
 	ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }

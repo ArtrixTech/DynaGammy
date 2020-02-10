@@ -12,32 +12,32 @@
 
 class X11
 {
-    Display *dsp;
+	Display *dsp;
 
-    Screen *scr;
-    Window root;
+	Screen *scr;
+	Window root;
 
-    int ramp_sz;
-    int scr_num;
+	int ramp_sz;
+	int scr_num;
 
-    std::vector<uint16_t> init_ramp;
-    bool initial_ramp_exists = true;
+	std::vector<uint16_t> init_ramp;
+	bool initial_ramp_exists = true;
 
-    unsigned w, h;
+	unsigned w, h;
 
-    void fillRamp(std::vector<uint16_t> &ramp, int brightness, int temp);
+	void fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp);
 
-public:
-    X11();
+	public:
+	X11();
 
-    uint32_t getWidth();
-    uint32_t getHeight();
+	uint32_t getWidth();
+	uint32_t getHeight();
 
-    void getX11Snapshot(std::vector<uint8_t> &buf) noexcept;
-    void setXF86Gamma(int scrBr, int temp);
-    void setInitialGamma(bool set_previous);
+	void getX11Snapshot(std::vector<uint8_t> &buf) noexcept;
+	void setXF86Gamma(int scrBr, int temp);
+	void setInitialGamma(bool set_previous);
 
-    ~X11();
+	~X11();
 };
 
 #endif // X11_H

@@ -22,6 +22,7 @@
 #include <chrono>
 #include <QApplication>
 #include <QTime>
+#include <algorithm>
 #include "mainwindow.h"
 
 // Reflects the current screen brightness
@@ -221,7 +222,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			}
 		}
 
-		const int target_step = kelvinToStep(cfg["temp_state"] == HIGH_TEMP ? cfg["temp_high"] : cfg["temp_low"]);
+		const int target_temp = cfg["temp_state"] == HIGH_TEMP ? cfg["temp_high"] : cfg["temp_low"];
+		const int target_step = int(std::ceil(mapValue(target_temp, min_temp_kelvin, max_temp_kelvin, 255, 0)));
 
 		int cur_step = cfg["temp_step"];
 		int add = 0;
@@ -311,13 +313,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 		int target = default_brightness - img_br + cfg["offset"].get<int>();
 
-		if (target > cfg["max_br"]) {
-			target = cfg["max_br"];
-		}
-		else
-		if (target < cfg["min_br"]) {
-			target = cfg["min_br"];
-		}
+		target = std::clamp(target, cfg["min_br"].get<int>(), cfg["max_br"].get<int>());
 
 		if (target == scr_br)
 		{

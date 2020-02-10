@@ -9,8 +9,10 @@
 #include <array>
 #include <vector>
 
-int convertRange(int, int, int, int, int);
-int kelvinToStep(int);
+double lerp(double start, double end, double factor);
+double normalize(double start, double end, double value);
+double mapValue(double value, double from_min, double from_max, double to_min, double to_max);
+int roundUp(int val, int multiple);
 
 void setColors(int temp, std::array<double, 3> &c);
 
@@ -24,5 +26,7 @@ void setGDIGamma(int brightness, int temp);
 void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);
+
+
 
 #endif // UTILS_H
