@@ -90,7 +90,7 @@ void X11::getX11Snapshot(std::vector<uint8_t> &buf) noexcept
 	img->f.destroy_image(img);
 }
 
-void X11::fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp)
+void X11::fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp_step)
 {
 	auto r = &ramp[0 * ramp_sz],
 	     g = &ramp[1 * ramp_sz],
@@ -98,19 +98,17 @@ void X11::fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int 
 
 	std::array<double, 3> c{1.0, 1.0, 1.0};
 
-	setColors(temp, c);
+	setColors(temp_step, c);
 
-	/*
-	* This equals 32 when ramp_sz = 2048, 64 when 1024, etc.
-	* Assuming ramp_sz = 2048 and pure state (default brightness/temp)
-	* each color channel looks like:
+	/* This equals 32 when ramp_sz = 2048, 64 when 1024, etc.
+	*  Assuming ramp_sz = 2048 and pure state (default brightness/temp)
+	*  each color channel looks like:
 	* { 0, 32, 64, 96, ... UINT16_MAX - 32 } */
-	const int pure_ramp_steps = (UINT16_MAX + 1) / ramp_sz;
-	const double norm_brt     = brightness / 255.;
+	const int ramp_mult = (UINT16_MAX + 1) / ramp_sz;
 
 	for (int32_t i = 0; i < ramp_sz; ++i)
 	{
-		int val = std::clamp(int(i * pure_ramp_steps * norm_brt), 0, UINT16_MAX);
+		const int val = std::clamp(int(normalize(0, 255, brightness) * ramp_mult * i), 0, UINT16_MAX);
 
 		r[i] = uint16_t(val * c[0]);
 		g[i] = uint16_t(val * c[1]);

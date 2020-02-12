@@ -245,7 +245,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 	else x11->setXF86Gamma(scr_br, val);
 #endif
 
-	int temp_kelvin = int(mapValue(255 - val, 0, 255, min_temp_kelvin, max_temp_kelvin));
+	int temp_kelvin = int(remap(255 - val, 0, 255, min_temp_kelvin, max_temp_kelvin));
 
 	temp_kelvin = roundUp(temp_kelvin, 100);
 

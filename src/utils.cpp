@@ -22,7 +22,7 @@ double normalize(double start, double end, double value)
 	return (value - start) / (end - start);
 }
 
-double mapValue(double value, double from_min, double from_max, double to_min, double to_max)
+double remap(double value, double from_min, double from_max, double to_min, double to_max)
 {
 	 return lerp(to_min, to_max, normalize(from_min, from_max, value));
 }
@@ -35,16 +35,25 @@ int roundUp(int val, int multiple)
 
 void setColors(int temp_step, std::array<double, 3> &c)
 {
-	double factor = normalize(0, 255, 255 - temp_step);
-
-	int pos = std::clamp(int(lerp(0, temp_arr_len, factor)), 0, temp_arr_len - 3);
-	pos     = roundUp(pos, 3);
+	size_t pos = size_t(remap(255 - temp_step, 0, 255, 0, temp_arr_len));
+	pos = std::clamp(size_t(roundUp(pos, 3)), 0ul, temp_arr_len - 3);
 
 	size_t rpos = size_t(pos);
 
+	// Interpolate temperature array values to prevent grainy temperature steps
+	const auto interpTemp = [&] (size_t offset)
+	{
+		const size_t pos = std::clamp(rpos + offset, 0ul, temp_arr_len - 3 - (3 - offset));
+
+		const double x = remap(255 - temp_step, 0, 255, ingo_thies_table[pos], ingo_thies_table[pos + 3]);
+		const double y = remap(x, ingo_thies_table[pos], ingo_thies_table[pos + 3], ingo_thies_table[offset], 1);
+
+		return y;
+	};
+
 	c[0] = ingo_thies_table[rpos];
-	c[1] = ingo_thies_table[rpos + 1];
-	c[2] = ingo_thies_table[rpos + 2];
+	c[1] = interpTemp(1);
+	c[2] = interpTemp(2);
 };
 
 int calcBrightness(const std::vector<uint8_t> &buf)

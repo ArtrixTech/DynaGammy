@@ -11,7 +11,7 @@
 
 double lerp(double start, double end, double factor);
 double normalize(double start, double end, double value);
-double mapValue(double value, double from_min, double from_max, double to_min, double to_max);
+double remap(double value, double from_min, double from_max, double to_min, double to_max);
 int roundUp(int val, int multiple);
 
 void setColors(int temp, std::array<double, 3> &c);

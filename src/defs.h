@@ -22,20 +22,17 @@ constexpr OS os = Unix;
 extern int scr_br;
 
 constexpr int default_brightness = 255;
+constexpr int min_temp_kelvin    = 2000;
+constexpr int max_temp_kelvin    = 6500;
 
-constexpr int
-	min_temp_kelvin  = 2000,
-	max_temp_kelvin  = 6500,
-	temp_arr_ch_len  = 46,
-	temp_arr_len     = temp_arr_ch_len * 3,
-	temp_mult        = 3; // min: 3
-
+const size_t temp_arr_ch_len     = 46;
+const size_t temp_arr_len        = temp_arr_ch_len * 3;
 
 // Color ramp by Ingo Thies. From Redshift:
 // https://github.com/jonls/redshift/blob/master/README-colorramp
 constexpr std::array<double, temp_arr_len> ingo_thies_table
 {
-    1.00000000,  0.54360078,  0.08679949, /* 2000K */
+    1.00000000,  0.54360078,  0.08679949, // 2000K
     1.00000000,  0.56618736,  0.14065513,
     1.00000000,  0.58734976,  0.18362641,
     1.00000000,  0.60724493,  0.22137978,
@@ -80,7 +77,7 @@ constexpr std::array<double, temp_arr_len> ingo_thies_table
     1.00000000,  0.98305189,  0.96640795,
     1.00000000,  0.98883326,  0.97779486,
     1.00000000,  0.99448139,  0.98899179,
-    1.00000000,  1.00000000,  1.00000000 /* 6500K */
+    1.00000000,  1.00000000,  1.00000000 // 6500K - 137
 };
 
 #endif // DEFS_H
