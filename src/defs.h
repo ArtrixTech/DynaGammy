@@ -25,6 +25,7 @@ constexpr int default_brightness = 255;
 constexpr int min_temp_kelvin    = 2000;
 constexpr int max_temp_kelvin    = 6500;
 
+const int temp_slider_steps      = 500;
 const size_t temp_arr_ch_len     = 46;
 const size_t temp_arr_len        = temp_arr_ch_len * 3;
 

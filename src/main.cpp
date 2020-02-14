@@ -223,7 +223,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		}
 
 		const int target_temp = cfg["temp_state"] == HIGH_TEMP ? cfg["temp_high"] : cfg["temp_low"];
-		const int target_step = int(std::ceil(remap(target_temp, min_temp_kelvin, max_temp_kelvin, 255, 0)));
+		const int target_step = int(std::ceil(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0)));
 
 		int cur_step = cfg["temp_step"];
 		int add = 0;

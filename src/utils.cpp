@@ -37,7 +37,7 @@ void setColors(int temp_step, std::array<double, 3> &c)
 {
 	const auto interpTemp = [temp_step] (size_t offset)
 	{
-		return remap(255 - temp_step, 0, 255, ingo_thies_table[offset], 1);
+		return remap(temp_slider_steps - temp_step, 0, temp_slider_steps, ingo_thies_table[offset], 1);
 	};
 
 	c[0] = interpTemp(0);
