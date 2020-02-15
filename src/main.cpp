@@ -26,13 +26,13 @@
 #include "mainwindow.h"
 
 // Reflects the current screen brightness
-int scr_br = default_brightness;
+int brt_step = brt_slider_steps;
 
 #ifndef _WIN32
 // Pointers for quitting normally in signal handler
-static bool	*p_quit;
-static convar	*p_ss_cv;
-static convar	*p_temp_cv;
+static bool   *p_quit;
+static convar *p_ss_cv;
+static convar *p_temp_cv;
 #endif
 
 void adjustTemperature(convar &temp_cv, MainWindow &w)
@@ -223,7 +223,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		}
 
 		const int target_temp = cfg["temp_state"] == HIGH_TEMP ? cfg["temp_high"] : cfg["temp_low"];
-		const int target_step = int(std::ceil(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0)));
+		const int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
 
 		int cur_step = cfg["temp_step"];
 
@@ -243,19 +243,19 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
 
-		double time  = 0;
+		double time = 0;
 
 		const auto adjust = [&]
 		{
 			time += time_incr;
 			cfg["temp_step"] = int(easeInOutQuad(time, start, distance, duration));
 
+			w.setTempSlider(cfg["temp_step"]);
+
 			if (cfg["temp_step"] == end)
 			{
 				return false;
 			}
-
-			w.setTempSlider(cfg["temp_step"]);
 
 			return true;
 		};
@@ -319,17 +319,16 @@ void adjustBrightness(Args &args, MainWindow &w)
 			args.img_delta = 0;
 		}
 
-		int target = default_brightness - img_br + cfg["offset"].get<int>();
-
+		int target = brt_slider_steps - remap(img_br, 0, 255, 0, brt_slider_steps) + cfg["offset"].get<int>();
 		target = std::clamp(target, cfg["min_br"].get<int>(), cfg["max_br"].get<int>());
 
-		if (target == scr_br)
+		if (target == brt_step)
 		{
 			LOGD << "Brightness is already at target.";
 			continue;
 		}
 
-		int start = scr_br;
+		int start = brt_step;
 		int end = target;
 
 		double norm_delta = normalize(0, 100, delta);
@@ -345,21 +344,15 @@ void adjustBrightness(Args &args, MainWindow &w)
 		const auto adjust = [&]
 		{
 			time += time_incr;
-			scr_br = int(easeOutExpo(time, start, distance, duration));
+			brt_step = int(easeOutExpo(time, start, distance, duration));
 
-			w.updateBrLabel();
+			w.setBrtSlider(brt_step);
 
-			if (scr_br == target)
+			if (brt_step == target)
 			{
 				return false;
 			}
 
-			if constexpr (os == OS::Windows) {
-				setGDIGamma(scr_br, cfg["temp_step"]);
-			}
-#ifndef _WIN32
-			else args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
-#endif
 			return true;
 		};
 
@@ -401,7 +394,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 	const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
 	const uint64_t len = screen_res * 4;
 
-	args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
+	args.x11->setXF86Gamma(brt_step, cfg["temp_step"]);
 #endif
 
 	LOGD << "Buffer size: " << len;
@@ -541,7 +534,7 @@ int main(int argc, char **argv)
 	read();
 
 	// Start with manual brightness setting, if auto brightness is disabled
-	if(!cfg["auto_br"]) scr_br = cfg["brightness"];
+	if(!cfg["auto_br"]) brt_step = cfg["brightness"];
 
 	plog::get()->addAppender(&file_appender);
 	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));
@@ -601,7 +594,7 @@ int main(int argc, char **argv)
 	LOGD << "recordScreen joined";
 
 	if constexpr (os == OS::Windows) {
-		setGDIGamma(default_brightness, 0);
+		setGDIGamma(brt_slider_steps, 0);
 	}
 #ifndef _WIN32
 	else x11.setInitialGamma(wnd.set_previous_gamma);

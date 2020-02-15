@@ -47,6 +47,7 @@ public:
 	bool ignore_closeEvent	= true;
 
 	void setTempSlider(int);
+	void setBrtSlider(int);
 	void updateBrLabel();
 	void setPollingRange(int, int);
 
@@ -75,7 +76,7 @@ private:
 	QSystemTrayIcon *trayIcon;
 	QMenu *createMenu();
 	void toggleSliders(bool show);
-	void setBrSlidersRange(bool);
+	void toggleBrtSlidersRange(bool);
 	void closeEvent(QCloseEvent *);
 
 #ifndef _WIN32

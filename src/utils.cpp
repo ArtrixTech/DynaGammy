@@ -27,12 +27,6 @@ double remap(double value, double from_min, double from_max, double to_min, doub
 	 return lerp(to_min, to_max, normalize(from_min, from_max, value));
 }
 
-int roundUp(int val, int multiple)
-{
-	assert(multiple);
-	return ((val + multiple - 1) / multiple) * multiple;
-}
-
 void setColors(int temp_step, std::array<double, 3> &c)
 {
 	const auto interpTemp = [temp_step] (size_t offset)

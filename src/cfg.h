@@ -13,8 +13,8 @@ using json = nlohmann::json;
 
 extern json cfg;
 
-auto getConfigPath()		-> std::string;
-auto getExecutablePath()	-> std::wstring;
+auto getConfigPath()     -> std::string;
+auto getExecutablePath() -> std::wstring;
 
 void read();
 void save();

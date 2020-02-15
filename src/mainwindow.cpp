@@ -61,7 +61,7 @@ void MainWindow::init()
 			ui->extendBr->hide();
 		}
 
-		ui->manBrSlider->hide();
+		//ui->manBrSlider->hide();
 		ui->speedWidget->hide();
 		ui->threshWidget->hide();
 		ui->pollingWidget->hide();
@@ -94,12 +94,17 @@ void MainWindow::init()
 
 	// Set slider properties
 	{
-		ui->statusLabel->setText(QStringLiteral("%1").arg(scr_br * 100 / 255));
-		ui->minBrLabel->setText(QStringLiteral("%1").arg(cfg["min_br"].get<int>() * 100 / 255));
-		ui->maxBrLabel->setText(QStringLiteral("%1").arg(cfg["max_br"].get<int>() * 100 / 255));
+		ui->statusLabel->setText(QStringLiteral("%1").arg(int(remap(brt_step, 0, brt_slider_steps, 0, 100))));
+		ui->minBrLabel->setText(QStringLiteral("%1").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
+		ui->maxBrLabel->setText(QStringLiteral("%1").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
+
+		ui->manBrSlider->setRange(100, brt_slider_steps);
+		ui->manBrSlider->setValue(cfg["brightness"]);
+		ui->brRange->setMinimum(100);
+		ui->brRange->setMaximum(brt_slider_steps);
 
 		ui->extendBr->setChecked(cfg["extend_br"]);
-		setBrSlidersRange(cfg["extend_br"]);
+		toggleBrtSlidersRange(cfg["extend_br"]);
 
 		ui->offsetSlider->setValue(cfg["offset"]);
 
@@ -193,21 +198,26 @@ QMenu* MainWindow::createMenu()
 
 void MainWindow::on_brRange_lowerValueChanged(int val)
 {
-	ui->minBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
-
 	cfg["min_br"] = val;
+
+	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
+
+	ui->minBrLabel->setText(QStringLiteral("%1").arg(val));
 }
 
 void MainWindow::on_brRange_upperValueChanged(int val)
 {
-	ui->maxBrLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
-
 	cfg["max_br"] = val;
+
+	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
+
+	ui->maxBrLabel->setText(QStringLiteral("%1").arg(val));
 }
 
 void MainWindow::updateBrLabel()
 {
-	int val = scr_br * 100 / 255;
+	int val = int(ceil(remap(brt_step, 0, brt_slider_steps, 0, 100)));
+
 	ui->statusLabel->setText(QStringLiteral("%1").arg(val));
 }
 
@@ -224,7 +234,7 @@ void MainWindow::on_offsetSlider_valueChanged(int val)
 {
 	cfg["offset"] = val;
 
-	ui->offsetLabel->setText(QStringLiteral("%1").arg(val * 100 / 255));
+	ui->offsetLabel->setText(QStringLiteral("%1").arg(int(remap(val, 0, brt_slider_steps, 0, 100))));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
@@ -239,15 +249,15 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 	if(this->quit) return;
 
 	if constexpr(os == OS::Windows) {
-		setGDIGamma(scr_br, val);
+		setGDIGamma(brt_step, val);
 	}
 #ifndef _WIN32
-	else x11->setXF86Gamma(scr_br, val);
+	else x11->setXF86Gamma(brt_step, val);
 #endif
 
-	int temp_kelvin = int(remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin));
+	double temp_kelvin = remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
 
-	temp_kelvin = roundUp(temp_kelvin, 100);
+	temp_kelvin = floor(temp_kelvin / 100) * 100;
 
 	ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
 }
@@ -285,6 +295,8 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 		this->setMinimumHeight(170);
 		this->setMaximumHeight(170);
 	}
+
+	ui->manBrSlider->setDisabled(checked);
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
@@ -303,14 +315,14 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 
 void MainWindow::toggleSliders(bool is_auto)
 {
-	ui->manBrSlider->setVisible(!is_auto);
+	//ui->manBrSlider->setVisible(!is_auto);
 	ui->rangeWidget->setVisible(is_auto);
 	ui->offsetWidget->setVisible(is_auto);
 	ui->advBrSettingsBtn->setVisible(is_auto);
 
 	if(!is_auto)
 	{
-		ui->manBrSlider->setValue(scr_br);
+		ui->manBrSlider->setValue(brt_step);
 
 		this->setMinimumHeight(170);
 		this->setMaximumHeight(170);
@@ -319,14 +331,14 @@ void MainWindow::toggleSliders(bool is_auto)
 
 void MainWindow::on_manBrSlider_valueChanged(int value)
 {
-	scr_br = value;
+	brt_step = value;
 	cfg["brightness"] = value;
 
 	if constexpr(os == OS::Windows) {
-		setGDIGamma(scr_br, cfg["temp_step"]);
+		setGDIGamma(brt_step, cfg["temp_step"]);
 	}
 #ifndef _WIN32
-	else x11->setXF86Gamma(scr_br, cfg["temp_step"]);
+	else x11->setXF86Gamma(brt_step, cfg["temp_step"]);
 #endif
 
 	updateBrLabel();
@@ -336,14 +348,14 @@ void MainWindow::on_extendBr_clicked(bool checked)
 {
 	cfg["extend_br"] = checked;
 
-	setBrSlidersRange(cfg["extend_br"]);
+	toggleBrtSlidersRange(cfg["extend_br"]);
 }
 
-void MainWindow::setBrSlidersRange(bool inc)
+void MainWindow::toggleBrtSlidersRange(bool extend)
 {
-	int br_limit = default_brightness;
+	int br_limit = brt_slider_steps;
 
-	if(inc) br_limit *= 2;
+	if(extend) br_limit *= 2;
 
 	int max = cfg["max_br"];
 	int min = cfg["min_br"];
@@ -354,7 +366,7 @@ void MainWindow::setBrSlidersRange(bool inc)
 	ui->brRange->setUpperValue(max);
 	ui->brRange->setLowerValue(min);
 
-	ui->manBrSlider->setRange(64, br_limit);
+	ui->manBrSlider->setRange(100, br_limit);
 	ui->offsetSlider->setRange(0, br_limit);
 }
 
@@ -387,6 +399,11 @@ void MainWindow::setPollingRange(int min, int max)
 void MainWindow::setTempSlider(int val)
 {
 	ui->tempSlider->setValue(val);
+}
+
+void MainWindow::setBrtSlider(int val)
+{
+	ui->manBrSlider->setValue(val);
 }
 
 void MainWindow::on_tempSlider_sliderPressed()

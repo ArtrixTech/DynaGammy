@@ -12,7 +12,7 @@
 double lerp(double start, double end, double factor);
 double normalize(double start, double end, double value);
 double remap(double value, double from_min, double from_max, double to_min, double to_max);
-int roundUp(int val, int multiple);
+int roundup(int val, int multiple);
 
 void setColors(int temp, std::array<double, 3> &c);
 
@@ -27,7 +27,6 @@ void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);
 
-double easeOutBack(double t, double b, double c, double d);
 double easeOutExpo(double t, double b , double c, double d);
 double easeInOutQuad(double t, double b, double c, double d);
 

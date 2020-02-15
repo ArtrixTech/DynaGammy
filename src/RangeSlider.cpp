@@ -15,8 +15,8 @@ const int scLeftRightMargin = 1;
 
 RangeSlider::RangeSlider(QWidget* aParent)
     : QWidget(aParent),
-      mMinimum(64),
-      mMaximum(default_brightness),
+      mMinimum(100),
+      mMaximum(brt_slider_steps),
       mLowerValue(cfg["min_br"]),
       mUpperValue(cfg["max_br"]),
       mFirstHandlePressed(false),
@@ -39,7 +39,6 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
 	QRectF backgroundRect = QRectF(scLeftRightMargin, (height() - scSliderBarHeight) / 2,
 				   width() - scLeftRightMargin * 2, scSliderBarHeight);
 
-	QColor grey = QColor(135, 135, 135);
 	QColor teal = QColor(35, 112, 145);
 	QColor whiteblue = QColor(235, 225, 255);
 

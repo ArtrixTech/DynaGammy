@@ -19,15 +19,15 @@ constexpr OS os = Windows;
 constexpr OS os = Unix;
 #endif
 
-extern int scr_br;
+extern int brt_step;
 
-constexpr int default_brightness = 255;
 constexpr int min_temp_kelvin    = 2000;
 constexpr int max_temp_kelvin    = 6500;
 
-const int temp_slider_steps      = 500;
-const size_t temp_arr_ch_len     = 46;
-const size_t temp_arr_len        = temp_arr_ch_len * 3;
+constexpr int brt_slider_steps   = 500;
+constexpr int temp_slider_steps  = 500;
+constexpr size_t temp_arr_ch_len = 46;
+constexpr size_t temp_arr_len    = temp_arr_ch_len * 3;
 
 // Color ramp by Ingo Thies. From Redshift:
 // https://github.com/jonls/redshift/blob/master/README-colorramp
