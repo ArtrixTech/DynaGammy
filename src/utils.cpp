@@ -72,6 +72,20 @@ int calcBrightness(const std::vector<uint8_t> &buf)
 	return brightness;
 }
 
+double easeOutExpo(double t, double b , double c, double d)
+{
+	return (t == d) ? b + c : c * (-pow(2, -10 * t / d) + 1) + b;
+}
+
+double easeInOutQuad(double t, double b, double c, double d)
+{
+	if ((t /= d / 2) < 1) {
+		return c / 2 * t * t + b;
+	} else {
+		return -c / 2 * ((--t) * (t - 2) - 1) + b;
+	}
+};
+
 #ifdef _WIN32
 
 static const HDC screenDC = GetDC(nullptr);

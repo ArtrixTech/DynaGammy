@@ -27,6 +27,8 @@ void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);
 
-
+double easeOutBack(double t, double b, double c, double d);
+double easeOutExpo(double t, double b , double c, double d);
+double easeInOutQuad(double t, double b, double c, double d);
 
 #endif // UTILS_H

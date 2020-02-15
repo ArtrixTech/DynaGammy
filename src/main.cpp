@@ -43,8 +43,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	const auto setTime = [] (QTime &t, const std::string &time_str)
 	{
-		const auto start_hour	= time_str.substr(0, 2);
-		const auto start_min	= time_str.substr(3, 2);
+		const auto start_hour = time_str.substr(0, 2);
+		const auto start_min  = time_str.substr(3, 2);
 
 		t = QTime(std::stoi(start_hour), std::stoi(start_min));
 	};
@@ -60,21 +60,21 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	bool force = false;
 	w.force_temp_change = &force;
 
-	QTime		time_start;
-	QTime		time_end;
-	QDateTime	datetime_start;
-	QDateTime	datetime_end;
+	QTime     time_start;
+	QTime     time_end;
+	QDateTime datetime_start;
+	QDateTime datetime_end;
 
-	int64_t		jday_start;
-	int64_t		jday_end;
+	int64_t jday_start;
+	int64_t jday_end;
 
 	const auto setDates = [&]
 	{
 		setTime(time_start, cfg["time_start"]);
 		setTime(time_end, cfg["time_end"]);
 
-		datetime_start	= QDateTime(QDate::fromJulianDay(jday_start), time_start);
-		datetime_end	= QDateTime(QDate::fromJulianDay(jday_end), time_end);
+		datetime_start = QDateTime(QDate::fromJulianDay(jday_start), time_start);
+		datetime_end   = QDateTime(QDate::fromJulianDay(jday_end), time_end);
 
 		LOGD << "Start: " << datetime_start.toString();
 		LOGD << "End:   " << datetime_end.toString();
@@ -84,8 +84,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	{
 		const auto now = QDateTime::currentDateTime();
 
-		start_date_reached	= now > datetime_start;
-		end_date_reached	= now > datetime_end;
+		start_date_reached = now > datetime_start;
+		end_date_reached   = now > datetime_end;
 
 		LOGV << "Start reached: " << start_date_reached;
 		LOGV << "End   reached: " << end_date_reached;
@@ -115,8 +115,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	bool needs_change = cfg["auto_temp"];
 
-	convar		clock_cv;
-	std::mutex	clock_mtx;
+	convar     clock_cv;
+	std::mutex clock_mtx;
 
 	std::thread clock ([&]
 	{
@@ -226,39 +226,47 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int target_step = int(std::ceil(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0)));
 
 		int cur_step = cfg["temp_step"];
-		int add = 0;
 
 		if(target_step == cur_step)
 		{
 			LOGD << "Temperature is already at target.";
 			continue;
 		}
-		else if(target_step > cur_step)
+
+		int start = cur_step;
+		int end = target_step;
+
+		const int fps           = 60;
+		const double duration   = 2; // seconds
+		const double iterations = fps * duration;
+
+		const int distance      = end - start;
+		const double time_incr  = duration / iterations;
+
+		double time  = 0;
+
+		const auto adjust = [&]
 		{
-			LOGD << "Decreasing temp...";
-			add = 1;
-		}
-		else
-		{
-			LOGD << "Increasing temp...";
-			add = -1;
-		}
+			time += time_incr;
+			cfg["temp_step"] = int(easeInOutQuad(time, start, distance, duration));
+
+			if (cfg["temp_step"] == end)
+			{
+				return false;
+			}
+
+			w.setTempSlider(cfg["temp_step"]);
+
+			return true;
+		};
 
 		while (cfg["auto_temp"])
 		{
 			if(w.quit || force) break;
 
-			cur_step += add;
+			if(!adjust()) break;
 
-			w.setTempSlider(cur_step);
-
-			if(cur_step == target_step)
-			{
-				LOGD << "Done!";
-				break;
-			}
-
-			sleep_for(50ms);
+			sleep_for(milliseconds(1000 / fps));
 		}
 	}
 
@@ -334,13 +342,28 @@ void adjustBrightness(Args &args, MainWindow &w)
 			add = -1;
 		}
 
-		LOGD << scr_br << "->" << target;
+		int start = scr_br;
+		int end = target;
 
-		while (!args.br_needs_change && cfg["auto_br"])
+		const int fps           = 60;
+		const double duration   = 1;
+		const double iterations = fps * duration;
+		const int distance      = end - start;
+		const double time_incr  = duration / iterations;
+
+		double time = 0;
+
+		const auto adjust = [&]
 		{
-			scr_br += add;
+			time += time_incr;
+			scr_br = int(easeOutExpo(time, start, distance, duration));
 
-			if(w.quit) break;
+			w.updateBrLabel();
+
+			if (scr_br == end)
+			{
+				return false;
+			}
 
 			if constexpr (os == OS::Windows) {
 				setGDIGamma(scr_br, cfg["temp_step"]);
@@ -348,12 +371,19 @@ void adjustBrightness(Args &args, MainWindow &w)
 #ifndef _WIN32
 			else args.x11->setXF86Gamma(scr_br, cfg["temp_step"]);
 #endif
+			return true;
+		};
 
-			w.updateBrLabel();
+		while (!args.br_needs_change && cfg["auto_br"])
+		{
+			scr_br += add;
 
-			if(scr_br == target) break;
+			if(w.quit) break;
 
-			sleep_for(milliseconds(sleeptime));
+			if(!adjust()) break;
+
+
+			sleep_for(milliseconds(1000 / fps));
 		}
 	}
 }
