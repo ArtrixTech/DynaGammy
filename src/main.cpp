@@ -329,24 +329,13 @@ void adjustBrightness(Args &args, MainWindow &w)
 			continue;
 		}
 
-		int sleeptime = (100 - delta / 4) / cfg["speed"].get<int>();
-		int add = 0;
-
-		if (target > scr_br)
-		{
-			add = 1;
-			sleeptime /= 3;
-		}
-		else
-		{
-			add = -1;
-		}
-
 		int start = scr_br;
 		int end = target;
 
+		double norm_delta = normalize(0, 100, delta);
+
 		const int fps           = 60;
-		const double duration   = 1;
+		const double duration   = 5 - norm_delta;
 		const double iterations = fps * duration;
 		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
@@ -360,7 +349,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 			w.updateBrLabel();
 
-			if (scr_br == end)
+			if (scr_br == target)
 			{
 				return false;
 			}
@@ -376,12 +365,9 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 		while (!args.br_needs_change && cfg["auto_br"])
 		{
-			scr_br += add;
-
 			if(w.quit) break;
 
 			if(!adjust()) break;
-
 
 			sleep_for(milliseconds(1000 / fps));
 		}
