@@ -92,12 +92,17 @@ void MainWindow::init()
 		LOGI << "Tray icon created";
 	}
 
+	// Set label text
+	{
+		ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(brt_step, 0, brt_slider_steps, 0, 100))));
+		ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
+		ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
+
+		ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
+	}
+
 	// Set slider properties
 	{
-		ui->statusLabel->setText(QStringLiteral("%1").arg(int(remap(brt_step, 0, brt_slider_steps, 0, 100))));
-		ui->minBrLabel->setText(QStringLiteral("%1").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-		ui->maxBrLabel->setText(QStringLiteral("%1").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-
 		ui->manBrSlider->setRange(100, brt_slider_steps);
 		ui->manBrSlider->setValue(cfg["brightness"]);
 		ui->brRange->setMinimum(100);
@@ -119,7 +124,7 @@ void MainWindow::init()
 	// Set auto checks
 	{
 		ui->autoCheck->setChecked(cfg["auto_br"]);
-		toggleSliders(cfg["auto_br"]);
+		emit on_autoCheck_toggled(cfg["auto_br"]);
 
 		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
 	}
@@ -202,7 +207,7 @@ void MainWindow::on_brRange_lowerValueChanged(int val)
 
 	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
 
-	ui->minBrLabel->setText(QStringLiteral("%1").arg(val));
+	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::on_brRange_upperValueChanged(int val)
@@ -211,14 +216,14 @@ void MainWindow::on_brRange_upperValueChanged(int val)
 
 	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
 
-	ui->maxBrLabel->setText(QStringLiteral("%1").arg(val));
+	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::updateBrLabel()
 {
 	int val = int(ceil(remap(brt_step, 0, brt_slider_steps, 0, 100)));
 
-	ui->statusLabel->setText(QStringLiteral("%1").arg(val));
+	ui->statusLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -234,12 +239,13 @@ void MainWindow::on_offsetSlider_valueChanged(int val)
 {
 	cfg["offset"] = val;
 
-	ui->offsetLabel->setText(QStringLiteral("%1").arg(int(remap(val, 0, brt_slider_steps, 0, 100))));
+	ui->offsetLabel->setText(QStringLiteral("%1 %").arg(int(remap(val, 0, brt_slider_steps, 0, 100))));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
 	cfg["speed"] = val;
+	ui->speedLabel->setText(QStringLiteral("%1 s").arg(val));
 }
 
 void MainWindow::on_tempSlider_valueChanged(int val)
@@ -259,7 +265,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 
 	temp_kelvin = floor(temp_kelvin / 100) * 100;
 
-	ui->tempLabel->setText(QStringLiteral("%1").arg(temp_kelvin));
+	ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
@@ -274,29 +280,41 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 
 void MainWindow::on_autoCheck_toggled(bool checked)
 {
-	toggleSliders(checked);
-
 	cfg["auto_br"] = checked;
 	ss_cv->notify_one();
 
-	ui->rangeWidget->setVisible(checked);
-	ui->offsetWidget->setVisible(checked);
+	// Toggle visibility of br range and offset sliders
+	toggleSliders(checked);
 
-	if(checked) {
-		this->setMinimumHeight(wnd_height);
-		this->setMaximumHeight(wnd_height);
+	// Allow adv. settings button input when auto br is enabled
+	ui->advBrSettingsBtn->setEnabled(checked);
+	ui->advBrSettingsBtn->setChecked(false);
 
-		ui->advBrSettingsBtn->show();
-	}
-	else {
-		ui->advBrSettingsBtn->setChecked(false);
-		ui->advBrSettingsBtn->hide();
+	const int h = checked ? wnd_height : 170;
 
-		this->setMinimumHeight(170);
-		this->setMaximumHeight(170);
-	}
+	this->setMinimumHeight(h);
+	this->setMaximumHeight(h);
 
-	ui->manBrSlider->setDisabled(checked);
+	// Allow br. slider input when auto br is disabled
+	ui->manBrSlider->setEnabled(!checked);
+}
+
+void MainWindow::toggleSliders(bool is_auto)
+{
+	ui->rangeWidget->setVisible(is_auto);
+	ui->offsetWidget->setVisible(is_auto);
+}
+
+void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
+{
+	ui->speedWidget->setVisible(checked);
+	ui->threshWidget->setVisible(checked);
+	ui->pollingWidget->setVisible(checked);
+
+	const int h = checked ? wnd_height + 185 : wnd_height;
+
+	this->setMinimumHeight(h);
+	this->setMaximumHeight(h);
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
@@ -311,22 +329,6 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 	temp_cv->notify_one();
 
 	ui->tempSlider->setDisabled(checked);
-}
-
-void MainWindow::toggleSliders(bool is_auto)
-{
-	//ui->manBrSlider->setVisible(!is_auto);
-	ui->rangeWidget->setVisible(is_auto);
-	ui->offsetWidget->setVisible(is_auto);
-	ui->advBrSettingsBtn->setVisible(is_auto);
-
-	if(!is_auto)
-	{
-		ui->manBrSlider->setValue(brt_step);
-
-		this->setMinimumHeight(170);
-		this->setMaximumHeight(170);
-	}
 }
 
 void MainWindow::on_manBrSlider_valueChanged(int value)
@@ -426,23 +428,4 @@ void MainWindow::closeEvent(QCloseEvent *e)
 MainWindow::~MainWindow()
 {
 	delete ui;
-}
-
-void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
-{
-	ui->speedWidget->setVisible(checked);
-	ui->threshWidget->setVisible(checked);
-	ui->pollingWidget->setVisible(checked);
-
-	if(checked)
-	{
-		this->setMinimumHeight(485);
-		ui->advBrSettingsBtn->setText("↑");
-	}
-	else
-	{
-		ui->advBrSettingsBtn->setText("↓");
-		this->setMinimumHeight(wnd_height);
-		this->setMaximumHeight(wnd_height);
-	}
 }

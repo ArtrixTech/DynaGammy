@@ -21,6 +21,9 @@ constexpr OS os = Unix;
 
 extern int brt_step;
 
+// Animation framerate
+constexpr int FPS = 60;
+
 constexpr int min_temp_kelvin    = 2000;
 constexpr int max_temp_kelvin    = 6500;
 

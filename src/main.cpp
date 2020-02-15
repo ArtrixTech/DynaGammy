@@ -183,7 +183,6 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			}
 		}
 
-
 		if(!cfg["auto_temp"]) continue;
 
 		if(cfg["temp_state"] == HIGH_TEMP)
@@ -233,12 +232,11 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			continue;
 		}
 
-		int start = cur_step;
-		int end = target_step;
+		const int start = cur_step;
+		const int end   = target_step;
 
-		const int fps           = 60;
-		const double duration   = 2; // seconds
-		const double iterations = fps * duration;
+		const double duration   = 8; // seconds
+		const double iterations = FPS * duration;
 
 		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
@@ -266,7 +264,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			if(!adjust()) break;
 
-			sleep_for(milliseconds(1000 / fps));
+			sleep_for(milliseconds(1000 / FPS));
 		}
 	}
 
@@ -288,7 +286,6 @@ struct Args
 #endif
 
 	int img_br = 0;
-	int img_delta = 0;
 	bool br_needs_change = false;
 };
 
@@ -300,7 +297,6 @@ void adjustBrightness(Args &args, MainWindow &w)
 	while(true)
 	{
 		int img_br;
-		int delta;
 
 		{
 			std::unique_lock<std::mutex> lock(args.br_mtx);
@@ -315,11 +311,9 @@ void adjustBrightness(Args &args, MainWindow &w)
 			args.br_needs_change = false;
 
 			img_br = args.img_br;
-			delta = args.img_delta;
-			args.img_delta = 0;
 		}
 
-		int target = brt_slider_steps - remap(img_br, 0, 255, 0, brt_slider_steps) + cfg["offset"].get<int>();
+		int target = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps)) + cfg["offset"].get<int>();
 		target = std::clamp(target, cfg["min_br"].get<int>(), cfg["max_br"].get<int>());
 
 		if (target == brt_step)
@@ -328,14 +322,22 @@ void adjustBrightness(Args &args, MainWindow &w)
 			continue;
 		}
 
-		int start = brt_step;
-		int end = target;
+		const int start = brt_step;
+		const int end   = target;
 
-		double norm_delta = normalize(0, 100, delta);
+		const int secs = cfg["speed"];
 
-		const int fps           = 60;
-		const double duration   = 5 - norm_delta;
-		const double iterations = fps * duration;
+		const double factor = normalize(0, brt_slider_steps, target);
+
+		LOGD << normalize(0, brt_slider_steps, target);
+
+		double duration = secs - factor;
+
+		duration = std::clamp(duration, 1., 20.);
+
+		LOGD << "Animation time: " << duration << " s";
+
+		const double iterations = FPS * duration;
 		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
 
@@ -344,7 +346,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 		const auto adjust = [&]
 		{
 			time += time_incr;
-			brt_step = int(easeOutExpo(time, start, distance, duration));
+			brt_step = int(std::ceil(easeOutExpo(time, start, distance, duration)));
 
 			w.setBrtSlider(brt_step);
 
@@ -362,7 +364,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 			if(!adjust()) break;
 
-			sleep_for(milliseconds(1000 / fps));
+			sleep_for(milliseconds(1000 / FPS));
 		}
 	}
 }
@@ -469,22 +471,20 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 		{
 			getSnapshot(buf);
 
-			int img_br = calcBrightness(buf);
+			const int img_br = calcBrightness(buf);
 			img_delta += abs(prev_img_br - img_br);
 
 			if (img_delta > cfg["threshold"] || force)
 			{
+				img_delta = 0;
 				force = false;
 
 				{
 					std::lock_guard lock (args.br_mtx);
 
 					args.img_br = img_br;
-					args.img_delta = img_delta;
 					args.br_needs_change = true;
 				}
-
-				img_delta = 0;
 
 				args.br_cv.notify_one();
 			}

@@ -14,10 +14,10 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
 
-	this->start_hr	= std::stoi(cfg["time_start"].get<std::string>().substr(0, 2));
-	this->end_hr	= std::stoi(cfg["time_start"].get<std::string>().substr(3, 2));
-	this->start_min	= std::stoi(cfg["time_end"].get<std::string>().substr(0, 2));
-	this->end_min	= std::stoi(cfg["time_end"].get<std::string>().substr(3, 2));
+	this->start_hr  = std::stoi(cfg["time_start"].get<std::string>().substr(0, 2));
+	this->end_hr    = std::stoi(cfg["time_start"].get<std::string>().substr(3, 2));
+	this->start_min = std::stoi(cfg["time_end"].get<std::string>().substr(0, 2));
+	this->end_min   = std::stoi(cfg["time_end"].get<std::string>().substr(3, 2));
 
 	ui->timeStartBox->setTime(QTime(start_hr, end_hr));
 	ui->timeEndBox->setTime(QTime(start_min, end_min));
@@ -34,11 +34,11 @@ void TempScheduler::on_buttonBox_accepted()
 		t_start = t_end.addSecs(3600);
 	}
 
-	cfg["time_start"]	= t_start.toString().toStdString();
-	cfg["time_end"] 	= t_end.toString().toStdString();
+	cfg["time_start"] = t_start.toString().toStdString();
+	cfg["time_end"]   = t_end.toString().toStdString();
 
-	cfg["temp_high"]	= high_temp;
-	cfg["temp_low"] 	= low_temp;
+	cfg["temp_high"]  = high_temp;
+	cfg["temp_low"]   = low_temp;
 
 	save();
 
