@@ -102,15 +102,19 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	setDates();
 	checkDates();
 
-	bool fast_change = 1;
+	bool fast_change = false;
 
-	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached)
+	if(cfg["temp_state"] == LOW_TEMP)
 	{
-		LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
-		jday_end = today;
+		fast_change = true;
 
-		setDates();
-		checkDates();
+		if(!start_date_reached)
+		{
+			LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
+			jday_end = today;
+			setDates();
+			checkDates();
+		}
 	}
 
 	std::mutex temp_mtx;
@@ -146,6 +150,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 				bool is_high = cfg["temp_state"] == HIGH_TEMP;
 				needs_change = (start_date_reached && is_high) || (end_date_reached && !is_high);
+				fast_change = false;
 			}
 
 			temp_cv.notify_one();
@@ -168,14 +173,25 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			}
 			if(force)
 			{
-				fast_change = 1;
 				setDates();
 				checkDates();
 
-				if(cfg["temp_state"] == LOW_TEMP && !start_date_reached && jday_end != today)
+				if(cfg["temp_state"] == LOW_TEMP)
 				{
-					LOGD << "Forcing high temp";
-					cfg["temp_state"] = HIGH_TEMP;
+					if(!start_date_reached)
+					{
+						if(jday_end != today)
+						{
+							LOGD << "Forcing high temp";
+							cfg["temp_state"] = HIGH_TEMP;
+							fast_change = true;
+						}
+					}
+					else fast_change = true;
+				}
+				else if(!start_date_reached)
+				{
+					fast_change = true;
 				}
 
 				force = false;
@@ -245,9 +261,9 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		double min = cfg["temp_speed"];
 
-		double duration = fast_change ? (1.5) : (min * 60);
-
-		fast_change = 0;
+		double duration = fast_change ? (2) : (min * 60);
+		LOGD << "Duration: "<< duration << 's';
+		fast_change = false;
 
 		const double iterations = FPS * duration;
 

@@ -262,7 +262,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 
 	double temp_kelvin = remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
 
-	temp_kelvin = floor(temp_kelvin / 100) * 100;
+	temp_kelvin = floor(temp_kelvin / 10) * 10;
 
 	ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
 }

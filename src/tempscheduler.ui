@@ -329,7 +329,7 @@ selection-color:white;</string>
            </property>
            <property name="maximumSize">
             <size>
-             <width>95</width>
+             <width>105</width>
              <height>16777215</height>
             </size>
            </property>
@@ -337,13 +337,13 @@ selection-color:white;</string>
             <set>Qt::AlignCenter</set>
            </property>
            <property name="suffix">
-            <string> m</string>
+            <string> min</string>
            </property>
            <property name="decimals">
             <number>1</number>
            </property>
            <property name="minimum">
-            <double>0.500000000000000</double>
+            <double>0.100000000000000</double>
            </property>
            <property name="maximum">
             <double>60.000000000000000</double>
