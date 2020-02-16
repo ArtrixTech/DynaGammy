@@ -18,17 +18,21 @@ Screenshots available on its [website](https://getgammy.com).
 
 The latest Windows release can be found [here](https://getgammy.com/downloads.html). Unpack and run it, no installation required.
 
-### Linux/X11
+### Linux
 
 #### Requirements
 
-##### sudo apt install (or other package manager equivalent): 
-- git 
-- build-essential 
-- libgl1-mesa-dev 
-- qt5-default
+- X11
+- g++ compiler with C++17 support
 
-In a single command:
+##### Packages
+
+- git
+- build-essential 
+- libgl1-mesa-dev
+- qt5-default (5.12+)
+
+On Debian-based distros:
 ```
 sudo apt install git build-essential libgl1-mesa-dev qt5-default
 ```
@@ -54,24 +58,21 @@ Updating Qt is recommended, but as a workaround you can delete the offending lin
 
 Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon open the settings window. 
 
-Unticking the "Auto" checkbox allows manual brightness adjustment.
-
-The padlock button next to "Max brightness" can extend the brightness range to a max. of 200%. (Linux only)
-
-Color temperature can be set manually, or handled automatically based on a time period. The latter can be set by clicking on the '...' button, next to the second 'Auto' checkbox.
-
-Dragging the bottom of the window will reveal additional settings:
-
+- The padlock icon next to the brightness allows the brightness range to go up to 200%. (Linux only)
+- The "Range" slider determines the minimum and maximum brightness allowed.
+- The "Offset" slider adds to the screen brightness calculation. Higher = brighter image.
+- Clicking on the first '...' button shows additional options related to adaptive brightness:
 - "Adaption speed" controls how quickly the brightness adapts when a change is detected.
 - "Threshold" controls how much the screen has to change in order to trigger adaptation.
 - "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommended.
-
+- "The second '...' button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
 ## Third party
 
 - Qt 5 ([LGPL](https://doc.qt.io/qt-5/lgpl.html))
 - Plog ([MPL](https://github.com/SergiusTheBest/plog/blob/master/LICENSE))
 - JSON for Modern C++ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
+- Qt5-RangeSlider ([MIT](https://github.com/ThisIsClark/Qt-RangeSlider/blob/master/LICENSE))
 
 ## License
-
+Copyright (C) Francesco Fusco.
 [GPLv3](https://github.com/Fushko/gammy/blob/master/LICENSE)
