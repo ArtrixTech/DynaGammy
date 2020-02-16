@@ -568,12 +568,13 @@ color:white;
          <number>6</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0,0">
+         <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0">
           <item>
            <widget class="QLabel" name="label_11">
             <property name="font">
              <font>
-              <pointsize>11</pointsize>
+              <family>Ubuntu,sans-serif</family>
+              <pointsize>-1</pointsize>
              </font>
             </property>
             <property name="text">
@@ -586,9 +587,16 @@ color:white;
             <property name="enabled">
              <bool>true</bool>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="font">
              <font>
-              <family>Ubuntu,Segoe UI,sans-serif</family>
+              <family>Ubuntu,sans-serif</family>
+              <pointsize>-1</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -618,8 +626,14 @@ color:white;
               <height>24</height>
              </size>
             </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
             <property name="styleSheet">
-             <string notr="true">QPushButton:checked {
+             <string notr="true">QPushButton{
+margin-left:4px;
+}
+QPushButton:checked {
 background-color:rgb(20,22,35);
 }</string>
             </property>
@@ -650,6 +664,19 @@ background-color:rgb(20,22,35);
              <bool>true</bool>
             </property>
            </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
           <item>
            <widget class="QCheckBox" name="autoCheck">
@@ -1212,7 +1239,8 @@ color: rgb(255, 255, 255);
             <widget class="QLabel" name="label_5">
              <property name="font">
               <font>
-               <pointsize>11</pointsize>
+               <family>Ubuntu,sans-serif</family>
+               <pointsize>-1</pointsize>
               </font>
              </property>
              <property name="text">
@@ -1224,7 +1252,8 @@ color: rgb(255, 255, 255);
             <widget class="QLabel" name="minBrLabel">
              <property name="font">
               <font>
-               <family>Ubuntu,Segoe UI,sans-serif</family>
+               <family>Ubuntu,sans-serif</family>
+               <pointsize>-1</pointsize>
                <weight>50</weight>
                <bold>false</bold>
               </font>
@@ -1263,7 +1292,8 @@ color: rgb(255, 255, 255);
              </property>
              <property name="font">
               <font>
-               <family>Ubuntu,Segoe UI,sans-serif</family>
+               <family>Ubuntu,sans-serif</family>
+               <pointsize>-1</pointsize>
               </font>
              </property>
              <property name="text">
@@ -1315,7 +1345,8 @@ background-color:rgb(100, 100, 100);
             <widget class="QLabel" name="label_12">
              <property name="font">
               <font>
-               <pointsize>11</pointsize>
+               <family>Ubuntu,sans-serif</family>
+               <pointsize>-1</pointsize>
               </font>
              </property>
              <property name="text">
@@ -1327,7 +1358,8 @@ background-color:rgb(100, 100, 100);
             <widget class="QLabel" name="offsetLabel">
              <property name="font">
               <font>
-               <family>Ubuntu,Segoe UI,sans-serif</family>
+               <family>Ubuntu,sans-serif</family>
+               <pointsize>-1</pointsize>
               </font>
              </property>
              <property name="text">
@@ -1394,11 +1426,12 @@ background-color:rgb(100, 100, 100);
               <widget class="QLabel" name="label_13">
                <property name="font">
                 <font>
-                 <pointsize>11</pointsize>
+                 <family>Ubuntu,sans-serif</family>
+                 <pointsize>-1</pointsize>
                 </font>
                </property>
                <property name="text">
-                <string>Adaptation time:</string>
+                <string>Adaptation speed:</string>
                </property>
               </widget>
              </item>
@@ -1654,6 +1687,8 @@ background-color:rgb(100, 100, 100);
             </property>
             <property name="font">
              <font>
+              <family>Ubuntu,sans-serif</family>
+              <pointsize>-1</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>

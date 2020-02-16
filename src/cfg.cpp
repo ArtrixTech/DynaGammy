@@ -17,12 +17,12 @@ json setDefault()
 {
 	return
 	{
-		{"brightness", 255},
-		{"min_br", 192 },
-		{"max_br", 255 },
-		{"offset", 78 },
-		{"speed", 3 },
-		{"threshold", 32 },
+		{"brightness", brt_slider_steps},
+		{"min_br", brt_slider_steps / 2 },
+		{"max_br", brt_slider_steps },
+		{"offset", brt_slider_steps / 3 },
+		{"speed", 5 },
+		{"threshold", 36 },
 		{"polling_rate", 100 },
 		{"temp_step", 0 },
 		{"temp_high", max_temp_kelvin },

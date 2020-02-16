@@ -97,26 +97,25 @@ void MainWindow::init()
 		ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(brt_step, 0, brt_slider_steps, 0, 100))));
 		ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
 		ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-
 		ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
+
+		double temp_kelvin = remap(temp_slider_steps - cfg["temp_step"].get<int>(), 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
+		temp_kelvin = floor(temp_kelvin / 100) * 100;
+		ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
 	}
 
-	// Set slider properties
+	// Init sliders
 	{
-		ui->manBrSlider->setRange(100, brt_slider_steps);
-		ui->manBrSlider->setValue(cfg["brightness"]);
-		ui->brRange->setMinimum(100);
-		ui->brRange->setMaximum(brt_slider_steps);
-
 		ui->extendBr->setChecked(cfg["extend_br"]);
 		toggleBrtSlidersRange(cfg["extend_br"]);
 
+		ui->manBrSlider->setValue(cfg["brightness"]);
 		ui->offsetSlider->setValue(cfg["offset"]);
 
 		ui->tempSlider->setRange(0, temp_slider_steps);
+		ui->tempSlider->setValue(cfg["temp_step"]);
 
 		ui->speedSlider->setValue(cfg["speed"]);
-		ui->tempSlider->setValue(cfg["temp_step"]);
 		ui->thresholdSlider->setValue(cfg["threshold"]);
 		ui->pollingSlider->setValue(cfg["polling_rate"]);
 	}
@@ -284,7 +283,7 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 	ss_cv->notify_one();
 
 	// Toggle visibility of br range and offset sliders
-	toggleSliders(checked);
+	toggleMainBrSliders(checked);
 
 	// Allow adv. settings button input when auto br is enabled
 	ui->advBrSettingsBtn->setEnabled(checked);
@@ -296,13 +295,13 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 	this->setMaximumHeight(h);
 
 	// Allow br. slider input when auto br is disabled
-	ui->manBrSlider->setEnabled(!checked);
+	//ui->manBrSlider->setEnabled(!checked);
 }
 
-void MainWindow::toggleSliders(bool is_auto)
+void MainWindow::toggleMainBrSliders(bool checked)
 {
-	ui->rangeWidget->setVisible(is_auto);
-	ui->offsetWidget->setVisible(is_auto);
+	ui->rangeWidget->setVisible(checked);
+	ui->offsetWidget->setVisible(checked);
 }
 
 void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
@@ -328,7 +327,7 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 
 	temp_cv->notify_one();
 
-	ui->tempSlider->setDisabled(checked);
+	//ui->tempSlider->setDisabled(checked);
 }
 
 void MainWindow::on_manBrSlider_valueChanged(int value)
@@ -408,9 +407,20 @@ void MainWindow::setBrtSlider(int val)
 	ui->manBrSlider->setValue(val);
 }
 
+void MainWindow::on_manBrSlider_sliderPressed()
+{
+	if(!ui->autoCheck->isChecked()) return;
+
+	ui->autoCheck->setChecked(false);
+	//emit on_autoCheck_toggled(false);
+}
+
 void MainWindow::on_tempSlider_sliderPressed()
 {
-	// @TODO: Something
+	if(!ui->autoTempCheck->isChecked()) return;
+
+	ui->autoTempCheck->setChecked(false);
+	//emit on_autoTempCheck_toggled(false);
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)

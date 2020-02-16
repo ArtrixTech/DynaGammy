@@ -250,19 +250,18 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			w.setTempSlider(cfg["temp_step"]);
 
-			if (cfg["temp_step"] == end)
-			{
-				return false;
-			}
-
-			return true;
+			return cfg["temp_step"] == end;
 		};
 
 		while (cfg["auto_temp"])
 		{
 			if(w.quit || force) break;
 
-			if(!adjust()) break;
+			if(adjust())
+			{
+				LOGD << "Temp adjustment done.";
+				break;
+			}
 
 			sleep_for(milliseconds(1000 / FPS));
 		}
@@ -325,17 +324,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 		const int start = brt_step;
 		const int end   = target;
 
-		const int secs = cfg["speed"];
-
-		const double factor = normalize(0, brt_slider_steps, target);
-
-		LOGD << normalize(0, brt_slider_steps, target);
-
-		double duration = secs - factor;
-
-		duration = std::clamp(duration, 1., 20.);
-
-		LOGD << "Animation time: " << duration << " s";
+		double duration = cfg["speed"];
 
 		const double iterations = FPS * duration;
 		const int distance      = end - start;
@@ -350,19 +339,18 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 			w.setBrtSlider(brt_step);
 
-			if (brt_step == target)
-			{
-				return false;
-			}
-
-			return true;
+			return brt_step == target;
 		};
 
 		while (!args.br_needs_change && cfg["auto_br"])
 		{
 			if(w.quit) break;
 
-			if(!adjust()) break;
+			if(adjust())
+			{
+				LOGD << "Brt adjustment done.";
+				break;
+			}
 
 			sleep_for(milliseconds(1000 / FPS));
 		}

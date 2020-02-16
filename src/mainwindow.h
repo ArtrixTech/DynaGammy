@@ -71,11 +71,13 @@ private slots:
 
 	void on_advBrSettingsBtn_toggled(bool checked);
 
+	void on_manBrSlider_sliderPressed();
+
 private:
 	Ui::MainWindow *ui;
 	QSystemTrayIcon *trayIcon;
 	QMenu *createMenu();
-	void toggleSliders(bool show);
+	void toggleMainBrSliders(bool show);
 	void toggleBrtSlidersRange(bool);
 	void closeEvent(QCloseEvent *);
 
