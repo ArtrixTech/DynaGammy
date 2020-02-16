@@ -58,7 +58,7 @@ Gammy starts minimized in the system tray (or maximized if the tray is absent). 
   - "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommended.
 - "The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
 
-##### Troubleshooting
+## Troubleshooting
 If you are experiencing an "Invalid gamma ramp size" fatal error, refer to [this post.](https://github.com/Fushko/gammy/issues/20#issuecomment-584473270)
 
 ## Third party
