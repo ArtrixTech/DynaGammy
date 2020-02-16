@@ -47,7 +47,7 @@ NOTE: If make fails with ```PlaceholderText is not a member of QPalette``` error
 Updating Qt is recommended, but as a workaround you can delete the offending lines in ui_mainwindow.h, then run make again.
 
 ## Usage
-Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon open the settings window. 
+Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings window. 
 
 - The padlock icon allows the brightness range to go up to 200%. (Linux only)
 - The "Range" slider determines the minimum and maximum brightness.
