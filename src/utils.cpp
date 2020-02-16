@@ -10,7 +10,6 @@
 #include "utils.h"
 #include "cfg.h"
 #include "defs.h"
-#include <algorithm>
 
 double lerp(double start, double end, double factor)
 {
@@ -24,7 +23,7 @@ double normalize(double start, double end, double value)
 
 double remap(double value, double from_min, double from_max, double to_min, double to_max)
 {
-	 return lerp(to_min, to_max, normalize(from_min, from_max, value));
+	return lerp(to_min, to_max, normalize(from_min, from_max, value));
 }
 
 void setColors(int temp_step, std::array<double, 3> &c)

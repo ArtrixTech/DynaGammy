@@ -22,6 +22,7 @@ json setDefault()
 		{"max_br", brt_slider_steps },
 		{"offset", brt_slider_steps / 3 },
 		{"speed", 5 },
+		{"temp_speed", 30.0 },
 		{"threshold", 36 },
 		{"polling_rate", 100 },
 		{"temp_step", 0 },

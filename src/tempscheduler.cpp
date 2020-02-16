@@ -13,6 +13,7 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
 
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
+	ui->doubleSpinBox->setValue(temp_speed_min = cfg["temp_speed"]);
 
 	this->start_hr  = std::stoi(cfg["time_start"].get<std::string>().substr(0, 2));
 	this->end_hr    = std::stoi(cfg["time_start"].get<std::string>().substr(3, 2));
@@ -39,6 +40,8 @@ void TempScheduler::on_buttonBox_accepted()
 
 	cfg["temp_high"]  = high_temp;
 	cfg["temp_low"]   = low_temp;
+
+	cfg["temp_speed"] = temp_speed_min;
 
 	save();
 
@@ -71,4 +74,9 @@ void TempScheduler::on_timeEndBox_timeChanged(const QTime &time)
 TempScheduler::~TempScheduler()
 {
 	delete ui;
+}
+
+void TempScheduler::on_doubleSpinBox_valueChanged(double arg1)
+{
+	this->temp_speed_min = arg1;
 }

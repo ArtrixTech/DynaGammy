@@ -102,6 +102,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	setDates();
 	checkDates();
 
+	bool fast_change = 1;
+
 	if(cfg["temp_state"] == LOW_TEMP && !start_date_reached)
 	{
 		LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
@@ -166,6 +168,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			}
 			if(force)
 			{
+				fast_change = 1;
 				setDates();
 				checkDates();
 
@@ -235,7 +238,17 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int start = cur_step;
 		const int end   = target_step;
 
-		const double duration   = 8; // seconds
+		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>())
+		{
+			cfg["temp_speed"] = 30.;
+		}
+
+		double min = cfg["temp_speed"];
+
+		double duration = fast_change ? (1.5) : (min * 60);
+
+		fast_change = 0;
+
 		const double iterations = FPS * duration;
 
 		const int distance      = end - start;
@@ -523,6 +536,7 @@ int main(int argc, char **argv)
 
 	// Start with manual brightness setting, if auto brightness is disabled
 	if(!cfg["auto_br"]) brt_step = cfg["brightness"];
+	if(cfg["auto_temp"]) cfg["temp_step"] = 0;
 
 	plog::get()->addAppender(&file_appender);
 	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));

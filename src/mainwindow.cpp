@@ -293,9 +293,6 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 
 	this->setMinimumHeight(h);
 	this->setMaximumHeight(h);
-
-	// Allow br. slider input when auto br is disabled
-	//ui->manBrSlider->setEnabled(!checked);
 }
 
 void MainWindow::toggleMainBrSliders(bool checked)
@@ -326,8 +323,6 @@ void MainWindow::on_autoTempCheck_toggled(bool checked)
 	}
 
 	temp_cv->notify_one();
-
-	//ui->tempSlider->setDisabled(checked);
 }
 
 void MainWindow::on_manBrSlider_valueChanged(int value)
@@ -412,7 +407,6 @@ void MainWindow::on_manBrSlider_sliderPressed()
 	if(!ui->autoCheck->isChecked()) return;
 
 	ui->autoCheck->setChecked(false);
-	//emit on_autoCheck_toggled(false);
 }
 
 void MainWindow::on_tempSlider_sliderPressed()
@@ -420,7 +414,6 @@ void MainWindow::on_tempSlider_sliderPressed()
 	if(!ui->autoTempCheck->isChecked()) return;
 
 	ui->autoTempCheck->setChecked(false);
-	//emit on_autoTempCheck_toggled(false);
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)

@@ -29,6 +29,8 @@ private slots:
 
 	void on_timeEndBox_timeChanged(const QTime &time);
 
+	void on_doubleSpinBox_valueChanged(double arg1);
+
 private:
 	Ui::TempScheduler *ui;
 
@@ -37,6 +39,7 @@ private:
 
 	int high_temp;
 	int low_temp;
+	double temp_speed_min;
 
 	convar *temp_cv;
 	bool *force_change = nullptr;
