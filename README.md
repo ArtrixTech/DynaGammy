@@ -53,7 +53,7 @@ Gammy starts minimized in the system tray (or maximized if the tray is absent). 
 - The "Range" slider determines the minimum and maximum brightness.
 - The "Offset" slider adds to the screen brightness calculation. Higher = brighter image.
 - Clicking on the first "..." button shows additional options related to adaptive brightness:
-  - "Adaption speed" controls how quickly the brightness adapts when a change is detected.
+  - "Adaptation speed" controls how quickly the brightness adapts when a change is detected.
   - "Threshold" controls how much the screen has to change in order to trigger adaptation.
   - "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommended.
 - "The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
