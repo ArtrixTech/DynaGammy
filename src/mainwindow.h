@@ -13,6 +13,7 @@
 	#undef Status
 	#undef Bool
 	#undef CursorShape
+	#undef None
 #endif
 
 #include <QMainWindow>
