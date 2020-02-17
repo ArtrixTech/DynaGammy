@@ -980,9 +980,9 @@ background-color:rgb(20,22,35);
                <colorrole role="WindowText">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
-                  <red>0</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1034,9 +1034,9 @@ background-color:rgb(20,22,35);
                <colorrole role="Text">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
-                  <red>0</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1052,9 +1052,9 @@ background-color:rgb(20,22,35);
                <colorrole role="ButtonText">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
-                  <red>0</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1134,7 +1134,7 @@ background-color:rgb(20,22,35);
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true"/>
+             <string notr="true">color:white;</string>
             </property>
             <property name="text">
              <string>Auto</string>
@@ -1705,8 +1705,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1759,8 +1759,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1777,8 +1777,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1851,8 +1851,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1905,8 +1905,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1923,8 +1923,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1997,8 +1997,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -2051,8 +2051,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -2069,8 +2069,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>0</green>
-                  <blue>0</blue>
+                  <green>255</green>
+                  <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -2147,7 +2147,7 @@ background-color:rgb(100, 100, 100);
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true"/>
+             <string notr="true">color:white;</string>
             </property>
             <property name="text">
              <string>Auto</string>
