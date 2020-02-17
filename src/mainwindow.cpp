@@ -289,6 +289,8 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 	ui->advBrSettingsBtn->setEnabled(checked);
 	ui->advBrSettingsBtn->setChecked(false);
 
+	checked ? ui->advBrSettingsBtn->setStyleSheet("color:white") : ui->advBrSettingsBtn->setStyleSheet("color:rgba(0,0,0,0)");
+
 	const int h = checked ? wnd_height : 170;
 
 	this->setMinimumHeight(h);

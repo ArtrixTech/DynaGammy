@@ -326,9 +326,9 @@
      <colorrole role="WindowText">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>7</red>
-        <green>17</green>
-        <blue>21</blue>
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
        </color>
       </brush>
      </colorrole>
@@ -380,9 +380,9 @@
      <colorrole role="Text">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>7</red>
-        <green>17</green>
-        <blue>21</blue>
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
        </color>
       </brush>
      </colorrole>
@@ -398,9 +398,9 @@
      <colorrole role="ButtonText">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>7</red>
-        <green>17</green>
-        <blue>21</blue>
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
        </color>
       </brush>
      </colorrole>
@@ -480,31 +480,30 @@
    <double>100.000000000000000</double>
   </property>
   <property name="styleSheet">
-   <string notr="true">QSlider::groove:horizontal 
-{
+   <string notr="true">QSlider::groove:horizontal{
 	background-color: rgb(35, 112, 145);
    	height:4px;
 	margin-bottom: 0px;
 	border-radius:2px;
 }
-QSlider::handle:horizontal
-{
+QSlider::handle:horizontal{
 	background-color: rgb(235, 225, 255);
     width:  7px;
  	margin: -7px 0px;
     border-radius: 9px;
 	border: 6px solid transparent
 }
-QWidget
-{
+QWidget{
 font-family:Ubuntu, sans-serif;
-}
-QLabel {
-font-family:Ubuntu, sans-serif;
-font-size:14px;
 color:white;
 }
-
+QLabel{
+font-family:Ubuntu, sans-serif;
+font-size:14px;
+}
+QPushButton{
+background-color:rgb(20,22,35);
+}
 </string>
   </property>
   <property name="documentMode">
@@ -1158,19 +1157,18 @@ background-color:rgb(20,22,35);
             </property>
             <property name="minimumSize">
              <size>
-              <width>35</width>
-              <height>20</height>
+              <width>30</width>
+              <height>25</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>35</width>
-              <height>20</height>
+              <width>30</width>
+              <height>25</height>
              </size>
             </property>
             <property name="styleSheet">
              <string notr="true">background-color:rgb(20,22,35);
-color: rgb(255, 255, 255);
 </string>
             </property>
             <property name="text">
@@ -1707,8 +1705,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>255</green>
-                  <blue>255</blue>
+                  <green>0</green>
+                  <blue>0</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1761,8 +1759,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>255</green>
-                  <blue>255</blue>
+                  <green>0</green>
+                  <blue>0</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1779,8 +1777,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>255</green>
-                  <blue>255</blue>
+                  <green>0</green>
+                  <blue>0</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1853,8 +1851,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>255</green>
-                  <blue>255</blue>
+                  <green>0</green>
+                  <blue>0</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1907,8 +1905,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>255</green>
-                  <blue>255</blue>
+                  <green>0</green>
+                  <blue>0</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1925,8 +1923,8 @@ background-color:rgb(100, 100, 100);
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>255</red>
-                  <green>255</green>
-                  <blue>255</blue>
+                  <green>0</green>
+                  <blue>0</blue>
                  </color>
                 </brush>
                </colorrole>
@@ -1998,7 +1996,7 @@ background-color:rgb(100, 100, 100);
                <colorrole role="WindowText">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
-                  <red>0</red>
+                  <red>255</red>
                   <green>0</green>
                   <blue>0</blue>
                  </color>
@@ -2052,7 +2050,7 @@ background-color:rgb(100, 100, 100);
                <colorrole role="Text">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
-                  <red>0</red>
+                  <red>255</red>
                   <green>0</green>
                   <blue>0</blue>
                  </color>
@@ -2070,7 +2068,7 @@ background-color:rgb(100, 100, 100);
                <colorrole role="ButtonText">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
-                  <red>0</red>
+                  <red>255</red>
                   <green>0</green>
                   <blue>0</blue>
                  </color>
@@ -2160,14 +2158,14 @@ background-color:rgb(100, 100, 100);
            <widget class="QPushButton" name="pushButton">
             <property name="minimumSize">
              <size>
-              <width>35</width>
-              <height>20</height>
+              <width>30</width>
+              <height>25</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>35</width>
-              <height>20</height>
+              <width>30</width>
+              <height>25</height>
              </size>
             </property>
             <property name="font">
@@ -2176,8 +2174,7 @@ background-color:rgb(100, 100, 100);
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true">background-color:rgb(20,22,35);
-color: rgb(255, 255, 255);</string>
+             <string notr="true">background-color:rgb(20,22,35);</string>
             </property>
             <property name="text">
              <string>...</string>
