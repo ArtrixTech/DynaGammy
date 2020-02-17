@@ -429,3 +429,4 @@ MigrationBackup/
 # End of https://www.gitignore.io/api/qt,qtcreator,visualstudio
 
 gammy
+gammylog.txt
