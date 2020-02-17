@@ -13,6 +13,13 @@ TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_chang
 
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
+
+	// @TODO: Remove this
+	if(!cfg["temp_speed"].get_ptr<json::number_float_t*>())
+	{
+		cfg["temp_speed"] = 30.;
+	}
+
 	ui->doubleSpinBox->setValue(temp_speed_min = cfg["temp_speed"]);
 
 	this->start_hr  = std::stoi(cfg["time_start"].get<std::string>().substr(0, 2));

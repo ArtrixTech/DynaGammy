@@ -254,6 +254,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int start = cur_step;
 		const int end   = target_step;
 
+		// @TODO: Remove this
 		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>())
 		{
 			cfg["temp_speed"] = 30.;

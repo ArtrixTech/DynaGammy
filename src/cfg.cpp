@@ -40,14 +40,14 @@ json setDefault()
 
 json cfg = setDefault();
 
-void save()
-{
 #ifdef _WIN32
 	static const std::wstring path = getExecutablePath();
 #else
 	static const std::string path = getConfigPath();
 #endif
 
+void save()
+{
 	if(path.empty())
 	{
 		LOGE << "Invalid config path";
@@ -72,17 +72,11 @@ void save()
 		return;
 	}
 
-	LOGD << "Settings saved";
+	LOGD << "Config set";
 }
 
 void read()
 {
-#ifdef _WIN32
-	static const std::wstring path = getExecutablePath();
-#else
-	static const std::string path = getConfigPath();
-#endif
-
 	std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
 
 	if(!file.good() || !file.is_open())
@@ -95,7 +89,6 @@ void read()
 
 	if(file.tellg() == 0)
 	{
-		LOGW << "Config empty. Creating one.";
 		save();
 		return;
 	}
@@ -117,7 +110,7 @@ void read()
 		return;
 	}
 
-	LOGD << "Settings parsed";
+	LOGD << "Config parsed";
 }
 
 #ifndef _WIN32
