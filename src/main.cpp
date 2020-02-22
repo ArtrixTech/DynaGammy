@@ -551,9 +551,18 @@ int main(int argc, char **argv)
 
 	read();
 
-	// Start with manual brightness setting, if auto brightness is disabled
-	if(!cfg["auto_br"]) brt_step = cfg["brightness"];
-	if(cfg["auto_temp"]) cfg["temp_step"] = 0;
+	if(!cfg["auto_br"].get<bool>())
+	{
+		// Start with manual brightness setting, if auto brightness is disabled
+		LOGD << "Autobrt OFF. Setting manual brt step.";
+		brt_step = cfg["brightness"];
+	}
+
+	if(cfg["auto_temp"].get<bool>())
+	{
+		LOGD << "Autotemp ON. Starting from step 0."; // To allow smooth transition
+		cfg["temp_step"] = 0;
+	}
 
 	plog::get()->addAppender(&file_appender);
 	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));
@@ -599,6 +608,7 @@ int main(int argc, char **argv)
 
 	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
 	std::thread ss_thr(recordScreen, std::ref(thr_args), std::ref(ss_cv), std::ref(wnd));
+
 
 	a.exec();
 
