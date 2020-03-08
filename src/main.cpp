@@ -50,12 +50,14 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	};
 
 	enum TempState {
-		HIGH_TEMP,
-		LOW_TEMP
+		HIGH,
+		INCREASING,
+		LOWERING,
+		LOW
 	};
 
-	bool start_date_reached;
-	bool end_date_reached;
+	bool start_r;
+	bool end_r;
 
 	bool force = false;
 	w.force_temp_change = &force;
@@ -76,44 +78,54 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		datetime_start = QDateTime(QDate::fromJulianDay(jday_start), time_start);
 		datetime_end   = QDateTime(QDate::fromJulianDay(jday_end), time_end);
 
-		LOGD << "Start: " << datetime_start.toString();
-		LOGD << "End:   " << datetime_end.toString();
+		LOGD << "Dates set";
 	};
 
 	const auto checkDates = [&]
 	{
 		const auto now = QDateTime::currentDateTime();
+		const auto end = now.addSecs(3600 * 24);
 
-		start_date_reached = now > datetime_start;
-		end_date_reached   = now > datetime_end;
+		start_r = now > datetime_start;
+		end_r   = start_r ? now > datetime_end : false;
 
-		LOGV << "Start reached: " << start_date_reached;
-		LOGV << "End   reached: " << end_date_reached;
+		LOGV << "Start: " << datetime_start.toString() << " reached: " << start_r;
+		LOGV << "End: " << datetime_end.toString() << " reached: " << end_r;
 	};
 
 	LOGV << "Initializing temp schedule";
 
-	int64_t today = QDate::currentDate().toJulianDay();
+	const auto resetInterval = [&] (bool shift_days = false)
+	{
+		if(shift_days)
+		{
+			++jday_start;
+			++jday_end;
+		}
+
+		setDates();
+		checkDates();
+	};
+
+	int64_t today    = QDate::currentDate().toJulianDay();
 	int64_t tomorrow = today + 1;
 
 	jday_start = today;
-	jday_end = tomorrow;
+	jday_end   = tomorrow;
 
 	setDates();
 	checkDates();
 
-	bool fast_change = false;
+	bool fast_change = true;
 
-	if(cfg["temp_state"] == LOW_TEMP)
+	LOGD << "Starting temp state: " << cfg["temp_state"];
+
+	if(cfg["temp_state"] == LOW)
 	{
-		fast_change = true;
-
-		if(!start_date_reached)
+		if(!start_r)
 		{
-			LOGD << "Starting on low temp, but start date hasn't been reached. End time should be today.";
 			jday_end = today;
-			setDates();
-			checkDates();
+			resetInterval();
 		}
 	}
 
@@ -130,27 +142,33 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		{
 			{
 				std::unique_lock<std::mutex> lk(clock_mtx);
-				clock_cv.wait_until(lk, system_clock::now() + 60s, [&] { return w.quit; });
+				clock_cv.wait_until(lk, system_clock::now() + 1s, [&] { return w.quit; });
 			}
 
 			if(w.quit) break;
 
-			if(!cfg["auto_temp"])
-			{
-				LOGD << "Skipping date check (adaptive temp disabled)";
-				continue;
-			}
-
-			LOGV << "Checking time";
+			if(!cfg["auto_temp"]) continue;
 
 			checkDates();
 
 			{
 				std::lock_guard<std::mutex> lock(temp_mtx);
 
-				bool is_high = cfg["temp_state"] == HIGH_TEMP;
-				needs_change = (start_date_reached && is_high) || (end_date_reached && !is_high);
-				fast_change = false;
+				bool low_period  = start_r && !end_r;
+				bool high_period = !start_r && end_r;
+
+				if(low_period)
+				{
+					cfg["temp_state"] = LOWERING;
+					needs_change = true;
+				}
+				else if(high_period)
+				{
+					cfg["temp_state"] = INCREASING;
+					needs_change = true;
+				}
+
+				fast_change  = false;
 			}
 
 			temp_cv.notify_one();
@@ -159,6 +177,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	while (true)
 	{
+		// Lock
 		{
 			std::unique_lock<std::mutex> lock(temp_mtx);
 
@@ -167,32 +186,36 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				return needs_change || force || w.quit;
 			});
 
-			if(w.quit)
-			{
-				break;
-			}
+			if(w.quit) break;
+
 			if(force)
 			{
-				setDates();
-				checkDates();
+				resetInterval();
 
-				if(cfg["temp_state"] == LOW_TEMP)
+				if(!start_r && (cfg["temp_state"] == LOWERING || cfg["temp_state"] == LOW))
 				{
-					if(!start_date_reached)
-					{
-						if(jday_end != today)
-						{
-							LOGD << "Forcing high temp";
-							cfg["temp_state"] = HIGH_TEMP;
-							fast_change = true;
-						}
-					}
-					else fast_change = true;
-				}
-				else if(!start_date_reached)
-				{
+					cfg["temp_state"] = INCREASING;
 					fast_change = true;
 				}
+
+				if(start_r && (cfg["temp_state"] == HIGH || cfg["temp_state"] == INCREASING))
+				{
+					cfg["temp_state"] = LOWERING;
+					fast_change = true;
+				}
+
+				/*if(cfg["temp_state"] == LOW || cfg["temp_state"] == LOWERING)
+				{
+					if(!start_r && jday_end != today)
+					{
+						LOGD << "Forcing high temp";
+
+						cfg["temp_state"] = INCREASING;
+						fast_change = true;
+					}
+				}
+
+				if(cfg["temp_state"] == INCREASING || cfg["temp_state"] == LOWERING) fast_change = false;*/
 
 				force = false;
 			}
@@ -204,44 +227,46 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		if(!cfg["auto_temp"]) continue;
 
-		if(cfg["temp_state"] == HIGH_TEMP)
+		/*if(cfg["temp_state"] == INCREASING || cfg["temp_state"] == HIGH)
 		{
-			if(start_date_reached)
+			LOGD << "We need to increase.";
+
+			if(start_r)
 			{
 				LOGD << "Start date reached.";
-				cfg["temp_state"] = LOW_TEMP;
+				cfg["temp_state"] = LOWERING;
 			}
 		}
-		else
+		else if (cfg["temp_state"] == LOWERING || cfg["temp_state"] == LOW)
 		{
-			if(start_date_reached && end_date_reached)
+			LOGD << "We need to lower.";
+
+			if(start_r && end_r)
 			{
-				LOGD << "Start and end reached. Shifting dates.";
+				LOGD << "Start and end reached. Shifting days.";
+				resetInterval(true);
 
-				jday_start++;
-				jday_end++;
-				setDates();
-				checkDates();
-
-				cfg["temp_state"] = HIGH_TEMP;
+				cfg["temp_state"] = INCREASING;
 			}
-			else if(jday_end == today && end_date_reached)
+			else if(jday_end == today && end_r)
 			{
 				// We get here if the app was started on low temp
 				// but the start date hasn't been reached
 
 				LOGD << "End date reached. Shifting end date.";
 
-				cfg["temp_state"] = HIGH_TEMP;
+				cfg["temp_state"] = INCREASING;
 
 				jday_end++;
-				setDates();
-				checkDates();
+				resetInterval();
 			}
-		}
+			else cfg["temp_state"] = INCREASING;
+		}*/
 
-		const int target_temp = cfg["temp_state"] == HIGH_TEMP ? cfg["temp_high"] : cfg["temp_low"];
+		const int target_temp = cfg["temp_state"] == INCREASING ? cfg["temp_high"] : cfg["temp_low"];
 		const int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
+
+		LOGD << "Target temp: " << target_temp << " K";
 
 		int cur_step = cfg["temp_step"];
 
@@ -255,25 +280,21 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int end   = target_step;
 
 		// @TODO: Remove this
-		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>())
-		{
-			cfg["temp_speed"] = 30.;
-		}
+		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>()) cfg["temp_speed"] = 30.;
 
 		double min = cfg["temp_speed"];
 
 		double duration = fast_change ? (2) : (min * 60);
-		LOGD << "Duration: "<< duration << 's';
+
 		fast_change = false;
 
 		const double iterations = FPS * duration;
-
 		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
 
 		double time = 0;
 
-		const auto adjust = [&]
+		const auto adjusted = [&]
 		{
 			time += time_incr;
 			cfg["temp_step"] = int(easeInOutQuad(time, start, distance, duration));
@@ -283,13 +304,38 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			return cfg["temp_step"] == end;
 		};
 
+		LOGD << "Adjusting...";
+
 		while (cfg["auto_temp"])
 		{
-			if(w.quit || force) break;
+			if(w.quit) break;
 
-			if(adjust())
+			if(force)
+			{
+				resetInterval();
+
+				if(!start_r && cfg["temp_state"] == LOWERING)
+				{
+					cfg["temp_state"] = INCREASING;
+					fast_change = true;
+					break;
+				}
+
+				if(start_r && cfg["temp_state"] == INCREASING)
+				{
+					cfg["temp_state"] = LOWERING;
+					fast_change = true;
+					break;
+				}
+
+				force = false;
+			}
+
+			if(adjusted())
 			{
 				LOGD << "Temp adjustment done.";
+
+				cfg["temp_state"] = cfg["temp_state"] == INCREASING ? HIGH : LOW;
 				break;
 			}
 
