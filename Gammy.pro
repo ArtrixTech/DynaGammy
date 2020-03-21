@@ -13,7 +13,10 @@ TARGET = gammy
 TEMPLATE = app
 
 CONFIG += c++11 c++17
-CONFIG += optimize_full
+
+CONFIG(release) {
+    CONFIG += optimize_full
+}
 
 HEADERS += src/mainwindow.h src/utils.h \
     src/tempscheduler.h \
@@ -44,10 +47,10 @@ unix:{
 
 RESOURCES += res.qrc
 
-RCC_DIR = $$PWD/res
 UI_DIR = $$PWD/src
-MOC_DIR = $$PWD/res/tmp
-OBJECTS_DIR = $$PWD/res/tmp
+RCC_DIR = res
+MOC_DIR = res/tmp
+OBJECTS_DIR = res/tmp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
