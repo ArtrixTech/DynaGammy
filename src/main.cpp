@@ -44,6 +44,10 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	QTime start_time;
 	QTime end_time;
 
+	bool force          = false;
+	w.force_temp_change = &force;
+	bool fast_change    = true;
+
 	const auto setTime = [] (QTime &t, const std::string &time_str)
 	{
 		const auto start_hour = time_str.substr(0, 2);
@@ -52,11 +56,14 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		t = QTime(std::stoi(start_hour), std::stoi(start_min));
 	};
 
-	const auto checkTime = [&]
+	const auto resetInterval = [&]
 	{
 		setTime(start_time, cfg["time_start"]);
 		setTime(end_time,   cfg["time_end"]);
+	};
 
+	const auto checkTime = [&]
+	{
 		QTime cur_time = QTime::currentTime();
 
 		return (cur_time >= start_time) || (cur_time < end_time);
@@ -69,13 +76,10 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		LOW
 	};
 
-	bool force          = false;
-	w.force_temp_change = &force;
-	bool fast_change    = true;
+	resetInterval();
 
-	bool should_be_low  = checkTime();
-
-	bool needs_change   = cfg["auto_temp"];
+	bool should_be_low = checkTime();
+	bool needs_change  = cfg["auto_temp"];
 
 	convar     clock_cv;
 	std::mutex clock_mtx;
@@ -119,6 +123,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			if(force)
 			{
+				resetInterval();
 				should_be_low = checkTime();
 				force         = false;
 			}
