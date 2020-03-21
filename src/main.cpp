@@ -46,7 +46,6 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	bool force          = false;
 	w.force_temp_change = &force;
-	bool fast_change    = true;
 
 	const auto setTime = [] (QTime &t, const std::string &time_str)
 	{
@@ -71,15 +70,18 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	enum TempState {
 		HIGH,
-		INCREASING,
 		LOWERING,
-		LOW
+		LOW,
+		INCREASING
 	};
 
 	resetInterval();
 
 	bool should_be_low = checkTime();
 	bool needs_change  = cfg["auto_temp"];
+	bool quick         = true;
+
+	cfg["temp_state"] = HIGH;
 
 	convar     clock_cv;
 	std::mutex clock_mtx;
@@ -102,6 +104,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				std::lock_guard<std::mutex> lock(temp_mtx);
 				should_be_low = checkTime();
 				needs_change  = true; // @TODO: Should be false if the state hasn't changed
+				quick = false;
 			}
 
 			temp_cv.notify_one();
@@ -126,6 +129,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				resetInterval();
 				should_be_low = checkTime();
 				force         = false;
+
+				quick = !((cfg["temp_state"] == LOWERING && should_be_low) || ((cfg["temp_state"] == INCREASING) && !should_be_low));
 			}
 
 			needs_change = false;
@@ -143,23 +148,22 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		if(target_step == cur_step)
 		{
 			LOGD << "Temperature is already at target.";
+
+			cfg["temp_state"] = should_be_low ? LOW : HIGH;
+
 			continue;
 		}
 
 		cfg["temp_state"] = should_be_low ? LOWERING : INCREASING;
 
-		const int start = cur_step;
-		const int end   = target_step;
+		const int start    = cur_step;
+		const int end      = target_step;
+		const int distance = end - start;
 
-		// @TODO: Remove this
-		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>()) cfg["temp_speed"] = 30.;
+		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>()) cfg["temp_speed"] = 30.; // @TODO: Remove this
 
-		double min = cfg["temp_speed"];
-
-		double duration = fast_change ? (2) : (min * 60);
-
+		const double duration   = quick ? (2) : (cfg["temp_speed"].get<double>() * 60);
 		const double iterations = FPS * duration;
-		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
 
 		double time = 0;
@@ -174,7 +178,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			return cfg["temp_step"] == end;
 		};
 
-		LOGD << "Adjusting...";
+		LOGD << "Adjusting temp...";
 
 		while (cfg["auto_temp"])
 		{
@@ -182,13 +186,20 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			if(force)
 			{
-				force = false;
-				break;
+				resetInterval();
+				should_be_low = checkTime();
+
+				if((cfg["temp_state"] == LOWERING && should_be_low) || (cfg["temp_state"] == INCREASING && !should_be_low))
+				{
+					force = false;
+				}
+				else break;
 			}
 
 			if(adjusted())
 			{
 				LOGD << "Temp adjustment done.";
+				cfg["temp_state"] = should_be_low ? LOW : HIGH;
 				break;
 			}
 
