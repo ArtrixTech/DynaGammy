@@ -91,7 +91,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		LOGV << "End   reached: " << end_date_reached;
 	};
 
-	LOGD << "Initializing temp schedule";
+	LOGV << "Initializing temp schedule";
 
 	int64_t today = QDate::currentDate().toJulianDay();
 	int64_t tomorrow = today + 1;
@@ -297,12 +297,12 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		}
 	}
 
-	LOGD << "Notifying clock thread";
+	LOGV << "Notifying clock thread";
 
 	clock_cv.notify_one();
 	clock.join();
 
-	LOGD << "Clock thread joined";
+	LOGV << "Clock thread joined";
 }
 
 struct Args
@@ -512,17 +512,17 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 				force = true;
 			}
 
-			prev_img_br	= img_br;
-			prev_min	= cfg["min_br"];
-			prev_max	= cfg["max_br"];
-			prev_offset	= cfg["offset"];
+			prev_img_br = img_br;
+			prev_min    = cfg["min_br"];
+			prev_max    = cfg["max_br"];
+			prev_offset = cfg["offset"];
 		}
 
 		buf.clear();
 		buf.shrink_to_fit();
 	}
 
-	LOGD << "Exited screenshot loop. Notifying adjustBrightness";
+	LOGV << "Exited screenshot loop. Notifying adjustBrightness";
 
 	{
 		std::lock_guard<std::mutex> lock (args.br_mtx);
@@ -533,9 +533,9 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 	br_thr.join();
 
-	LOGD << "adjustBrightness joined";
+	LOGV << "adjustBrightness joined";
 
-	LOGD << "Notifying QApplication";
+	LOGV << "Notifying QApplication";
 
 	QApplication::quit();
 }
@@ -609,18 +609,17 @@ int main(int argc, char **argv)
 	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
 	std::thread ss_thr(recordScreen, std::ref(thr_args), std::ref(ss_cv), std::ref(wnd));
 
-
 	a.exec();
 
-	LOGD << "QApplication joined";
+	LOGV << "QApplication joined";
 
 	temp_thr.join();
 
-	LOGD << "adjustTemperature joined";
+	LOGV << "adjustTemperature joined";
 
 	ss_thr.join();
 
-	LOGD << "recordScreen joined";
+	LOGV << "recordScreen joined";
 
 	if constexpr (os == OS::Windows) {
 		setGDIGamma(brt_slider_steps, 0);
@@ -629,7 +628,7 @@ int main(int argc, char **argv)
 	else x11.setInitialGamma(wnd.set_previous_gamma);
 #endif
 
-	LOGD << "Exiting";
+	LOGV << "Exiting";
 
 	return EXIT_SUCCESS;
 }
