@@ -73,15 +73,13 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		LOWERING,
 		LOW,
 		INCREASING
-	};
+	} temp_state = HIGH;
 
 	resetInterval();
 
 	bool should_be_low = checkTime();
 	bool needs_change  = cfg["auto_temp"];
 	bool quick         = true;
-
-	cfg["temp_state"] = HIGH;
 
 	convar     clock_cv;
 	std::mutex clock_mtx;
@@ -102,9 +100,10 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			{
 				std::lock_guard<std::mutex> lock(temp_mtx);
+
 				should_be_low = checkTime();
 				needs_change  = true; // @TODO: Should be false if the state hasn't changed
-				quick = false;
+				quick         = false;
 			}
 
 			temp_cv.notify_one();
@@ -130,7 +129,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				should_be_low = checkTime();
 				force         = false;
 
-				quick = !((cfg["temp_state"] == LOWERING && should_be_low) || ((cfg["temp_state"] == INCREASING) && !should_be_low));
+				quick = !((temp_state == LOWERING && should_be_low) || ((temp_state == INCREASING) && !should_be_low));
 			}
 
 			needs_change = false;
@@ -149,12 +148,12 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		{
 			LOGD << "Temperature is already at target.";
 
-			cfg["temp_state"] = should_be_low ? LOW : HIGH;
+			temp_state = should_be_low ? LOW : HIGH;
 
 			continue;
 		}
 
-		cfg["temp_state"] = should_be_low ? LOWERING : INCREASING;
+		temp_state = should_be_low ? LOWERING : INCREASING;
 
 		const int start    = cur_step;
 		const int end      = target_step;
@@ -189,7 +188,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				resetInterval();
 				should_be_low = checkTime();
 
-				if((cfg["temp_state"] == LOWERING && should_be_low) || (cfg["temp_state"] == INCREASING && !should_be_low))
+				if((temp_state == LOWERING && should_be_low) || (temp_state == INCREASING && !should_be_low))
 				{
 					force = false;
 				}
@@ -199,7 +198,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			if(adjusted())
 			{
 				LOGD << "Temp adjustment done.";
-				cfg["temp_state"] = should_be_low ? LOW : HIGH;
+				temp_state = should_be_low ? LOW : HIGH;
 				break;
 			}
 
