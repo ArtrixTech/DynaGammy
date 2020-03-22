@@ -88,6 +88,11 @@ void MainWindow::init()
 		this->trayIcon->setToolTip(QString("Gammy"));
 		this->trayIcon->show();
 		connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+        
+        if constexpr(os == Windows) 
+        {
+            menu->setStyleSheet("color:black");
+        }
 
 		LOGI << "Tray icon created";
 	}

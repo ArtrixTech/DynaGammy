@@ -3,7 +3,7 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "main.h"
+
 #include "dxgidupl.h"
 #include <thread>
 #include <chrono>
@@ -11,6 +11,7 @@
 
 #include "utils.h"
 #include "cfg.h"
+#include "defs.h"
 
 #include <locale>
 #include <codecvt>

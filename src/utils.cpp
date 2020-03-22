@@ -114,10 +114,10 @@ void getGDISnapshot(std::vector<uint8_t> &buf)
     DeleteObject(oldObj);
     DeleteDC(memoryDC);
 }
-
+#include <algorithm>
 void setGDIGamma(int brightness, int temp)
 {
-    if (brightness > default_brightness) {
+    if (brightness > brt_slider_steps) {
         return;
     }
 
@@ -125,18 +125,18 @@ void setGDIGamma(int brightness, int temp)
 
     setColors(temp, c);
 
-    WORD gammaArr[3][256];
+    WORD ramp[3][256];
 
     for (WORD i = 0; i < 256; ++i)
     {
-        WORD gammaVal = i * brightness;
+        const int val = remap(brightness, 0, brt_slider_steps, 0, 255) * i;
 
-        gammaArr[0][i] = WORD (gammaVal * c[0]);
-        gammaArr[1][i] = WORD (gammaVal * c[1]);
-        gammaArr[2][i] = WORD (gammaVal * c[2]);
+        ramp[0][i] = WORD(val * c[0]);
+        ramp[1][i] = WORD(val * c[1]);
+        ramp[2][i] = WORD(val * c[2]);
     }
 
-    SetDeviceGammaRamp(screenDC, gammaArr);
+    SetDeviceGammaRamp(screenDC, ramp);
 }
 
 void checkGammaRange()
