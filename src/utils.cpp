@@ -114,7 +114,7 @@ void getGDISnapshot(std::vector<uint8_t> &buf)
     DeleteObject(oldObj);
     DeleteDC(memoryDC);
 }
-#include <algorithm>
+
 void setGDIGamma(int brightness, int temp)
 {
     if (brightness > brt_slider_steps) {
