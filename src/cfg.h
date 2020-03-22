@@ -17,6 +17,6 @@ auto getConfigPath()     -> std::string;
 auto getExecutablePath() -> std::wstring;
 
 void read();
-void save();
+void write();
 
 #endif // CFG_H

@@ -426,7 +426,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	// while quitting the app gets done elsewhere
 
 	this->hide();
-	save();
+	write();
 	if(ignore_closeEvent) e->ignore();
 }
 

@@ -159,8 +159,6 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int end      = target_step;
 		const int distance = end - start;
 
-		if(!cfg["temp_speed"].get_ptr<json::number_float_t*>()) cfg["temp_speed"] = 30.; // @TODO: Remove this
-
 		const double duration   = quick ? (2) : (cfg["temp_speed"].get<double>() * 60);
 		const double iterations = FPS * duration;
 		const double time_incr  = duration / iterations;
@@ -451,7 +449,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 void sig_handler(int signo);
 
-int main(int argc, char **argv)
+void init()
 {
 	static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
@@ -463,20 +461,24 @@ int main(int argc, char **argv)
 	if(!cfg["auto_br"].get<bool>())
 	{
 		// Start with manual brightness setting, if auto brightness is disabled
-		LOGD << "Autobrt OFF. Setting manual brt step.";
+		LOGV << "Autobrt OFF. Setting manual brt step.";
 		brt_step = cfg["brightness"];
 	}
 
 	if(cfg["auto_temp"].get<bool>())
 	{
-		LOGD << "Autotemp ON. Starting from step 0."; // To allow smooth transition
+		LOGV << "Autotemp ON. Starting from step 0."; // To allow smooth transition
 		cfg["temp_step"] = 0;
 	}
 
 	plog::get()->addAppender(&file_appender);
 	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));
 
-#ifdef _WIN32
+#ifndef _WIN32
+	signal(SIGINT, sig_handler);
+	signal(SIGQUIT, sig_handler);
+	signal(SIGTERM, sig_handler);
+#else
 	checkInstance();
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
@@ -490,13 +492,12 @@ int main(int argc, char **argv)
 	}
 
 	checkGammaRange();
-#else
-	signal(SIGINT, sig_handler);
-	signal(SIGQUIT, sig_handler);
-	signal(SIGTERM, sig_handler);
-
-	X11 x11;
 #endif
+}
+
+int main(int argc, char **argv)
+{
+	init();
 
 	QApplication a(argc, argv);
 
@@ -507,6 +508,8 @@ int main(int argc, char **argv)
 #ifdef _WIN32
 	MainWindow wnd(nullptr, &ss_cv, &temp_cv);
 #else
+	X11 x11;
+
 	MainWindow wnd(&x11, &ss_cv, &temp_cv);
 
 	thr_args.x11 = &x11;
@@ -549,7 +552,7 @@ void sig_handler(int signo)
 	LOGD_IF(signo == SIGTERM) << "SIGTERM received";
 	LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
 
-	save();
+	write();
 
 	if(!p_quit || ! p_ss_cv || !p_temp_cv) _exit(0);
 

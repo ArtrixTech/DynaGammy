@@ -36,125 +36,121 @@ json setDefault()
 		{"extend_br", false },
 		{"log_lvl", plog::warning }
 	};
-};
+}
 
 json cfg = setDefault();
 
+void read()
+{
 #ifdef _WIN32
-	static const std::wstring path = getExecutablePath();
+	const std::wstring path = getExecutablePath();
 #else
-	static const std::string path = getConfigPath();
+	const std::string path = getConfigPath();
 #endif
 
-void save()
-{
-	if(path.empty())
-	{
-		LOGE << "Invalid config path";
+	std::ifstream file(path, std::fstream::in | std::fstream::app);
+
+	if(!file.good() || !file.is_open()) {
+		LOGE << "Unable to open config";
 		return;
 	}
 
-	std::ofstream file(path, std::ofstream::out | std::ofstream::trunc);
+	// Seek file end
+	file.seekg(0, std::ios::end);
 
-	if(!file.good() || !file.is_open())
-	{
+	// If end position is 0, create the file
+	if(file.tellg() == 0) {
+		write();
+		return;
+	}
+
+	// Seek file start
+	file.seekg(0);
+
+	json tmp;
+
+	try {
+		file >> tmp;
+	}
+	catch (json::exception &e) {
+
+		LOGE << e.what() << " - Resetting config...";
+
+		cfg = setDefault();
+		write();
+
+		return;
+	}
+
+	cfg.update(tmp);
+
+	LOGV << "Config parsed";
+}
+
+void write()
+{
+#ifdef _WIN32
+	const std::wstring path = getExecutablePath();
+#else
+	const std::string path = getConfigPath();
+#endif
+
+	std::ofstream file(path, std::ofstream::out);
+
+	if(!file.good() || !file.is_open()) {
 		LOGE << "Unable to open config file";
 		return;
 	}
 
-	try
-	{
+	try {
 		file << std::setw(4) << cfg;
 	}
-	catch (json::exception &e)
-	{
+	catch (json::exception &e) {
 		LOGE << e.what() << " id: " << e.id;
 		return;
 	}
 
-	LOGD << "Config set";
-}
-
-void read()
-{
-	std::fstream file(path, std::fstream::in | std::fstream::out | std::fstream::app);
-
-	if(!file.good() || !file.is_open())
-	{
-		LOGE << "Unable to open config.";
-		return;
-	}
-
-	file.seekg(0, std::ios::end);
-
-	if(file.tellg() == 0)
-	{
-		save();
-		return;
-	}
-
-	file.seekg(0);
-
-	try
-	{
-		file >> cfg;
-	}
-	catch (json::exception &e)
-	{
-		LOGE << e.what();
-		LOGI << "Resetting config.";
-
-		cfg = setDefault();
-		save();
-
-		return;
-	}
-
-	LOGD << "Config parsed";
+	LOGV << "Config set";
 }
 
 #ifndef _WIN32
 std::string getConfigPath()
 {
-	const char *xdg_cfg_home;
-	const char *home;
+	constexpr const char *cfg_filename = "gammy";
+	constexpr const char *cfg_folder   = ".config";
 
-	std::string path;
-	std::string cfg_filename = "gammy";
+	char buf[4096];
 
-	xdg_cfg_home = getenv("XDG_CONFIG_HOME");
+	const char *home = getenv("XDG_CONFIG_HOME");
 
-	if (xdg_cfg_home)
-	{
-		path = std::string(xdg_cfg_home) + '/';
-	}
-	else
+	if (!home)
 	{
 		home = getenv("HOME");
-		if(!home) return "";
 
-		path = std::string(home) + "/.config/";
+		if(!home) {
+			LOGE << "Unable to find HOME directory";
+			return "";
+		}
 	}
 
-	path += cfg_filename;
+	sprintf(buf, "%s/%s/%s", home, cfg_folder, cfg_filename);
 
-	LOGI << "Config path: " + path;
-
-	return path;
+	return std::string(buf);
 }
+
 #else
 std::wstring getExecutablePath()
 {
-    wchar_t buf[FILENAME_MAX] {};
-    GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
-    std::wstring path(buf);
+	wchar_t buf[FILENAME_MAX] {};
+	GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
+	std::wstring path(buf);
 
-    std::wstring appname = L"gammy.exe";
-    path.erase(path.find(appname), appname.length());
+	std::wstring appname = L"gammy.exe";
+	path.erase(path.find(appname), appname.length());
 
-    path += L"gammysettings.cfg";
+	path += L"gammysettings.cfg";
 
-    return path;
+	return path;
 }
 #endif
 
