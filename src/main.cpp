@@ -140,18 +140,18 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		const int target_temp = should_be_low ? cfg["temp_low"] : cfg["temp_high"];
 		const int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
 
-		LOGD << "Target temp: " << target_temp << " K";
-
 		int cur_step = cfg["temp_step"];
 
 		if(target_step == cur_step)
 		{
-			LOGD << "Temperature is already at target.";
+			LOGD << "Temp already at target (" << target_temp << " K)";
 
 			temp_state = should_be_low ? LOW : HIGH;
 
 			continue;
 		}
+
+		LOGD << "Temp target: " << target_temp << " K";
 
 		temp_state = should_be_low ? LOWERING : INCREASING;
 
@@ -166,19 +166,9 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		double time = 0;
 
-		const auto adjusted = [&]
-		{
-			time += time_incr;
-			cfg["temp_step"] = int(easeInOutQuad(time, start, distance, duration));
+		LOGD << "(" << start << "->" << end << ')';
 
-			w.setTempSlider(cfg["temp_step"]);
-
-			return cfg["temp_step"] == end;
-		};
-
-		LOGD << "Adjusting temp...";
-
-		while (cfg["auto_temp"])
+		while (cfg["temp_step"] != end && cfg["auto_temp"])
 		{
 			if(w.quit) break;
 
@@ -194,15 +184,17 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				else break;
 			}
 
-			if(adjusted())
-			{
-				LOGD << "Temp adjustment done.";
-				temp_state = should_be_low ? LOW : HIGH;
-				break;
-			}
+			time += time_incr;
+			cfg["temp_step"] = int(easeInOutQuad(time, start, distance, duration));
+
+			w.setTempSlider(cfg["temp_step"]);
 
 			sleep_for(milliseconds(1000 / FPS));
 		}
+
+		temp_state = should_be_low ? LOW : HIGH;
+
+		LOGD << "(" << start << "->" << end << ") done";
 	}
 
 	LOGV << "Notifying clock thread";
@@ -255,7 +247,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 		if (target == brt_step)
 		{
-			LOGD << "Brt already at target";
+			LOGD << "Brt already at target (" << target << ')';
 			continue;
 		}
 

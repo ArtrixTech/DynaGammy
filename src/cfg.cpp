@@ -18,7 +18,7 @@ json setDefault()
 	return
 	{
 		{"brt_fps", 60},
-		{"temp_fps", 30},
+		{"temp_fps", 45},
 		{"brightness", brt_slider_steps},
 		{"min_br", brt_slider_steps / 2 },
 		{"max_br", brt_slider_steps },
