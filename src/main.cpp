@@ -155,6 +155,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		temp_state = should_be_low ? LOWERING : INCREASING;
 
+		const int FPS      = cfg["temp_fps"];
 		const int start    = cur_step;
 		const int end      = target_step;
 		const int distance = end - start;
@@ -254,43 +255,35 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 		if (target == brt_step)
 		{
-			LOGD << "Brightness is already at target.";
+			LOGD << "Brt already at target";
 			continue;
 		}
 
 		const int start = brt_step;
 		const int end   = target;
-
 		double duration = cfg["speed"];
 
+		const int FPS           = cfg["brt_fps"];
 		const double iterations = FPS * duration;
 		const int distance      = end - start;
 		const double time_incr  = duration / iterations;
 
 		double time = 0;
 
-		const auto adjust = [&]
+		LOGD << "(" << start << "->" << end << ')';
+
+		while (brt_step != target && !args.br_needs_change && cfg["auto_br"] && !w.quit)
 		{
 			time += time_incr;
-			brt_step = int(std::ceil(easeOutExpo(time, start, distance, duration)));
+
+			brt_step = std::round(easeOutExpo(time, start, distance, duration));
 
 			w.setBrtSlider(brt_step);
 
-			return brt_step == target;
-		};
-
-		while (!args.br_needs_change && cfg["auto_br"])
-		{
-			if(w.quit) break;
-
-			if(adjust())
-			{
-				LOGD << "Brt adjustment done.";
-				break;
-			}
-
 			sleep_for(milliseconds(1000 / FPS));
 		}
+
+		LOGD << "(" << start << "->" << end << ") done";
 	}
 }
 
