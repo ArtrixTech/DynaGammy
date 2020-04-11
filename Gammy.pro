@@ -12,9 +12,10 @@ message(Qt version: $$[QT_VERSION])
 TARGET = gammy
 TEMPLATE = app
 
-CONFIG += c++11 c++17
+CONFIG += c++11 c++1z
 
 CONFIG(release) {
+    message(Release build $$[CONFIG])
     CONFIG += optimize_full
 }
 
