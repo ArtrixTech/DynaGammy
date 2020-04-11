@@ -15,7 +15,7 @@ TEMPLATE = app
 CONFIG += c++11 c++1z
 
 CONFIG(release) {
-    message(Release build $$[CONFIG])
+    message(Release build)
     CONFIG += optimize_full
 }
 
