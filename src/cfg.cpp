@@ -53,7 +53,7 @@ void read()
 	std::ifstream file(path, std::fstream::in | std::fstream::app);
 
 	if(!file.good() || !file.is_open()) {
-		LOGE << "Unable to open config";
+		LOGE << "Unable to open config at path: " << path;
 		return;
 	}
 
