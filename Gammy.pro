@@ -44,6 +44,19 @@ unix:{
     HEADERS += src/x11.h
     SOURCES += src/x11.cpp
     LIBS += -lX11 -lXxf86vm
+
+    isEmpty(PREFIX) {
+        PREFIX = /usr/opt
+    }
+
+    isEmpty(BINDIR) {
+        BINDIR = bin
+    }
+
+    BINDIR = $$absolute_path($$BINDIR, $$PREFIX)
+    target.path = $$BINDIR
+
+    message(Install path: $$target.path)
 }
 
 RESOURCES += res.qrc
@@ -55,7 +68,7 @@ OBJECTS_DIR = res/tmp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
+#else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 # Make the compiler emit warnings for deprecated Qt features
