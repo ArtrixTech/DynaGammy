@@ -8,6 +8,7 @@
 
 #include <array>
 #include <vector>
+#include "stdint.h"
 
 double lerp(double start, double end, double factor);
 double normalize(double start, double end, double value);
