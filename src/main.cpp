@@ -110,6 +110,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		}
 	});
 
+	bool intermediate = false;
+
 	while (true)
 	{
 		// Lock
@@ -118,7 +120,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			temp_cv.wait(lock, [&]
 			{
-				return needs_change || force || w.quit;
+				return needs_change || force || intermediate || w.quit;
 			});
 
 			if(w.quit) break;
@@ -128,6 +130,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				resetInterval();
 				should_be_low = checkTime();
 				force         = false;
+				intermediate = false;
 
 				quick = !((temp_state == LOWERING && should_be_low) || ((temp_state == INCREASING) && !should_be_low));
 			}
@@ -137,16 +140,33 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		if(!cfg["auto_temp"]) continue;
 
-		const int target_temp = should_be_low ? cfg["temp_low"] : cfg["temp_high"];
-		const int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
+		const auto full_temp_time = start_time.addMSecs(cfg["temp_speed"].get<double>() * 60000);
+
+		auto secs_to_peak = QTime::currentTime().secsTo(full_temp_time);
+		if(secs_to_peak < 0) { secs_to_peak = 0; }
+
+		int target_temp;
+
+		if(secs_to_peak > 0 && !intermediate)
+		{
+			target_temp = remap(secs_to_peak, 60 * 60, 0, cfg["temp_high"], cfg["temp_low"]);
+		}
+		else
+		{
+			target_temp = should_be_low ? cfg["temp_low"] : cfg["temp_high"];
+			quick = false;
+		}
+
+		int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
 
 		int cur_step = cfg["temp_step"];
 
-		if(target_step == cur_step)
+		if(cur_step == target_step)
 		{
 			LOGD << "Temp already at target (" << target_temp << " K)";
 
 			temp_state = should_be_low ? LOW : HIGH;
+			intermediate = false;
 
 			continue;
 		}
@@ -156,19 +176,19 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		temp_state = should_be_low ? LOWERING : INCREASING;
 
 		const int FPS      = cfg["temp_fps"];
-		const int start    = cur_step;
-		const int end      = target_step;
-		const int distance = end - start;
+		const int distance = target_step - cur_step;
 
-		const double duration   = quick ? (2) : (cfg["temp_speed"].get<double>() * 60);
+		double duration   = quick ? (2) : (cfg["temp_speed"].get<double>() * 60) - (3600 - secs_to_peak);
+		if(duration < 2) duration = 2;
+
 		const double iterations = FPS * duration;
 		const double time_incr  = duration / iterations;
 
 		double time = 0;
 
-		LOGD << "(" << start << "->" << end << ')';
+		LOGD << "(" << cur_step << "->" << target_step << ')';
 
-		while (cfg["temp_step"] != end && cfg["auto_temp"])
+		while (cfg["temp_step"] != target_step && cfg["auto_temp"])
 		{
 			if(w.quit) break;
 
@@ -177,24 +197,27 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				resetInterval();
 				should_be_low = checkTime();
 
-				if((temp_state == LOWERING && should_be_low) || (temp_state == INCREASING && !should_be_low))
+				if(0/*(temp_state == LOWERING && should_be_low) || (temp_state == INCREASING && !should_be_low)*/)
 				{
+					LOGD << "Negating force";
 					force = false;
 				}
 				else break;
 			}
 
 			time += time_incr;
-			cfg["temp_step"] = int(easeInOutQuad(time, start, distance, duration));
+			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration));
 
 			w.setTempSlider(cfg["temp_step"]);
 
+			//LOGD << "temp_step: " << cfg["temp_step"] << " target: " << target_step << " time:" << time;
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
 		temp_state = should_be_low ? LOW : HIGH;
 
-		LOGD << "(" << start << "->" << end << ") done";
+		intermediate = cfg["temp_step"] != (should_be_low ? cfg["temp_low"] : cfg["temp_high"]);
+		LOGD << "(" << cur_step << "->" << target_step << ") done - INTERMEDIATE: " << intermediate;
 	}
 
 	LOGV << "Notifying clock thread";
