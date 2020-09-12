@@ -104,12 +104,12 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 	/* We always need to catch up temperature a bit when:
 	- the clock above checks the time a bit after the start time passes
 	- we wake up from suspend
-	- we modify start time or adaptation speed */
+	- we modify start time, temperature targets or adaptation speed */
 	bool already_catched_up = false;
 
 	while (true)
 	{
-		// Lock ------------------------------------------------------------------------------------------------
+		// Lock ------------------------------------------------------------------------------------------
 
 		{
 			std::unique_lock<std::mutex> lock(temp_mtx);
@@ -135,7 +135,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		if(!cfg["auto_temp"]) continue;
 
-		//------------------------------------------------------------------------------------------------
+		// -----------------------------------------------------------------------------------------------
 
 		int   target_temp; // Temperature target in Kelvin
 		double duration_s; // Seconds it takes to reach it
