@@ -68,13 +68,6 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		return (cur_time >= start_time) || (cur_time < end_time);
 	};
 
-	enum TempState { // Not used anymore, may be deleted later
-		HIGH,
-		LOWERING,
-		LOW,
-		INCREASING
-	} temp_state = HIGH;
-
 	resetInterval();
 
 	bool should_be_low = checkTime();
@@ -181,15 +174,12 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		{
 			LOGD << "Temp already at target (" << target_temp << " K)";
 
-			temp_state = should_be_low ? LOW : HIGH;
 			already_catched_up = false;
 
 			continue;
 		}
 
 		LOGD << "Temp target: " << target_temp << " K";
-
-		temp_state = should_be_low ? LOWERING : INCREASING;
 
 		const int    FPS        = cfg["temp_fps"];
 		const double iterations = FPS * duration_s;
@@ -218,8 +208,6 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			sleep_for(milliseconds(1000 / FPS));
 		}
-
-		temp_state = should_be_low ? LOW : HIGH;
 
 		already_catched_up = cur_step != cfg["target_step"];
 
