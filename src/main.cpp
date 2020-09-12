@@ -55,23 +55,15 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		t = QTime(std::stoi(start_hour), std::stoi(start_min));
 	};
 
-	const auto resetInterval = [&]
+	const auto updateInterval = [&]
 	{
 		setTime(start_time, cfg["time_start"]);
 		setTime(end_time,   cfg["time_end"]);
 	};
 
-	const auto checkTime = [&]
-	{
-		QTime cur_time = QTime::currentTime();
+	updateInterval();
 
-		return (cur_time >= start_time) || (cur_time < end_time);
-	};
-
-	resetInterval();
-
-	bool should_be_low = checkTime();
-	bool needs_change  = cfg["auto_temp"];
+	bool needs_change = cfg["auto_temp"];
 
 	convar     clock_cv;
 	std::mutex clock_mtx;
@@ -92,9 +84,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			{
 				std::lock_guard<std::mutex> lock(temp_mtx);
-
-				should_be_low = checkTime();
-				needs_change  = true; // @TODO: Should be false if the state hasn't changed
+				needs_change = true; // @TODO: Should be false if the state hasn't changed
 			}
 
 			temp_cv.notify_one();
@@ -123,10 +113,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			if(force)
 			{
-				resetInterval();
-				should_be_low = checkTime();
-				force         = false;
-
+				updateInterval();
+				force = false;
 				already_catched_up = false;
 			}
 
@@ -137,33 +125,36 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		// -----------------------------------------------------------------------------------------------
 
-		int   target_temp; // Temperature target in Kelvin
-		double duration_s; // Seconds it takes to reach it
+		int   target_temp;     // Temperature target in Kelvin
+		double duration_s = 2; // Seconds it takes to reach it
 
-		const double temp_speed_s = cfg["temp_speed"].get<double>() * 60;
+		const double adapt_time_s = cfg["temp_speed"].get<double>() * 60;
+		const QTime cur_time      = QTime::currentTime();
 
-		if(should_be_low) {
+		if((cur_time >= start_time) || (cur_time < end_time))
+		{
+			int secs_since_start = start_time.secsTo(cur_time);
 
-			const int secs_since_start = start_time.secsTo(QTime::currentTime());
-
-			if(already_catched_up) {
-				target_temp = cfg["temp_low"];
-				duration_s  = temp_speed_s - secs_since_start;
+			if(secs_since_start > adapt_time_s) {
+				secs_since_start = adapt_time_s;
 			}
-			else {
-				target_temp = remap(secs_since_start, temp_speed_s, 0, cfg["temp_low"], cfg["temp_high"]);
-				duration_s  = 2;
 
-				if(target_temp < cfg["temp_low"]) { target_temp = cfg["temp_low"]; } // idk why this happens
+			if(already_catched_up)
+			{
+				target_temp = cfg["temp_low"];
+				duration_s  = adapt_time_s - secs_since_start;
+
+				if(duration_s < 2) { duration_s = 2; }
+			}
+			else
+			{
+				target_temp = remap(secs_since_start, 0, adapt_time_s, cfg["temp_high"], cfg["temp_low"]);
 			}
 		}
 		else
 		{
 			target_temp = cfg["temp_high"];
-			duration_s  = 2;
 		}
-
-		if(duration_s < 2) { duration_s = 2; }
 
 		LOGD << "Duration: " << duration_s / 60 << " min";
 
