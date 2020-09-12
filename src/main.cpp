@@ -68,7 +68,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		return (cur_time >= start_time) || (cur_time < end_time);
 	};
 
-	enum TempState {
+	enum TempState { // Not used anymore, may be deleted later
 		HIGH,
 		LOWERING,
 		LOW,
@@ -79,7 +79,6 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 	bool should_be_low = checkTime();
 	bool needs_change  = cfg["auto_temp"];
-	bool quick         = true;
 
 	convar     clock_cv;
 	std::mutex clock_mtx;
@@ -103,24 +102,28 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 				should_be_low = checkTime();
 				needs_change  = true; // @TODO: Should be false if the state hasn't changed
-				quick         = false;
 			}
 
 			temp_cv.notify_one();
 		}
 	});
 
-	bool intermediate = false;
+	/* We always need to catch up temperature a bit when:
+	- the clock above checks the time a bit after the start time passes
+	- we wake up from suspend
+	- we modify start time or adaptation speed */
+	bool already_catched_up = false;
 
 	while (true)
 	{
-		// Lock
+		// Lock ------------------------------------------------------------------------------------------------
+
 		{
 			std::unique_lock<std::mutex> lock(temp_mtx);
 
 			temp_cv.wait(lock, [&]
 			{
-				return needs_change || force || intermediate || w.quit;
+				return needs_change || already_catched_up || force || w.quit;
 			});
 
 			if(w.quit) break;
@@ -130,9 +133,8 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 				resetInterval();
 				should_be_low = checkTime();
 				force         = false;
-				intermediate = false;
 
-				quick = !((temp_state == LOWERING && should_be_low) || ((temp_state == INCREASING) && !should_be_low));
+				already_catched_up = false;
 			}
 
 			needs_change = false;
@@ -140,33 +142,47 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		if(!cfg["auto_temp"]) continue;
 
-		const auto full_temp_time = start_time.addMSecs(cfg["temp_speed"].get<double>() * 60000);
+		//------------------------------------------------------------------------------------------------
 
-		auto secs_to_peak = QTime::currentTime().secsTo(full_temp_time);
-		if(secs_to_peak < 0) { secs_to_peak = 0; }
+		int   target_temp; // Temperature target in Kelvin
+		double duration_s; // Seconds it takes to reach it
 
-		int target_temp;
+		const double temp_speed_s = cfg["temp_speed"].get<double>() * 60;
 
-		if(secs_to_peak > 0 && !intermediate)
-		{
-			target_temp = remap(secs_to_peak, 60 * 60, 0, cfg["temp_high"], cfg["temp_low"]);
+		if(should_be_low) {
+
+			const int secs_since_start = start_time.secsTo(QTime::currentTime());
+
+			if(already_catched_up) {
+				target_temp = cfg["temp_low"];
+				duration_s  = temp_speed_s - secs_since_start;
+			}
+			else {
+				target_temp = remap(secs_since_start, temp_speed_s, 0, cfg["temp_low"], cfg["temp_high"]);
+				duration_s  = 2;
+
+				if(target_temp < cfg["temp_low"]) { target_temp = cfg["temp_low"]; } // idk why this happens
+			}
 		}
 		else
 		{
-			target_temp = should_be_low ? cfg["temp_low"] : cfg["temp_high"];
-			quick = false;
+			target_temp = cfg["temp_high"];
+			duration_s  = 2;
 		}
 
-		int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
+		if(duration_s < 2) { duration_s = 2; }
 
-		int cur_step = cfg["temp_step"];
+		LOGD << "Duration: " << duration_s / 60 << " min";
+
+		int cur_step    = cfg["temp_step"];
+		int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
 
 		if(cur_step == target_step)
 		{
 			LOGD << "Temp already at target (" << target_temp << " K)";
 
 			temp_state = should_be_low ? LOW : HIGH;
-			intermediate = false;
+			already_catched_up = false;
 
 			continue;
 		}
@@ -175,14 +191,10 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		temp_state = should_be_low ? LOWERING : INCREASING;
 
-		const int FPS      = cfg["temp_fps"];
-		const int distance = target_step - cur_step;
-
-		double duration   = quick ? (2) : (cfg["temp_speed"].get<double>() * 60) - (3600 - secs_to_peak);
-		if(duration < 2) duration = 2;
-
-		const double iterations = FPS * duration;
-		const double time_incr  = duration / iterations;
+		const int    FPS        = cfg["temp_fps"];
+		const double iterations = FPS * duration_s;
+		const double time_incr  = duration_s / iterations;
+		const int    distance   = target_step - cur_step;
 
 		double time = 0;
 
@@ -196,28 +208,22 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			{
 				resetInterval();
 				should_be_low = checkTime();
-
-				if(0/*(temp_state == LOWERING && should_be_low) || (temp_state == INCREASING && !should_be_low)*/)
-				{
-					LOGD << "Negating force";
-					force = false;
-				}
-				else break;
+				break;
 			}
 
 			time += time_incr;
-			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration));
+			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration_s));
 
 			w.setTempSlider(cfg["temp_step"]);
 
-			//LOGD << "temp_step: " << cfg["temp_step"] << " target: " << target_step << " time:" << time;
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
 		temp_state = should_be_low ? LOW : HIGH;
 
-		intermediate = cfg["temp_step"] != (should_be_low ? cfg["temp_low"] : cfg["temp_high"]);
-		LOGD << "(" << cur_step << "->" << target_step << ") done - INTERMEDIATE: " << intermediate;
+		already_catched_up = cur_step != cfg["target_step"];
+
+		LOGD << "(" << cur_step << "->" << target_step << ") done";
 	}
 
 	LOGV << "Notifying clock thread";
@@ -276,12 +282,12 @@ void adjustBrightness(Args &args, MainWindow &w)
 
 		const int start = brt_step;
 		const int end   = target;
-		double duration = cfg["speed"];
+		double duration_s = cfg["speed"];
 
 		const int FPS           = cfg["brt_fps"];
-		const double iterations = FPS * duration;
+		const double iterations = FPS * duration_s;
 		const int distance      = end - start;
-		const double time_incr  = duration / iterations;
+		const double time_incr  = duration_s / iterations;
 
 		double time = 0;
 
@@ -291,7 +297,7 @@ void adjustBrightness(Args &args, MainWindow &w)
 		{
 			time += time_incr;
 
-			brt_step = std::round(easeOutExpo(time, start, distance, duration));
+			brt_step = std::round(easeOutExpo(time, start, distance, duration_s));
 
 			w.setBrtSlider(brt_step);
 
