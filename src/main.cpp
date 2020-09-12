@@ -192,14 +192,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		while (cfg["temp_step"] != target_step && cfg["auto_temp"])
 		{
-			if(w.quit) break;
-
-			if(force)
-			{
-				resetInterval();
-				should_be_low = checkTime();
-				break;
-			}
+			if(force || w.quit) break;
 
 			time += time_incr;
 			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration_s));
