@@ -91,11 +91,12 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		}
 	});
 
-	/* We always need to catch up temperature a bit when:
-	- the clock above checks the time a bit after the start time passes
-	- we wake up from suspend
-	- we modify start time, temperature targets or adaptation speed */
-	bool already_catched_up = false;
+	/* The temperature is adjusted in two steps with this flag.
+	 * The first one is for quickly catching up to the proper temperature when:
+	 * - the clock above checks the time a bit after the start time set by the user passes
+	 * - we wake up from suspend
+	 * - we modify start time, temperature targets or adaptation speed */
+	bool first_step_done = false;
 
 	while (true)
 	{
@@ -106,7 +107,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 			temp_cv.wait(lock, [&]
 			{
-				return needs_change || already_catched_up || force || w.quit;
+				return needs_change || first_step_done || force || w.quit;
 			});
 
 			if(w.quit) break;
@@ -115,7 +116,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			{
 				updateInterval();
 				force = false;
-				already_catched_up = false;
+				first_step_done = false;
 			}
 
 			needs_change = false;
@@ -125,30 +126,26 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 		// -----------------------------------------------------------------------------------------------
 
-		int   target_temp;     // Temperature target in Kelvin
-		double duration_s = 2; // Seconds it takes to reach it
+		int    target_temp = cfg["temp_low"]; // Temperature target in Kelvin
+		double duration_s  = 2;               // Seconds it takes to reach it
 
 		const double adapt_time_s = cfg["temp_speed"].get<double>() * 60;
 		const QTime cur_time      = QTime::currentTime();
 
 		if((cur_time >= start_time) || (cur_time < end_time))
 		{
-			int secs_since_start = start_time.secsTo(cur_time);
+			int secs_from_start = start_time.secsTo(cur_time);
 
-			if(secs_since_start > adapt_time_s) {
-				secs_since_start = adapt_time_s;
-			}
+			if(secs_from_start > adapt_time_s) { secs_from_start = adapt_time_s; }
 
-			if(already_catched_up)
+			if(!first_step_done)
 			{
-				target_temp = cfg["temp_low"];
-				duration_s  = adapt_time_s - secs_since_start;
-
-				if(duration_s < 2) { duration_s = 2; }
+				target_temp = remap(secs_from_start, 0, adapt_time_s, cfg["temp_high"], cfg["temp_low"]);
 			}
 			else
 			{
-				target_temp = remap(secs_since_start, 0, adapt_time_s, cfg["temp_high"], cfg["temp_low"]);
+				duration_s = adapt_time_s - secs_from_start;
+				if(duration_s < 2) { duration_s = 2; }
 			}
 		}
 		else
@@ -165,7 +162,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		{
 			LOGD << "Temp already at target (" << target_temp << " K)";
 
-			already_catched_up = false;
+			first_step_done = false;
 
 			continue;
 		}
@@ -193,7 +190,7 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
-		already_catched_up = cur_step != cfg["target_step"];
+		first_step_done = true;
 
 		LOGD << "(" << cur_step << "->" << target_step << ") done";
 	}
