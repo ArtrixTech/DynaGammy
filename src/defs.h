@@ -20,6 +20,7 @@ constexpr OS os = Windows;
 constexpr OS os = Unix;
 #endif
 
+constexpr const char* g_app_version = "v0.9.59";
 extern int brt_step;
 
 constexpr int min_temp_kelvin    = 2000;

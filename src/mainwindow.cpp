@@ -17,6 +17,7 @@
 #include <QMenu>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusConnection>
+#include <QMessageBox>
 
 #include <thread>
 
@@ -75,7 +76,7 @@ bool MainWindow::listenWakeupSignal()
 
 void MainWindow::wakeupSlot(bool status) {
 
-	// The signal emits TRUE when going to sleep. We only care about wakeup (FALSE)	std::this_thread::sleep_for(std::chrono::seconds(3));
+	// The signal emits TRUE when going to sleep. We only care about wakeup (FALSE)
 	if(status) { return; }
 
 	LOGD << "Waking up from sleep. Resetting screen... (3 sec)";
@@ -260,11 +261,18 @@ QMenu* MainWindow::createMenu()
 	connect(quit_prev, &QAction::triggered, this, [=] { exit(true); });
 	menu->addAction(quit_prev);
 
+
 #ifndef _WIN32
 	QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
 	connect(quit_pure, &QAction::triggered, this, [=] { exit(false); });
 	menu->addAction(quit_pure);
 #endif
+
+	menu->addSeparator();
+
+	QAction *about = new QAction("&Gammy " + QString(g_app_version), this);
+	about->setEnabled(false);
+	menu->addAction(about);
 
 	return menu;
 }

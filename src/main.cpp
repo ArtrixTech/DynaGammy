@@ -433,7 +433,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 void sig_handler(int signo);
 
 void init()
-{
+{	
 	static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
 
@@ -480,6 +480,13 @@ void init()
 
 int main(int argc, char **argv)
 {
+	if(argc > 1) {
+		if(strcmp(argv[1], "-v") == 0) {
+			std::cout << g_app_version << '\n';
+			exit(0);
+		}
+	}
+
 	init();
 
 	QApplication a(argc, argv);
