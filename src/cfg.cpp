@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (C) 2019 Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
@@ -57,6 +57,8 @@ void read()
 		return;
 	}
 
+	LOGD << "Reading from: " << path;
+
 	// Seek file end
 	file.seekg(0, std::ios::end);
 
@@ -103,6 +105,8 @@ void write()
 		LOGE << "Unable to open config file";
 		return;
 	}
+
+	LOGD << "Writing to: " << path;
 
 	try {
 		file << std::setw(4) << cfg;
