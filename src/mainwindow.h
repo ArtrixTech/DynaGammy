@@ -74,6 +74,8 @@ private slots:
 
 	void on_manBrSlider_sliderPressed();
 
+	void wakeupSlot(bool);
+
 private:
 	Ui::MainWindow *ui;
 	QSystemTrayIcon *trayIcon;
@@ -81,6 +83,7 @@ private:
 	void toggleMainBrSliders(bool show);
 	void toggleBrtSlidersRange(bool);
 	void closeEvent(QCloseEvent *);
+	bool listenWakeupSignal();
 
 #ifndef _WIN32
 	X11 *x11;

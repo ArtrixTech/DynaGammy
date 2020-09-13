@@ -15,6 +15,10 @@
 
 #include <QScreen>
 #include <QMenu>
+#include <QtDBus/QDBusInterface>
+#include <QtDBus/QDBusConnection>
+
+#include <thread>
 
 #ifndef _WIN32
 
@@ -38,8 +42,69 @@ MainWindow::MainWindow(QWidget *parent, convar *ss_cv, convar *temp_cv)
 	init();
 }
 
+bool MainWindow::listenWakeupSignal()
+{
+	QDBusConnection dbus = QDBusConnection::systemBus();
+
+	if (!dbus.isConnected()) {
+		LOGE << "Cannot connect to the system D-Bus.";
+		return false;
+	}
+
+	const QString service   = "org.freedesktop.login1";
+	const QString path      = "/org/freedesktop/login1";
+	const QString interface = "org.freedesktop.login1.Manager";
+	const QString name      = "PrepareForSleep";
+
+	QDBusInterface iface(service, path, interface, dbus, this);
+
+	if (!iface.isValid()) {
+		LOGE << "Wakeup interface not found. Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
+		return false;
+	}
+
+	bool connected = dbus.connect(service, path, interface, name, this, SLOT(wakeupSlot(bool)));
+
+	if(!connected) {
+		LOGE << "Cannot connect to wakeup signal. Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
+		return false;
+	}
+
+	return true;
+}
+
+void MainWindow::wakeupSlot(bool status) {
+
+	// The signal emits TRUE when going to sleep. We only care about wakeup (FALSE)	std::this_thread::sleep_for(std::chrono::seconds(3));
+	if(status) { return; }
+
+	LOGD << "Waking up from sleep. Resetting screen... (3 sec)";
+
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+
+	if(!cfg["auto_br"])
+	{
+		if constexpr(os == OS::Windows) {
+			setGDIGamma(cfg["brightness"], cfg["temp_step"]);
+		}
+#ifndef _WIN32
+		else x11->setXF86Gamma(cfg["brightness"], cfg["temp_step"]);
+#endif
+	}
+
+	// Force temperature change (will be ignored if disabled)
+	*force_temp_change = true;
+	temp_cv->notify_one();
+}
+
 void MainWindow::init()
 {
+#ifndef _WIN32
+	if(!listenWakeupSignal()) {
+		LOGE << "Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
+	}
+#endif
+
 	ui->setupUi(this);
 
 	QIcon icon = QIcon(":res/icons/128x128ball.ico");
@@ -88,11 +153,11 @@ void MainWindow::init()
 		this->trayIcon->setToolTip(QString("Gammy"));
 		this->trayIcon->show();
 		connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
-        
-        if constexpr(os == Windows) 
-        {
-            menu->setStyleSheet("color:black");
-        }
+
+		if constexpr(os == Windows)
+		{
+			menu->setStyleSheet("color:black");
+		}
 
 		LOGI << "Tray icon created";
 	}
