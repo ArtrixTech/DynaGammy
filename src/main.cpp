@@ -129,12 +129,25 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 		int    target_temp = cfg["temp_low"]; // Temperature target in Kelvin
 		double duration_s  = 2;               // Seconds it takes to reach it
 
-		const double adapt_time_s = cfg["temp_speed"].get<double>() * 60;
-		const QTime cur_time      = QTime::currentTime();
+		const double    adapt_time_s = cfg["temp_speed"].get<double>() * 60;
+		const QDateTime cur_datetime = QDateTime::currentDateTime();
+		const QTime     cur_time     = cur_datetime.time();
 
 		if((cur_time >= start_time) || (cur_time < end_time))
 		{
-			int secs_from_start = start_time.secsTo(cur_time);
+			int secs_from_start = 0;
+
+			QDateTime start_datetime(cur_datetime.date(), start_time);
+
+			// If the current time is earlier than both start and end time
+			// we need to count seconds from yesterday
+			if(cur_time < end_time) {
+				start_datetime = start_datetime.addDays(-1);
+			}
+
+			secs_from_start = start_datetime.secsTo(cur_datetime);
+
+			LOGD << "secs_from_start: " << secs_from_start << " adapt_time_s: " << adapt_time_s;
 
 			if(secs_from_start > adapt_time_s) { secs_from_start = adapt_time_s; }
 
