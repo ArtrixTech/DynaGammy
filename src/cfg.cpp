@@ -119,7 +119,7 @@ void write()
 std::string getConfigPath()
 {
 	constexpr const char *cfg_filename = "gammy";
-	constexpr const char *cfg_folder   = ".config";
+	const char *cfg_folder = "";
 
 	char buf[4096];
 
@@ -127,7 +127,8 @@ std::string getConfigPath()
 
 	if (!home)
 	{
-		home = getenv("HOME");
+		home		 = getenv("HOME");
+		cfg_folder	 = ".config";
 
 		if(!home) {
 			LOGE << "Unable to find HOME directory";
