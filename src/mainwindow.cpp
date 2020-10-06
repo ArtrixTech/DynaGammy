@@ -79,19 +79,25 @@ void MainWindow::wakeupSlot(bool status) {
 	// The signal emits TRUE when going to sleep. We only care about wakeup (FALSE)
 	if(status) { return; }
 
-	LOGD << "Waking up from sleep. Resetting screen... (3 sec)";
+	LOGD << "Waking up from sleep.";
 
-	std::this_thread::sleep_for(std::chrono::seconds(3));
-
-	if(!cfg["auto_br"])
+	std::thread reset ([&]
 	{
-		if constexpr(os == OS::Windows) {
-			setGDIGamma(cfg["brightness"], cfg["temp_step"]);
-		}
-#ifndef _WIN32
-		else x11->setXF86Gamma(cfg["brightness"], cfg["temp_step"]);
+		int i = 0;
+
+		while(i++ < 5)
+		{
+			LOGD << "Resetting screen (" << i << ")";
+#ifdef _WIN32
+			setGDIGamma(brt_step, cfg["temp_step"]);
+#else
+			x11->setXF86Gamma(brt_step, cfg["temp_step"]);
 #endif
-	}
+			std::this_thread::sleep_for(std::chrono::seconds(3));
+		}
+	});
+
+	reset.detach();
 
 	// Force temperature change (will be ignored if disabled)
 	*force_temp_change = true;
