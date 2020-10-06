@@ -317,7 +317,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 	const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
 	const uint64_t len = screen_res * 4;
 
-	args.x11->setXF86Gamma(brt_step, cfg["temp_step"]);
+	args.x11->setGamma(brt_step, cfg["temp_step"]);
 #endif
 
 	LOGD << "Buffer size: " << len;
@@ -342,7 +342,7 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 			sleep_for(milliseconds(cfg["polling_rate"]));
 		}
 #else
-		args.x11->getX11Snapshot(buf);
+		args.x11->getSnapshot(buf);
 
 		sleep_for(milliseconds(cfg["polling_rate"]));
 #endif
@@ -536,11 +536,10 @@ int main(int argc, char **argv)
 
 	LOGV << "recordScreen joined";
 
-	if constexpr (os == OS::Windows) {
-		setGDIGamma(brt_slider_steps, 0);
-	}
-#ifndef _WIN32
-	else x11.setInitialGamma(wnd.set_previous_gamma);
+#ifdef _WIN32
+	setGDIGamma(brt_slider_steps, 0);
+#else
+	x11.setInitialGamma(wnd.set_previous_gamma);
 #endif
 
 	LOGV << "Exiting";

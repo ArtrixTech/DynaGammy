@@ -81,7 +81,7 @@ X11::X11()
 	}
 }
 
-void X11::getX11Snapshot(std::vector<uint8_t> &buf) noexcept
+void X11::getSnapshot(std::vector<uint8_t> &buf) noexcept
 {
 	const auto img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
 
@@ -116,7 +116,7 @@ void X11::fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int 
 	}
 }
 
-void X11::setXF86Gamma(int scr_br, int temp)
+void X11::setGamma(int scr_br, int temp)
 {
 	std::vector<uint16_t> r (3 * ramp_sz * sizeof(uint16_t));
 
@@ -135,7 +135,7 @@ void X11::setInitialGamma(bool set_previous)
 	else
 	{
 		LOGI << "Setting pure gamma";
-		X11::setXF86Gamma(brt_slider_steps, 0);
+		X11::setGamma(brt_slider_steps, 0);
 	}
 }
 

@@ -60,14 +60,14 @@ bool MainWindow::listenWakeupSignal()
 	QDBusInterface iface(service, path, interface, dbus, this);
 
 	if (!iface.isValid()) {
-		LOGE << "Wakeup interface not found. Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
+		LOGE << "Wakeup interface not found.";
 		return false;
 	}
 
 	bool connected = dbus.connect(service, path, interface, name, this, SLOT(wakeupSlot(bool)));
 
 	if(!connected) {
-		LOGE << "Cannot connect to wakeup signal. Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
+		LOGE << "Cannot connect to wakeup signal.";
 		return false;
 	}
 
@@ -91,7 +91,7 @@ void MainWindow::wakeupSlot(bool status) {
 #ifdef _WIN32
 			setGDIGamma(brt_step, cfg["temp_step"]);
 #else
-			x11->setXF86Gamma(brt_step, cfg["temp_step"]);
+			x11->setGamma(brt_step, cfg["temp_step"]);
 #endif
 			std::this_thread::sleep_for(std::chrono::seconds(3));
 		}
@@ -127,10 +127,8 @@ void MainWindow::init()
 
 		this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
-		if constexpr(os == OS::Windows)
-		{
-			// Extending brightness range doesn't work yet on Windows
-			ui->extendBr->hide();
+		if (windows) {
+			ui->extendBr->hide(); // Extending brightness range doesn't work yet on Windows
 		}
 
 		//ui->manBrSlider->hide();
@@ -161,8 +159,7 @@ void MainWindow::init()
 		this->trayIcon->show();
 		connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
 
-		if constexpr(os == Windows)
-		{
+		if (windows) {
 			menu->setStyleSheet("color:black");
 		}
 
@@ -338,11 +335,10 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 
 	if(this->quit) return;
 
-	if constexpr(os == OS::Windows) {
-		setGDIGamma(brt_step, val);
-	}
-#ifndef _WIN32
-	else x11->setXF86Gamma(brt_step, val);
+#ifdef _WIN32
+	setGDIGamma(brt_step, val);
+#else
+	x11->setGamma(brt_step, val);
 #endif
 
 	double temp_kelvin = remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
@@ -417,11 +413,10 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
 	brt_step = value;
 	cfg["brightness"] = value;
 
-	if constexpr(os == OS::Windows) {
-		setGDIGamma(brt_step, cfg["temp_step"]);
-	}
-#ifndef _WIN32
-	else x11->setXF86Gamma(brt_step, cfg["temp_step"]);
+#ifdef _WIN32
+	setGDIGamma(brt_step, cfg["temp_step"]);
+#else
+	x11->setGamma(brt_step, cfg["temp_step"]);
 #endif
 
 	updateBrLabel();

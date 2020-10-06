@@ -9,15 +9,10 @@
 
 typedef std::condition_variable convar;
 
-enum OS
-{
-	Windows, Unix
-};
-
 #ifdef _WIN32
-constexpr OS os = Windows;
+constexpr bool windows = true;
 #else
-constexpr OS os = Unix;
+constexpr bool windows = false;
 #endif
 
 constexpr const char* g_app_version = "v0.9.59";
