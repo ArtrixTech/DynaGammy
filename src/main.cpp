@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (C) 2019 Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
@@ -24,6 +24,7 @@
 #include <QTime>
 #include <algorithm>
 #include "mainwindow.h"
+#include "screenctl.h"
 
 // Reflects the current screen brightness
 int brt_step = brt_slider_steps;
@@ -218,15 +219,10 @@ void adjustTemperature(convar &temp_cv, MainWindow &w)
 
 struct Args
 {
-	convar br_cv;
+	convar     br_cv;
 	std::mutex br_mtx;
-
-#ifndef _WIN32
-	X11 *x11 {};
-#endif
-
-	int img_br = 0;
-	bool br_needs_change = false;
+	int        img_br = 0;
+	bool       br_needs_change = false;
 };
 
 void adjustBrightness(Args &args, MainWindow &w)
@@ -290,63 +286,26 @@ void adjustBrightness(Args &args, MainWindow &w)
 	}
 }
 
-void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
+void recordScreen(ScreenCtl &screen, Args &args, convar &ss_cv, MainWindow &w)
 {
-	using namespace std::this_thread;
-	using namespace std::chrono;
-
 	LOGV << "recordScreen() start";
 
-#ifdef _WIN32
-	const uint64_t width	= GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
-	const uint64_t height	= GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-	const uint64_t len	= width * height * 4;
+	const uint64_t screen_res = screen.getResolution();
+	const uint64_t len        = screen_res * 4;
 
-	LOGD << "Screen resolution: " << width << '*' << height;
-
-	DXGIDupl dx;
-
-	bool useDXGI = dx.initDXGI();
-
-	if (!useDXGI)
-	{
+	if(windows && !screen.initDXGI()) {
 		LOGE << "DXGI initialization failed. Using GDI instead";
 		w.setPollingRange(1000, 5000);
 	}
-#else
-	const uint64_t screen_res = args.x11->getWidth() * args.x11->getHeight();
-	const uint64_t len = screen_res * 4;
 
-	args.x11->setGamma(brt_step, cfg["temp_step"]);
-#endif
+	LOGD << "Screen res: " << screen_res << ", buffer size: " << len;
 
-	LOGD << "Buffer size: " << len;
+	screen.setGamma(brt_step, cfg["temp_step"]);
 
 	// Buffer to store screen pixels
 	std::vector<uint8_t> buf;
 
 	std::thread br_thr(adjustBrightness, std::ref(args), std::ref(w));
-
-	const auto getSnapshot = [&] (std::vector<uint8_t> &buf)
-	{
-		LOGV << "Taking screenshot";
-
-#ifdef _WIN32
-		if (useDXGI)
-		{
-			while (!dx.getDXGISnapshot(buf)) dx.restartDXGI();
-		}
-		else
-		{
-			getGDISnapshot(buf);
-			sleep_for(milliseconds(cfg["polling_rate"]));
-		}
-#else
-		args.x11->getSnapshot(buf);
-
-		sleep_for(milliseconds(cfg["polling_rate"]));
-#endif
-	};
 
 	std::mutex m;
 
@@ -355,10 +314,10 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 	bool force = false;
 
 	int
-	prev_img_br	= 0,
-	prev_min	= 0,
-	prev_max	= 0,
-	prev_offset	= 0;
+	prev_img_br = 0,
+	prev_min    = 0,
+	prev_max    = 0,
+	prev_offset = 0;
 
 	while (true)
 	{
@@ -390,7 +349,8 @@ void recordScreen(Args &args, convar &ss_cv, MainWindow &w)
 
 		while(cfg["auto_br"] && !w.quit)
 		{
-			getSnapshot(buf);
+			LOGV << "Taking screenshot";
+			screen.getSnapshot(buf);
 
 			const int img_br = calcBrightness(buf);
 			img_delta += abs(prev_img_br - img_br);
@@ -504,25 +464,19 @@ int main(int argc, char **argv)
 
 	QApplication a(argc, argv);
 
-	convar ss_cv;
-	convar temp_cv;
-	Args thr_args;
+	convar    ss_cv;
+	convar    temp_cv;
+	Args      thr_args;
+	ScreenCtl screen;
 
-#ifdef _WIN32
-	MainWindow wnd(nullptr, &ss_cv, &temp_cv);
-#else
-	X11 x11;
+	MainWindow wnd(&screen, &ss_cv, &temp_cv);
 
-	MainWindow wnd(&x11, &ss_cv, &temp_cv);
-
-	thr_args.x11 = &x11;
-	p_quit = &wnd.quit;
-	p_ss_cv = &ss_cv;
+	p_quit    = &wnd.quit;
+	p_ss_cv   = &ss_cv;
 	p_temp_cv = &temp_cv;
-#endif
 
-	std::thread temp_thr(adjustTemperature, std::ref(temp_cv), std::ref(wnd));
-	std::thread ss_thr(recordScreen, std::ref(thr_args), std::ref(ss_cv), std::ref(wnd));
+	std::thread temp_thr (adjustTemperature, std::ref(temp_cv), std::ref(wnd));
+	std::thread ss_thr   (recordScreen, std::ref(screen), std::ref(thr_args), std::ref(ss_cv), std::ref(wnd));
 
 	a.exec();
 
@@ -536,11 +490,7 @@ int main(int argc, char **argv)
 
 	LOGV << "recordScreen joined";
 
-#ifdef _WIN32
-	setGDIGamma(brt_slider_steps, 0);
-#else
-	x11.setInitialGamma(wnd.set_previous_gamma);
-#endif
+	screen.setInitialGamma(wnd.set_previous_gamma);
 
 	LOGV << "Exiting";
 

@@ -18,6 +18,7 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include "screenctl.h"
 
 #include "defs.h"
 
@@ -32,9 +33,7 @@ class MainWindow : public QMainWindow
 public:
 	explicit MainWindow(QWidget *parent = nullptr, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
 
-#ifndef _WIN32
-	explicit MainWindow(X11 *x11, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
-#endif
+	explicit MainWindow(ScreenCtl *scrctl, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
 
 	~MainWindow();
 
@@ -85,9 +84,7 @@ private:
 	void closeEvent(QCloseEvent *);
 	bool listenWakeupSignal();
 
-#ifndef _WIN32
-	X11 *x11;
-#endif
+	ScreenCtl *screen;
 
 	int wnd_offset_x = 17;
 	int wnd_offset_y = 35;

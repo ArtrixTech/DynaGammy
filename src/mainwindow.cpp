@@ -18,27 +18,15 @@
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusConnection>
 #include <QMessageBox>
-
 #include <thread>
+#include "screenctl.h"
 
-#ifndef _WIN32
-
-MainWindow::MainWindow(X11 *x11, convar *ss_cv, convar *temp_cv)
+MainWindow::MainWindow(ScreenCtl *screen, convar *ss_cv, convar *temp_cv)
 	: ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
 {
-	this->ss_cv = ss_cv;
+	this->ss_cv   = ss_cv;
 	this->temp_cv = temp_cv;
-	this->x11 = x11;
-
-	init();
-}
-#endif
-
-MainWindow::MainWindow(QWidget *parent, convar *ss_cv, convar *temp_cv)
-	: QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(new QSystemTrayIcon(this))
-{
-	this->ss_cv = ss_cv;
-	this->temp_cv = temp_cv;
+	this->screen  = screen;
 
 	init();
 }
@@ -88,11 +76,9 @@ void MainWindow::wakeupSlot(bool status) {
 		while(i++ < 5)
 		{
 			LOGD << "Resetting screen (" << i << ")";
-#ifdef _WIN32
-			setGDIGamma(brt_step, cfg["temp_step"]);
-#else
-			x11->setGamma(brt_step, cfg["temp_step"]);
-#endif
+
+			screen->setGamma(brt_step, cfg["temp_step"]);
+
 			std::this_thread::sleep_for(std::chrono::seconds(3));
 		}
 	});
@@ -335,11 +321,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 
 	if(this->quit) return;
 
-#ifdef _WIN32
-	setGDIGamma(brt_step, val);
-#else
-	x11->setGamma(brt_step, val);
-#endif
+	screen->setGamma(brt_step, cfg["temp_step"]);
 
 	double temp_kelvin = remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
 
@@ -413,11 +395,7 @@ void MainWindow::on_manBrSlider_valueChanged(int value)
 	brt_step = value;
 	cfg["brightness"] = value;
 
-#ifdef _WIN32
-	setGDIGamma(brt_step, cfg["temp_step"]);
-#else
-	x11->setGamma(brt_step, cfg["temp_step"]);
-#endif
+	screen->setGamma(brt_step, cfg["temp_step"]);
 
 	updateBrLabel();
 }

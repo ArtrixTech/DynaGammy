@@ -20,12 +20,14 @@ CONFIG(release) {
 }
 
 HEADERS += src/mainwindow.h src/utils.h \
+    src/screenctl.h \
     src/tempscheduler.h \
     src/cfg.h \
     src/RangeSlider.h \
     src/defs.h
 
 SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
+    src/screenctl.cpp \
     src/tempscheduler.cpp \
     src/cfg.cpp \
     src/RangeSlider.cpp
