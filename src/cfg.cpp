@@ -121,7 +121,7 @@ void write()
 #ifndef _WIN32
 std::string getConfigPath()
 {
-	constexpr const char *cfg_name = "gammy";
+	constexpr const char *cfg_name = "gammyconf.json";
 
 	char buf[4096];
 
@@ -145,7 +145,7 @@ std::wstring getExecutablePath()
 	std::wstring appname = L"gammy.exe";
 	path.erase(path.find(appname), appname.length());
 
-	path += L"gammysettings.cfg";
+	path += L"gammyconf.json";
 
 	return path;
 }
