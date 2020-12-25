@@ -45,7 +45,8 @@ void ScreenCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
 
 #ifdef _WIN32
 	if (useDXGI) {
-		while (!dx.getDXGISnapshot(buf)) dx.restartDXGI();
+		while (!dx.getSnapshot(buf))
+			dx.restartDXGI();
 	}
 	else {
 		getGDISnapshot(buf);

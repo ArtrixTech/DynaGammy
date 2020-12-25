@@ -23,9 +23,9 @@ class DXGIDupl
 public:
     DXGIDupl();
 
-    bool initDXGI();
-    bool getDXGISnapshot(std::vector<uint8_t> &buf) noexcept;
-    void restartDXGI();
+    bool init();
+    bool getSnapshot(std::vector<uint8_t> &buf) noexcept;
+    void restart();
 
     ~DXGIDupl();
 };

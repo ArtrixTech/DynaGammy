@@ -1,15 +1,15 @@
 #include "tempscheduler.h"
 #include "ui_tempscheduler.h"
 #include "cfg.h"
+#include "gammactl.h"
 
-TempScheduler::TempScheduler(QWidget *parent, convar *temp_cv, bool *force_change) :
+TempScheduler::TempScheduler(QWidget *parent, GammaCtl *gammactl) :
 	QDialog(parent),
 	ui(new Ui::TempScheduler)
 {
 	ui->setupUi(this);
 
-	this->temp_cv = temp_cv;
-	this->force_change = force_change;
+	this->gammactl = gammactl;
 
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
@@ -29,9 +29,8 @@ void TempScheduler::on_buttonBox_accepted()
 	QTime t_start = QTime(start_hr, end_hr);
 	QTime t_end = QTime(start_min, end_min);
 
-	if(t_start <= t_end)
-	{
-		LOGW << "Start time is earlier or equal to end, setting to end time + 1";
+	if (t_start <= t_end) {
+		LOGW << "Start time is earlier or equal to end, setting to end time + 1 h";
 		t_start = t_end.addSecs(3600);
 	}
 
@@ -45,8 +44,7 @@ void TempScheduler::on_buttonBox_accepted()
 
 	write();
 
-	*force_change = true;
-	temp_cv->notify_one();
+	gammactl->notify_temp(true);
 }
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)

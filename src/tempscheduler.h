@@ -4,6 +4,7 @@
 #include <QDialog>
 #include "utils.h"
 #include "defs.h"
+#include "gammactl.h"
 
 namespace Ui {
 class TempScheduler;
@@ -15,7 +16,7 @@ class TempScheduler : public QDialog
 
 public:
 	explicit TempScheduler(QWidget *parent = nullptr);
-	explicit TempScheduler(QWidget *parent = nullptr, convar *temp_cv = nullptr, bool *force_change = {});
+	explicit TempScheduler(QWidget *parent = nullptr, GammaCtl* gammactl = nullptr);
 	~TempScheduler();
 
 private slots:
@@ -41,8 +42,7 @@ private:
 	int low_temp;
 	double temp_speed_min;
 
-	convar *temp_cv;
-	bool *force_change = nullptr;
+	GammaCtl *gammactl;
 
 	void setDates();
 };

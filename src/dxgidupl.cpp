@@ -19,7 +19,7 @@
 
 DXGIDupl::DXGIDupl() {}
 
-bool DXGIDupl::initDXGI()
+bool DXGIDupl::init()
 {
     IDXGIOutput                 *output;
     IDXGIAdapter1               *pAdapter;
@@ -225,7 +225,7 @@ bool DXGIDupl::initDXGI()
     return true;
 }
 
-bool DXGIDupl::getDXGISnapshot(std::vector<uint8_t> &buf) noexcept
+bool DXGIDupl::getSnapshot(std::vector<uint8_t> &buf) noexcept
 {
     HRESULT hr;
 
@@ -300,7 +300,7 @@ bool DXGIDupl::getDXGISnapshot(std::vector<uint8_t> &buf) noexcept
     return true;
 }
 
-void DXGIDupl::restartDXGI()
+void DXGIDupl::restart()
 {
     HRESULT hr;
 

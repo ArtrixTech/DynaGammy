@@ -7,49 +7,34 @@
 #define MAINWINDOW_H
 
 #include <QHelpEvent>
-
-#ifndef _WIN32
-	#include "x11.h"
-	#undef Status
-	#undef Bool
-	#undef CursorShape
-	#undef None
-#endif
-
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include "screenctl.h"
-
-#include "defs.h"
 
 namespace Ui {
 class MainWindow;
 }
+
+class GammaCtl;
+class ScreenCtl;
 
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget *parent = nullptr, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
-
-	explicit MainWindow(ScreenCtl *scrctl, convar *ss_cv = nullptr, convar *temp_cv = nullptr);
+	explicit MainWindow(QWidget *parent = nullptr);
+	explicit MainWindow(GammaCtl *gammactl);
 
 	~MainWindow();
 
-	convar *ss_cv		= nullptr;
-	convar *temp_cv		= nullptr;
-	bool *force_br_change	= nullptr;
-	bool *force_temp_change = nullptr;
-
-	bool quit		= false;
-	bool set_previous_gamma = true;
-	bool ignore_closeEvent	= true;
+	bool prev_gamma = true;
+	bool ignore_closeEvent  = true;
 
 	void setTempSlider(int);
 	void setBrtSlider(int);
 	void updateBrLabel();
 	void setPollingRange(int, int);
+	void quit(bool prev_gamma);
 
 private slots:
 	void init();
@@ -68,28 +53,25 @@ private slots:
 	void on_autoTempCheck_toggled(bool checked);
 	void on_pushButton_clicked();
 	void on_tempSlider_sliderPressed();
-
 	void on_advBrSettingsBtn_toggled(bool checked);
-
 	void on_manBrSlider_sliderPressed();
-
 	void wakeupSlot(bool);
 
 private:
-	Ui::MainWindow *ui;
-	QSystemTrayIcon *trayIcon;
-	QMenu *createMenu();
+	Ui::MainWindow  *ui;
+	QSystemTrayIcon *tray_icon;
+	QMenu           *createMenu();
+	GammaCtl        *gammactl;
+
 	void toggleMainBrSliders(bool show);
 	void toggleBrtSlidersRange(bool);
 	void closeEvent(QCloseEvent *);
 	bool listenWakeupSignal();
-
-	ScreenCtl *screen;
+	void showOnTop();
 
 	int wnd_offset_x = 17;
 	int wnd_offset_y = 35;
-
-	int wnd_height = 300;
+	int wnd_height   = 300;
 };
 
 #endif // MAINWINDOW_H

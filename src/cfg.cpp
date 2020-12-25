@@ -13,7 +13,7 @@
 #include <Windows.h> // GetModuleFileNameW
 #endif
 
-json setDefault()
+json getDefault()
 {
 	return
 	{
@@ -39,7 +39,7 @@ json setDefault()
 	};
 }
 
-json cfg = setDefault();
+json cfg = getDefault();
 
 void read()
 {
@@ -51,7 +51,7 @@ void read()
 
 	std::ifstream file(path, std::fstream::in | std::fstream::app);
 
-	if(!file.good() || !file.is_open()) {
+	if (!file.good() || !file.is_open()) {
 		LOGE << "Unable to open config at path: " << path;
 		return;
 	}
@@ -62,7 +62,7 @@ void read()
 	file.seekg(0, std::ios::end);
 
 	// If end position is 0, create the file
-	if(file.tellg() == 0) {
+	if (file.tellg() == 0) {
 		write();
 		return;
 	}
@@ -74,14 +74,10 @@ void read()
 
 	try {
 		file >> tmp;
-	}
-	catch (json::exception &e) {
-
+	} catch (json::exception &e) {
 		LOGE << e.what() << " - Resetting config...";
-
-		cfg = setDefault();
+		cfg = getDefault();
 		write();
-
 		return;
 	}
 
@@ -100,7 +96,7 @@ void write()
 
 	std::ofstream file(path, std::ofstream::out);
 
-	if(!file.good() || !file.is_open()) {
+	if (!file.good() || !file.is_open()) {
 		LOGE << "Unable to open config file";
 		return;
 	}
@@ -109,8 +105,7 @@ void write()
 
 	try {
 		file << std::setw(4) << cfg;
-	}
-	catch (json::exception &e) {
+	} catch (json::exception &e) {
 		LOGE << e.what() << " id: " << e.id;
 		return;
 	}
@@ -128,7 +123,8 @@ std::string getConfigPath()
 	const char *home   = getenv("XDG_CONFIG_HOME");
 	const char *format = home ? "%s/%s" : "%s/.config/%s";
 
-	if(!home) home = getenv("HOME");
+	if (!home)
+		home = getenv("HOME");
 
 	sprintf(buf, format, home, cfg_name);
 
