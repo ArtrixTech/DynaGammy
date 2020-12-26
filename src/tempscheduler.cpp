@@ -5,7 +5,7 @@
 
 TempScheduler::TempScheduler(QWidget *parent, GammaCtl *gammactl) :
 	QDialog(parent),
-	ui(new Ui::TempScheduler)
+        ui(new Ui::TempScheduler)
 {
 	ui->setupUi(this);
 
@@ -13,34 +13,36 @@ TempScheduler::TempScheduler(QWidget *parent, GammaCtl *gammactl) :
 
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
-	ui->doubleSpinBox->setValue(temp_speed_min = cfg["temp_speed"]);
+	ui->doubleSpinBox->setValue(adaptation_time_m = cfg["temp_speed"]);
 
-	this->start_hr  = std::stoi(cfg["time_start"].get<std::string>().substr(0, 2));
-	this->end_hr    = std::stoi(cfg["time_start"].get<std::string>().substr(3, 2));
-	this->start_min = std::stoi(cfg["time_end"].get<std::string>().substr(0, 2));
-	this->end_min   = std::stoi(cfg["time_end"].get<std::string>().substr(3, 2));
+	const auto sunrise = cfg["time_end"].get<std::string>();
+	sunrise_h = std::stoi(sunrise.substr(0, 2));
+	sunrise_m = std::stoi(sunrise.substr(3, 2));
 
-	ui->timeStartBox->setTime(QTime(start_hr, end_hr));
-	ui->timeEndBox->setTime(QTime(start_min, end_min));
+	const auto sunset = cfg["time_start"].get<std::string>();
+	sunset_h = std::stoi(sunset.substr(0, 2));
+	sunset_m = std::stoi(sunset.substr(3, 2));
+
+	ui->timeStartBox->setTime(QTime(sunset_h, sunset_m));
+	ui->timeEndBox->setTime(QTime(sunrise_h, sunrise_m));
 }
 
 void TempScheduler::on_buttonBox_accepted()
 {
-	QTime t_start = QTime(start_hr, end_hr);
-	QTime t_end = QTime(start_min, end_min);
+	QTime t_sunrise = QTime(sunrise_h, sunrise_m);
+	QTime t_sunset  = QTime(sunset_h, sunset_m);
+	QTime t_sunset_adaptated = t_sunset.addSecs(-adaptation_time_m * 60);
 
-	if (t_start <= t_end) {
-		LOGW << "Start time is earlier or equal to end, setting to end time + 1 h";
-		t_start = t_end.addSecs(3600);
+	if (t_sunrise >= t_sunset_adaptated) {
+		LOGW << "Sunrise time is later or equal to sunset - adaptation. Setting to sunset - adaptation.";
+		t_sunrise = t_sunset_adaptated;
 	}
 
-	cfg["time_start"] = t_start.toString().toStdString();
-	cfg["time_end"]   = t_end.toString().toStdString();
-
+	cfg["time_start"] = t_sunset.toString().toStdString();
+	cfg["time_end"]   = t_sunrise.toString().toStdString();
 	cfg["temp_high"]  = high_temp;
 	cfg["temp_low"]   = low_temp;
-
-	cfg["temp_speed"] = temp_speed_min;
+	cfg["temp_speed"] = adaptation_time_m;
 
 	write();
 
@@ -49,32 +51,32 @@ void TempScheduler::on_buttonBox_accepted()
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)
 {
-	this->high_temp = val;
+	high_temp = val;
 }
 
 void TempScheduler::on_tempEndBox_valueChanged(int val)
 {
-	this->low_temp = val;
+	low_temp = val;
 }
 
 void TempScheduler::on_timeStartBox_timeChanged(const QTime &time)
 {
-	this->start_hr = time.hour();
-	this->end_hr = time.minute();
+	sunset_h = time.hour();
+	sunset_m = time.minute();
 }
 
 void TempScheduler::on_timeEndBox_timeChanged(const QTime &time)
 {
-	this->start_min = time.hour();
-	this->end_min = time.minute();
+	sunrise_h = time.hour();
+	sunrise_m = time.minute();
+}
+
+void TempScheduler::on_doubleSpinBox_valueChanged(double arg1)
+{
+	adaptation_time_m = arg1;
 }
 
 TempScheduler::~TempScheduler()
 {
 	delete ui;
-}
-
-void TempScheduler::on_doubleSpinBox_valueChanged(double arg1)
-{
-	this->temp_speed_min = arg1;
 }

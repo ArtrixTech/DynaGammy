@@ -35,12 +35,12 @@ private slots:
 private:
 	Ui::TempScheduler *ui;
 
-	int start_hr, start_min;
-	int end_hr, end_min;
+	int sunrise_h, sunrise_m;
+	int sunset_h, sunset_m;
 
 	int high_temp;
 	int low_temp;
-	double temp_speed_min;
+	double adaptation_time_m;
 
 	GammaCtl *gammactl;
 
