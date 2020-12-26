@@ -35,7 +35,8 @@ json getDefault()
 		{"auto_br", true },
 		{"auto_temp", false },
 		{"extend_br", false },
-		{"log_lvl", plog::warning }
+		{"log_lvl", plog::warning },
+		{"show_on_startup", false }
 	};
 }
 

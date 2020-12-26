@@ -103,11 +103,12 @@ void MainWindow::init()
 
 		this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
+		this->setVisible(cfg["show_on_startup"]);
+
 		// Extending brightness range doesn't work yet on Windows
 		if (windows)
 			ui->extendBr->hide();
 
-		//ui->manBrSlider->hide();
 		ui->speedWidget->hide();
 		ui->threshWidget->hide();
 		ui->pollingWidget->hide();
