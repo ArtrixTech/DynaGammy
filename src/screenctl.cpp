@@ -47,8 +47,7 @@ void ScreenCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
 	if (useDXGI) {
 		while (!dx.getSnapshot(buf))
 			dx.restartDXGI();
-	}
-	else {
+	} else {
 		getGDISnapshot(buf);
 		sleep_for(milliseconds(cfg["polling_rate"]));
 	}
