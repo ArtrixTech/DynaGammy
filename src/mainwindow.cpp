@@ -28,6 +28,118 @@ MainWindow::MainWindow(GammaCtl *gammactl)
 	init();
 }
 
+void MainWindow::init()
+{
+	if (!windows && !listenWakeupSignal()) {
+		LOGE << "Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
+	}
+
+	ui->setupUi(this);
+
+	QIcon icon = QIcon(":res/icons/128x128ball.ico");
+
+	// Set window properties
+	{
+		this->setWindowTitle("Gammy");
+		this->setWindowIcon(icon);
+		this->setMinimumHeight(wnd_height);
+		this->setMaximumHeight(wnd_height);
+
+		QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
+
+		this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
+
+		this->setVisible(cfg["show_on_startup"]);
+
+		// Extending brightness range doesn't work yet on Windows
+		if (windows)
+			ui->extendBr->hide();
+
+		ui->speedWidget->hide();
+		ui->threshWidget->hide();
+		ui->pollingWidget->hide();
+
+		// Move window to bottom right
+		QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
+		move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
+	}
+
+	// Set label text
+	{
+		ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(brt_step, 0, brt_slider_steps, 0, 100))));
+		ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
+		ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
+		ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
+		ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["threshold"].get<int>()));
+
+		double temp_kelvin = remap(temp_slider_steps - cfg["temp_step"].get<int>(), 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
+		temp_kelvin = floor(temp_kelvin / 100) * 100;
+		ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
+	}
+
+	// Set sliders
+	{
+		ui->extendBr->setChecked(cfg["extend_br"]);
+		toggleBrtSlidersRange(cfg["extend_br"]);
+
+		ui->manBrSlider->setValue(cfg["brightness"]);
+		ui->offsetSlider->setValue(cfg["offset"]);
+
+		ui->tempSlider->setRange(0, temp_slider_steps);
+		ui->tempSlider->setValue(cfg["temp_step"]);
+
+		ui->speedSlider->setValue(cfg["speed"]);
+		ui->thresholdSlider->setValue(cfg["threshold"]);
+		ui->pollingSlider->setValue(cfg["polling_rate"]);
+	}
+
+	// Set auto checks
+	{
+		ui->autoCheck->setChecked(cfg["auto_br"]);
+		emit on_autoCheck_toggled(cfg["auto_br"]);
+		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
+	}
+
+	createTrayIcon(icon);
+
+	std::thread t ([&] { checkTray(); });
+	t.detach();
+
+	LOGD << "Window initialized";
+}
+
+void MainWindow::checkTray()
+{
+	int c = 3;
+	do {
+		systray_available = QSystemTrayIcon::isSystemTrayAvailable();
+
+		if (systray_available) {
+			tray_icon->show();
+			return;
+		}
+
+		std::this_thread::sleep_for(std::chrono::seconds(10));
+	} while (c--);
+
+	LOGW << "System tray unavailable. Closing the window will quit the app.";
+	this->show();
+}
+
+void MainWindow::createTrayIcon(QIcon &icon)
+{
+	QMenu *menu = createMenu();
+	tray_icon->setContextMenu(menu);
+
+	if (windows)
+		menu->setStyleSheet("color:black");
+
+	tray_icon->setToolTip(QString("Gammy"));
+	tray_icon->setIcon(icon);
+
+	connect(tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+}
+
 bool MainWindow::listenWakeupSignal()
 {
 	QDBusConnection dbus = QDBusConnection::systemBus();
@@ -82,110 +194,27 @@ void MainWindow::wakeupSlot(bool status)
 	gammactl->notify_temp(true);
 }
 
-void MainWindow::init()
-{
-	if (!windows && !listenWakeupSignal()) {
-		LOGE << "Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
-	}
-
-	ui->setupUi(this);
-
-	QIcon icon = QIcon(":res/icons/128x128ball.ico");
-
-	// Set window properties
-	{
-		this->setWindowTitle("Gammy");
-		this->setWindowIcon(icon);
-		this->setMinimumHeight(wnd_height);
-		this->setMaximumHeight(wnd_height);
-
-		QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
-
-		this->setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
-
-		this->setVisible(cfg["show_on_startup"]);
-
-		// Extending brightness range doesn't work yet on Windows
-		if (windows)
-			ui->extendBr->hide();
-
-		ui->speedWidget->hide();
-		ui->threshWidget->hide();
-		ui->pollingWidget->hide();
-
-		// Move window to bottom right
-		QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
-		move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
-	}
-
-	// Create tray icon
-	{
-		if (!QSystemTrayIcon::isSystemTrayAvailable()) {
-			LOGW << "System tray unavailable. Closing the settings window will quit the app.";
-			ignore_closeEvent = false;
-			show();
-		}
-
-		this->tray_icon->setIcon(icon);
-
-		QMenu *menu = createMenu();
-		this->tray_icon->setContextMenu(menu);
-		this->tray_icon->setToolTip(QString("Gammy"));
-		this->tray_icon->show();
-		connect(tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
-
-		if (windows) {
-			menu->setStyleSheet("color:black");
-		}
-
-		LOGD << "Tray icon created";
-	}
-
-	// Set label text
-	{
-		ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(brt_step, 0, brt_slider_steps, 0, 100))));
-		ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-		ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-		ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
-		ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["threshold"].get<int>()));
-
-		double temp_kelvin = remap(temp_slider_steps - cfg["temp_step"].get<int>(), 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
-		temp_kelvin = floor(temp_kelvin / 100) * 100;
-		ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
-	}
-
-	// Init sliders
-	{
-		ui->extendBr->setChecked(cfg["extend_br"]);
-		toggleBrtSlidersRange(cfg["extend_br"]);
-
-		ui->manBrSlider->setValue(cfg["brightness"]);
-		ui->offsetSlider->setValue(cfg["offset"]);
-
-		ui->tempSlider->setRange(0, temp_slider_steps);
-		ui->tempSlider->setValue(cfg["temp_step"]);
-
-		ui->speedSlider->setValue(cfg["speed"]);
-		ui->thresholdSlider->setValue(cfg["threshold"]);
-		ui->pollingSlider->setValue(cfg["polling_rate"]);
-	}
-
-	// Set auto checks
-	{
-		ui->autoCheck->setChecked(cfg["auto_br"]);
-		emit on_autoCheck_toggled(cfg["auto_br"]);
-		ui->autoTempCheck->setChecked(cfg["auto_temp"]);
-	}
-
-	LOGD << "Window initialized";
-}
-
 void MainWindow::quit(bool prev_gamma)
 {
 	this->prev_gamma = prev_gamma;
 	gammactl->close();
 	tray_icon->hide();
 	QApplication::quit();
+}
+
+/**
+ * This event gets fired when the window is closed or we quit.
+ * If we have a system tray, this event gets ignored,
+ * so that we only hide the window,
+ * while quitting the app gets done elsewhere.
+ */
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+	this->hide();
+	write();
+
+	if (systray_available)
+		e->ignore();
 }
 
 void MainWindow::showOnTop()
@@ -426,21 +455,6 @@ void MainWindow::on_tempSlider_sliderPressed()
 {
 	if (ui->autoTempCheck->isChecked())
 		ui->autoTempCheck->setChecked(false);
-}
-
-/**
- * This event gets fired when the window is closed or we quit.
- * If we have a system tray, this event gets ignored,
- * so that we only hide the window,
- * while quitting the app gets done elsewhere.
- */
-void MainWindow::closeEvent(QCloseEvent *e)
-{
-	this->hide();
-	write();
-
-	if (ignore_closeEvent)
-		e->ignore();
 }
 
 MainWindow::~MainWindow()

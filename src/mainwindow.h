@@ -69,9 +69,14 @@ private:
 	bool listenWakeupSignal();
 	void showOnTop();
 
+	void checkTray();
+	void createTrayIcon(QIcon &icon);
+	bool systray_available = false;
+
 	int wnd_offset_x = 17;
 	int wnd_offset_y = 35;
 	int wnd_height   = 300;
+
 };
 
 #endif // MAINWINDOW_H
