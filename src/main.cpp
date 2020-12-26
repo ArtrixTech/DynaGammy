@@ -15,7 +15,6 @@
 #endif
 
 #include <QApplication>
-#include <thread>
 
 #include "cfg.h"
 #include "utils.h"
@@ -51,7 +50,7 @@ void init()
 
 	plog::init(plog::Severity(plog::debug), &console_appender);
 
-	read();
+	config::read();
 
 	if (!cfg["auto_br"].get<bool>()) {
 		// Start with manual brightness setting, if auto brightness is disabled
@@ -60,7 +59,8 @@ void init()
 	}
 
 	if (cfg["auto_temp"].get<bool>()) {
-		LOGV << "Autotemp ON. Starting from step 0."; // To allow smooth transition
+		// To allow smooth transition
+		LOGV << "Autotemp ON. Starting from step 0.";
 		cfg["temp_step"] = 0;
 	}
 

@@ -11,6 +11,37 @@
 
 #ifdef _WIN32
 #include <Windows.h> // GetModuleFileNameW
+
+std::wstring config::getExecutablePath()
+{
+	wchar_t buf[FILENAME_MAX] {};
+	GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
+	std::wstring path(buf);
+
+	std::wstring appname = L"gammy.exe";
+	path.erase(path.find(appname), appname.length());
+
+	path += L"gammyconf.json";
+
+	return path;
+}
+#else
+std::string config::getPath()
+{
+	constexpr const char *cfg_name = "gammyconf.json";
+
+	char buf[4096];
+
+	const char *home   = getenv("XDG_CONFIG_HOME");
+	const char *format = home ? "%s/%s" : "%s/.config/%s";
+
+	if (!home)
+		home = getenv("HOME");
+
+	sprintf(buf, format, home, cfg_name);
+
+	return std::string(buf);
+}
 #endif
 
 json getDefault()
@@ -42,12 +73,12 @@ json getDefault()
 
 json cfg = getDefault();
 
-void read()
+void config::read()
 {
 #ifdef _WIN32
 	const std::wstring path = getExecutablePath();
 #else
-	const std::string path = getConfigPath();
+	const std::string path = config::getPath();
 #endif
 
 	std::ifstream file(path, std::fstream::in | std::fstream::app);
@@ -64,7 +95,7 @@ void read()
 
 	// If end position is 0, create the file
 	if (file.tellg() == 0) {
-		write();
+		config::write();
 		return;
 	}
 
@@ -78,7 +109,7 @@ void read()
 	} catch (json::exception &e) {
 		LOGE << e.what() << " - Resetting config...";
 		cfg = getDefault();
-		write();
+		config::write();
 		return;
 	}
 
@@ -87,12 +118,12 @@ void read()
 	LOGV << "Config parsed";
 }
 
-void write()
+void config::write()
 {
 #ifdef _WIN32
 	const std::wstring path = getExecutablePath();
 #else
-	const std::string path = getConfigPath();
+	const std::string path = getPath();
 #endif
 
 	std::ofstream file(path, std::ofstream::out);
@@ -113,39 +144,3 @@ void write()
 
 	LOGV << "Config set";
 }
-
-#ifndef _WIN32
-std::string getConfigPath()
-{
-	constexpr const char *cfg_name = "gammyconf.json";
-
-	char buf[4096];
-
-	const char *home   = getenv("XDG_CONFIG_HOME");
-	const char *format = home ? "%s/%s" : "%s/.config/%s";
-
-	if (!home)
-		home = getenv("HOME");
-
-	sprintf(buf, format, home, cfg_name);
-
-	return std::string(buf);
-}
-
-#else
-std::wstring getExecutablePath()
-{
-	wchar_t buf[FILENAME_MAX] {};
-	GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
-	std::wstring path(buf);
-
-	std::wstring appname = L"gammy.exe";
-	path.erase(path.find(appname), appname.length());
-
-	path += L"gammyconf.json";
-
-	return path;
-}
-#endif
-
-

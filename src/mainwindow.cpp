@@ -211,7 +211,7 @@ void MainWindow::quit(bool prev_gamma)
 void MainWindow::closeEvent(QCloseEvent *e)
 {
 	this->hide();
-	write();
+	config::write();
 
 	if (systray_available)
 		e->ignore();

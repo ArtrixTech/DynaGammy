@@ -44,7 +44,7 @@ void TempScheduler::on_buttonBox_accepted()
 	cfg["temp_low"]   = low_temp;
 	cfg["temp_speed"] = adaptation_time_m;
 
-	write();
+	config::write();
 
 	gammactl->notify_temp(true);
 }

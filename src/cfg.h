@@ -13,10 +13,11 @@ using json = nlohmann::json;
 
 extern json cfg;
 
-auto getConfigPath()     -> std::string;
-auto getExecutablePath() -> std::wstring;
-
+namespace config {
+std::string  getPath();
+std::wstring getExecutablePath();
 void read();
 void write();
+}
 
 #endif // CFG_H
