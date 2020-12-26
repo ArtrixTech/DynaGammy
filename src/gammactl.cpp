@@ -188,14 +188,21 @@ void GammaCtl::adjustTemperature()
 	QTime end_time;
 
 	const auto setTime = [] (QTime &t, const std::string &time_str) {
-		const auto start_hour = time_str.substr(0, 2);
-		const auto start_min  = time_str.substr(3, 2);
-		t = QTime(std::stoi(start_hour), std::stoi(start_min));
+		const auto start_h = time_str.substr(0, 2);
+		const auto start_m = time_str.substr(3, 2);
+		t = QTime(std::stoi(start_h), std::stoi(start_m));
 	};
 
 	const auto updateInterval = [&] {
-		setTime(start_time, cfg["time_start"]);
-		setTime(end_time,   cfg["time_end"]);
+		std::string t_start = cfg["time_start"];
+		const int h = std::stoi(t_start.substr(0, 2));
+		const int m = std::stoi(t_start.substr(3, 2));
+
+		const int adapt_time_s = cfg["temp_speed"].get<double>() * 60;
+		const QTime adapted_start = QTime(h, m).addSecs(-adapt_time_s);
+
+		setTime(start_time, adapted_start.toString().toStdString());
+		setTime(end_time, cfg["time_end"]);
 	};
 
 	updateInterval();

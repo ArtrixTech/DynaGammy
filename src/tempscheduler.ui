@@ -80,7 +80,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Start:</string>
+            <string>Sunset:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -196,7 +196,7 @@ selection-background-color: rgb(255, 120, 60);
             </font>
            </property>
            <property name="text">
-            <string>End:</string>
+            <string>Sunrise:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
