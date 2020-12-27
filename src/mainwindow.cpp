@@ -39,7 +39,6 @@ void MainWindow::init()
 	QIcon icon = QIcon(":res/icons/128x128ball.ico");
 
 	setWindowProperties(icon);
-
 	setLabels();
 	setSliders();
 
@@ -49,11 +48,8 @@ void MainWindow::init()
 	ui->autoTempCheck->setChecked(cfg["auto_temp"]);
 
 	createTrayIcon(icon);
-
-	std::thread t ([&] { checkTray(); });
+	std::thread t([&] { checkTray(); });
 	t.detach();
-
-	LOGD << "Window initialized";
 }
 
 void MainWindow::setLabels()
@@ -178,20 +174,9 @@ void MainWindow::wakeupSlot(bool status)
 	if (status)
 		return;
 
-	LOGD << "Waking up from sleep.";
+	LOGD << "System woke up from sleep.";
 
-	std::thread reset ([&] {
-		int i = 0;
-		while (i++ < 5) {
-			LOGD << "Resetting screen (" << i << ")";
-			gammactl->setGamma(cfg["brightness"], cfg["temp_step"]);
-			std::this_thread::sleep_for(std::chrono::seconds(3));
-		}
-	});
-
-	reset.detach();
-
-	// Force temperature change (will be ignored if disabled)
+	// Force autotemp change if enabled
 	gammactl->notify_temp(true);
 }
 

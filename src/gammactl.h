@@ -22,9 +22,10 @@ public:
 	void notify_temp(bool force = false);
 private:
 	MainWindow *wnd;
+
 	convar ss_cv;
-	convar br_cv;
 	convar temp_cv;
+	convar reapply_cv;
 
 	int brt_step;
 	int temp_step;
@@ -33,8 +34,10 @@ private:
 
 	std::mutex br_mtx;
 	void captureScreen();
-	void adjustBrightness();
+	void adjustBrightness(convar &br_cv);
 	void adjustTemperature();
+	void reapplyGamma();
+	void notify_all_threads();
 	bool br_needs_change   = false;
 	bool force_temp_change = false;
 	bool quit              = false;

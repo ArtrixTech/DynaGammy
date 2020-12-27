@@ -29,6 +29,7 @@ void GammaCtl::start()
 	if (threads.empty()) {
 		threads.push_back(std::thread([this] { adjustTemperature(); }));
 		threads.push_back(std::thread([this] { captureScreen(); }));
+		threads.push_back(std::thread([this] { reapplyGamma(); }));
 		LOGD << "Gamma control started";
 	}
 }
@@ -36,8 +37,7 @@ void GammaCtl::start()
 void GammaCtl::stop()
 {
 	quit = true;
-	temp_cv.notify_one();
-	ss_cv.notify_one();
+	notify_all_threads();
 
 	if (!threads.empty()) {
 		for (auto &t : threads)
@@ -60,11 +60,42 @@ void GammaCtl::notify_ss()
 	ss_cv.notify_one();
 }
 
+void GammaCtl::notify_all_threads()
+{
+	temp_cv.notify_one();
+	ss_cv.notify_one();
+	reapply_cv.notify_one();
+}
+
+void GammaCtl::reapplyGamma()
+{
+	using namespace std::this_thread;
+	using namespace std::chrono;
+	using namespace std::chrono_literals;
+
+	std::mutex mtx;
+
+	while (true) {
+		{
+			std::unique_lock<std::mutex> lock(mtx);
+			reapply_cv.wait_until(lock, system_clock::now() + 5s, [&] {
+				return quit;
+			});
+		}
+
+		if (quit)
+			break;
+
+		setGamma(cfg["brightness"], cfg["temp_step"]);
+	}
+}
+
 void GammaCtl::captureScreen()
 {
 	LOGV << "captureScreen() start";
 
-	std::thread br_thr([&] { adjustBrightness(); });
+	convar brt_cv;
+	std::thread brt_thr([&] { adjustBrightness(brt_cv); });
 
 	const uint64_t screen_res = getResolution();
 	const uint64_t buf_sz     = screen_res * 4;
@@ -129,7 +160,7 @@ void GammaCtl::captureScreen()
 					br_needs_change = true;
 				}
 
-				br_cv.notify_one();
+				brt_cv.notify_one();
 			}
 
 			if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
@@ -152,13 +183,13 @@ void GammaCtl::captureScreen()
 		br_needs_change = true;
 	}
 
-	br_cv.notify_one();
-	br_thr.join();
+	brt_cv.notify_one();
+	brt_thr.join();
 
 	LOGV << "adjustBrightness joined.";
 }
 
-void GammaCtl::adjustBrightness()
+void GammaCtl::adjustBrightness(convar &brt_cv)
 {
 	using namespace std::this_thread;
 	using namespace std::chrono;
@@ -169,7 +200,7 @@ void GammaCtl::adjustBrightness()
 		{
 			std::unique_lock<std::mutex> lock(br_mtx);
 
-			br_cv.wait(lock, [&] {
+			brt_cv.wait(lock, [&] {
 				return br_needs_change;
 			});
 
