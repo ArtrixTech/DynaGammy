@@ -15,7 +15,7 @@ constexpr bool windows = true;
 constexpr bool windows = false;
 #endif
 
-constexpr const char* g_app_version = "v0.9.59";
+constexpr const char* g_app_version = "v0.9.6";
 
 constexpr int min_temp_kelvin    = 2000;
 constexpr int max_temp_kelvin    = 6500;
