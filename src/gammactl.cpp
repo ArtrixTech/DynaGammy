@@ -26,27 +26,30 @@ void GammaCtl::setWindow(MainWindow *w)
 
 void GammaCtl::start()
 {
-	if (threads.empty()) {
-		threads.push_back(std::thread([this] { adjustTemperature(); }));
-		threads.push_back(std::thread([this] { captureScreen(); }));
-		threads.push_back(std::thread([this] { reapplyGamma(); }));
-		LOGD << "Gamma control started";
-	}
+	LOGD << "Starting gamma control";
+
+	if (!threads.empty())
+		return;
+
+	threads.push_back(std::thread([this] { adjustTemperature(); }));
+	threads.push_back(std::thread([this] { captureScreen(); }));
+	threads.push_back(std::thread([this] { reapplyGamma(); }));
 }
 
 void GammaCtl::stop()
 {
+	LOGD << "Stopping gamma control";
+
+	if (threads.empty())
+		return;
+
 	quit = true;
 	notify_all_threads();
 
-	if (!threads.empty()) {
-		for (auto &t : threads)
-			t.join();
+	for (auto &t : threads)
+		t.join();
 
-		threads.clear();
-	}
-
-	LOGD << "Gamma control stopped";
+	threads.clear();
 }
 
 void GammaCtl::notify_temp(bool force)

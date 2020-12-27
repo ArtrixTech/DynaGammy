@@ -16,6 +16,9 @@
 
 #include <QApplication>
 
+#include <plog/Appenders/ColorConsoleAppender.h>
+#include <plog/Appenders/RollingFileAppender.h>
+
 #include "cfg.h"
 #include "utils.h"
 #include "mainwindow.h"
@@ -39,12 +42,13 @@ void sig_handler(int signo)
 
 void init()
 {
-	config::read();
-
 	static plog::RollingFileAppender<plog::TxtFormatter> f("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> c;
 
 	plog::init(plog::Severity(plog::debug), &c);
+
+	config::read();
+
 	plog::get()->addAppender(&f);
 	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));
 

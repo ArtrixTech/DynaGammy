@@ -26,15 +26,16 @@ double remap(double value, double from_min, double from_max, double to_min, doub
 	return lerp(to_min, to_max, normalize(from_min, from_max, value));
 }
 
+double interpTemp(int temp_step, size_t offset)
+{
+	return remap(temp_slider_steps - temp_step, 0, temp_slider_steps, ingo_thies_table[offset], 1);
+};
+
 void setColors(int temp_step, std::array<double, 3> &c)
 {
-	const auto interpTemp = [temp_step] (size_t offset) {
-		return remap(temp_slider_steps - temp_step, 0, temp_slider_steps, ingo_thies_table[offset], 1);
-	};
-
-	c[0] = interpTemp(0);
-	c[1] = interpTemp(1);
-	c[2] = interpTemp(2);
+	c[0] = interpTemp(temp_step, 0);
+	c[1] = interpTemp(temp_step, 1);
+	c[2] = interpTemp(temp_step, 2);
 };
 
 int calcBrightness(const std::vector<uint8_t> &buf)

@@ -3,8 +3,6 @@
 
 #include <condition_variable>
 #include <plog/Log.h>
-#include <plog/Appenders/ColorConsoleAppender.h>
-#include <plog/Appenders/RollingFileAppender.h>
 #include <array>
 
 typedef std::condition_variable convar;
@@ -16,6 +14,7 @@ constexpr bool windows = false;
 #endif
 
 constexpr const char* g_app_version = "v0.9.6";
+constexpr const char* config_name = "gammyconf.json";
 
 constexpr int min_temp_kelvin    = 2000;
 constexpr int max_temp_kelvin    = 6500;
