@@ -4,7 +4,8 @@
 #include <QDialog>
 #include "utils.h"
 #include "defs.h"
-#include "gammactl.h"
+
+class GammaCtl;
 
 namespace Ui {
 class TempScheduler;

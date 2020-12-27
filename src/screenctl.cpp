@@ -6,8 +6,8 @@
 
 ScreenCtl::ScreenCtl() {}
 
-bool ScreenCtl::initDXGI() {
-
+bool ScreenCtl::initDXGI()
+{
 #ifdef _WIN32
 	useDXGI = dx.initDXGI();
 
@@ -27,8 +27,8 @@ void ScreenCtl::setGamma(int brt, int temp)
 #endif
 }
 
-uint64_t ScreenCtl::getResolution() {
-
+uint64_t ScreenCtl::getResolution()
+{
 #ifdef _WIN32
 	const uint64_t width  = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 	const uint64_t height = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);

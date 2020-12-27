@@ -1,46 +1,80 @@
-#include "gammactl.h"
-
-#include <QTime>
+﻿#include <QTime>
 #include <thread>
+
+#include "gammactl.h"
 #include "defs.h"
 #include "utils.h"
 #include "cfg.h"
-#include "mainwindow.h"
-#include "screenctl.h"
 
-GammaCtl::GammaCtl(ScreenCtl *screen)
+GammaCtl::GammaCtl()
 {
-	this->screen = screen;
+	// If auto brightness is on, start at max brightness
+	if (cfg["auto_br"])
+		cfg["brightness"] = brt_slider_steps;
+
+	// If auto temp is on, start at max temp for a smooth transition
+	if (cfg["auto_temp"])
+		cfg["temp_step"] = 0;
+
+	setGamma(cfg["brightness"], cfg["temp_step"]);
 }
 
-void GammaCtl::exec(MainWindow *w)
+void GammaCtl::setWindow(MainWindow *w)
 {
 	this->wnd = w;
-
-	std::thread temp_thr ([&] { adjustTemperature(); });
-	std::thread ss_thr ([&] { recordScreen(); });
-
-	ss_thr.detach();
-	temp_thr.detach();
 }
 
-void GammaCtl::recordScreen()
+void GammaCtl::start()
 {
-	LOGV << "recordScreen() start";
+	if (threads.empty()) {
+		threads.push_back(std::thread([this] { adjustTemperature(); }));
+		threads.push_back(std::thread([this] { captureScreen(); }));
+		LOGD << "Gamma control started";
+	}
+}
+
+void GammaCtl::stop()
+{
+	quit = true;
+	temp_cv.notify_one();
+	ss_cv.notify_one();
+
+	if (!threads.empty()) {
+		for (auto &t : threads)
+			t.join();
+
+		threads.clear();
+	}
+
+	LOGD << "Gamma control stopped";
+}
+
+void GammaCtl::notify_temp(bool force)
+{
+	force_temp_change = force;
+	temp_cv.notify_one();
+}
+
+void GammaCtl::notify_ss()
+{
+	ss_cv.notify_one();
+}
+
+void GammaCtl::captureScreen()
+{
+	LOGV << "captureScreen() start";
 
 	std::thread br_thr([&] { adjustBrightness(); });
 
-	const uint64_t screen_res = screen->getResolution();
+	const uint64_t screen_res = getResolution();
 	const uint64_t buf_sz     = screen_res * 4;
 
-	if (windows && !screen->initDXGI()) {
+	if (windows && !initDXGI()) {
 		LOGE << "DXGI init failed. Using GDI instead.";
 		wnd->setPollingRange(1000, 5000);
 	}
 
 	LOGD << "Screen res: " << screen_res << ", buffer size: " << buf_sz;
-
-	screen->setGamma(brt_step, cfg["temp_step"]);
 
 	// Buffer to store screen pixels
 	std::vector<uint8_t> buf;
@@ -80,7 +114,7 @@ void GammaCtl::recordScreen()
 
 		while (cfg["auto_br"] && !quit) {
 			LOGV << "Taking screenshot";
-			screen->getSnapshot(buf);
+			getSnapshot(buf);
 
 			const int img_br = calcBrightness(buf);
 			img_delta += abs(prev_img_br - img_br);
@@ -90,8 +124,8 @@ void GammaCtl::recordScreen()
 				force = false;
 
 				{
-					std::lock_guard lock (br_mtx);
-					this->img_br = img_br;
+					std::lock_guard lock(br_mtx);
+					this->ss_brightness = img_br;
 					br_needs_change = true;
 				}
 
@@ -143,19 +177,18 @@ void GammaCtl::adjustBrightness()
 				break;
 
 			br_needs_change = false;
-
-			img_br = this->img_br;
+			img_br = this->ss_brightness;
 		}
 
 		int target = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps)) + cfg["offset"].get<int>();
 		target = std::clamp(target, cfg["min_br"].get<int>(), cfg["max_br"].get<int>());
 
-		if (target == brt_step) {
+		if (target == cfg["brightness"]) {
 			LOGD << "Brt already at target (" << target << ')';
 			continue;
 		}
 
-		const int start         = brt_step;
+		const int start         = cfg["brightness"];
 		const int end           = target;
 		double duration_s       = cfg["speed"];
 		const int FPS           = cfg["brt_fps"];
@@ -167,10 +200,10 @@ void GammaCtl::adjustBrightness()
 
 		LOGD << "(" << start << "->" << end << ')';
 
-		while (brt_step != target && !br_needs_change && cfg["auto_br"] && !quit) {
+		while (cfg["brightness"] != target && !br_needs_change && cfg["auto_br"] && !quit) {
 			time += time_incr;
-			brt_step = std::round(easeOutExpo(time, start, distance, duration_s));
-			wnd->setBrtSlider(brt_step);
+			cfg["brightness"] = std::round(easeOutExpo(time, start, distance, duration_s));
+			wnd->setBrtSlider(cfg["brightness"]);
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
@@ -178,6 +211,13 @@ void GammaCtl::adjustBrightness()
 	}
 }
 
+/**
+ * The temperature is adjusted in two steps.
+ * The first one is for quickly catching up to the proper temperature when:
+ * - time is checked sometime after the start time
+ * - the system wakes up
+ * - temperature settings change
+ */
 void GammaCtl::adjustTemperature()
 {
 	using namespace std::this_thread;
@@ -237,13 +277,6 @@ void GammaCtl::adjustTemperature()
 		}
 	});
 
-	/**
-	 * The temperature is adjusted in two steps.
-	 * The first one is for quickly catching up to the proper temperature when:
-	 * - the clock above checks the time a bit after the start time set by the user passes
-	 * - we wake up from suspend
-	 * - we modify start time, temperature targets or adaptation speed.
-	 */
 	bool first_step_done = false;
 
 	while (true) {
@@ -278,16 +311,15 @@ void GammaCtl::adjustTemperature()
 		const QTime     cur_time     = cur_datetime.time();
 
 		if ((cur_time >= start_time) || (cur_time < end_time)) {
-			int secs_from_start = 0;
 
 			QDateTime start_datetime(cur_datetime.date(), start_time);
 
-			/* If the current time is earlier than both start and end time
-			 * we need to count the seconds from yesterday. */
+			/* If we are earlier than both sunset and sunrise times
+			 * we need to count from yesterday. */
 			if (cur_time < end_time)
 				start_datetime = start_datetime.addDays(-1);
 
-			secs_from_start = start_datetime.secsTo(cur_datetime);
+			int secs_from_start = start_datetime.secsTo(cur_datetime);
 
 			LOGD << "secs_from_start: " << secs_from_start << " adapt_time_s: " << adapt_time_s;
 
@@ -348,23 +380,4 @@ void GammaCtl::adjustTemperature()
 	clock.join();
 
 	LOGV << "Clock thread joined.";
-}
-
-void GammaCtl::notify_temp(bool force)
-{
-	force_temp_change = force;
-	temp_cv.notify_one();
-}
-
-void GammaCtl::notify_ss()
-{
-	ss_cv.notify_one();
-}
-
-void GammaCtl::close()
-{
-	quit = true;
-	temp_cv.notify_one();
-	ss_cv.notify_one();
-	wnd->close();
 }

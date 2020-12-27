@@ -18,14 +18,8 @@
 
 #include "cfg.h"
 #include "utils.h"
-#include "defs.h"
-
-#include "screenctl.h"
 #include "mainwindow.h"
 #include "gammactl.h"
-
-// Reflects the current screen brightness
-int brt_step = brt_slider_steps;
 
 #ifndef _WIN32
 static MainWindow *p_wnd;
@@ -44,27 +38,14 @@ void sig_handler(int signo)
 #endif
 
 void init()
-{	
-	static plog::RollingFileAppender<plog::TxtFormatter> file_appender("gammylog.txt", 1024 * 1024 * 5, 1);
-	static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
-
-	plog::init(plog::Severity(plog::debug), &console_appender);
-
+{
 	config::read();
 
-	if (!cfg["auto_br"].get<bool>()) {
-		// Start with manual brightness setting, if auto brightness is disabled
-		LOGV << "Autobrt OFF. Setting manual brt step.";
-		brt_step = cfg["brightness"];
-	}
+	static plog::RollingFileAppender<plog::TxtFormatter> f("gammylog.txt", 1024 * 1024 * 5, 1);
+	static plog::ColorConsoleAppender<plog::TxtFormatter> c;
 
-	if (cfg["auto_temp"].get<bool>()) {
-		// To allow smooth transition
-		LOGV << "Autotemp ON. Starting from step 0.";
-		cfg["temp_step"] = 0;
-	}
-
-	plog::get()->addAppender(&file_appender);
+	plog::init(plog::Severity(plog::debug), &c);
+	plog::get()->addAppender(&f);
 	plog::get()->setMaxSeverity(plog::Severity(cfg["log_lvl"]));
 
 #ifndef _WIN32
@@ -99,15 +80,10 @@ int main(int argc, char **argv)
 	init();
 
 	QApplication app(argc, argv);
-	ScreenCtl    screen;
-	GammaCtl     gammactl(&screen);
-	MainWindow   wnd(&gammactl);
+	GammaCtl     gmm;
+	MainWindow   wnd(&gmm);
 
 	p_wnd = &wnd;
 
-	gammactl.exec(&wnd);
-	app.exec();
-
-	screen.setInitialGamma(wnd.prev_gamma);
-	return 0;
+	return app.exec();
 }

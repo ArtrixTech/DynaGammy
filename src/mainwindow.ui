@@ -1185,7 +1185,7 @@ background-color:rgb(20,22,35);
          </layout>
         </item>
         <item>
-         <widget class="QSlider" name="manBrSlider">
+         <widget class="QSlider" name="brtSlider">
           <property name="enabled">
            <bool>true</bool>
           </property>

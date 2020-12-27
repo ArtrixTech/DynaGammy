@@ -20,14 +20,12 @@ class ScreenCtl
 {
 public:
 	ScreenCtl();
-	void setGamma(int, int);
-
 	uint64_t getResolution();
-
-	bool initDXGI();
+	void setGamma(int, int);
 	void getSnapshot(std::vector<uint8_t> &buf) noexcept;
 	void setInitialGamma(bool);
-
+protected:
+	bool initDXGI();
 private:
 #ifdef _WIN32
 	DXGIDupl dx;
