@@ -28,19 +28,18 @@ std::wstring config::getExecutablePath()
 #else
 std::string config::getPath()
 {
-	constexpr const char *cfg_name = "gammyconf.json";
-
-	char buf[4096];
-
 	const char *home   = getenv("XDG_CONFIG_HOME");
-	const char *format = home ? "%s/%s" : "%s/.config/%s";
+	const char *format = "/";
 
-	if (!home)
+	if (!home) {
+		format = "/.config/";
 		home = getenv("HOME");
+	}
 
-	sprintf(buf, format, home, cfg_name);
+	std::stringstream ss;
+	ss << home << format << config_name;
 
-	return std::string(buf);
+	return ss.str();
 }
 #endif
 
