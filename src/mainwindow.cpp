@@ -22,11 +22,9 @@
 MainWindow::MainWindow(GammaCtl *gammactl): ui(new Ui::MainWindow), tray_icon(new QSystemTrayIcon(this))
 {
 	this->ui->setupUi(this);
-
 	this->gammactl = gammactl;
 	this->gammactl->setWindow(this);
 	this->gammactl->start();
-
 	this->init();
 }
 
@@ -54,11 +52,12 @@ void MainWindow::init()
 
 void MainWindow::setLabels()
 {
-	ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brightness"], 0, brt_slider_steps, 0, 100))));
+	ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brightness"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
 	ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["threshold"].get<int>()));
+	ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg["polling_rate"].get<int>()));
 
 	double temp_kelvin = remap(temp_slider_steps - cfg["temp_step"].get<int>(), 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
 	temp_kelvin = floor(temp_kelvin / 100) * 100;
