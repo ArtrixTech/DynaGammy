@@ -138,7 +138,6 @@ void GammaCtl::captureScreen()
 			break;
 
 		if (cfg["auto_br"]) {
-			buf.resize(buf_sz);
 			force = true;
 		} else {
 			buf.clear();

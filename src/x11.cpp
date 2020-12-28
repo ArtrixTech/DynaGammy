@@ -72,7 +72,7 @@ X11::X11()
 void X11::getSnapshot(std::vector<uint8_t> &buf) noexcept
 {
 	const auto img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
-	memcpy(buf.data(), reinterpret_cast<uint8_t*>(img->data), buf.size());
+	buf.assign(img->data, img->data + (img->bytes_per_line * img->height));
 	img->f.destroy_image(img);
 }
 
