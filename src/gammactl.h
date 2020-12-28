@@ -34,6 +34,7 @@ private:
 
 	std::mutex br_mtx;
 	void captureScreen();
+	int  calcBrightness(const std::vector<uint8_t> &buf, int bpp = 4, int skip_mult = 1);
 	void adjustBrightness(convar &br_cv);
 	void adjustTemperature();
 	void reapplyGamma();

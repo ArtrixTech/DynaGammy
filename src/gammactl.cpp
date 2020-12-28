@@ -97,22 +97,16 @@ void GammaCtl::captureScreen()
 {
 	LOGV << "captureScreen() start";
 
-	convar brt_cv;
-	std::thread brt_thr([&] { adjustBrightness(brt_cv); });
-
-	const uint64_t screen_res = getResolution();
-	const uint64_t buf_sz     = screen_res * 4;
-
 	if (windows && !initDXGI()) {
 		LOGE << "DXGI init failed. Using GDI instead.";
 		wnd->setPollingRange(1000, 5000);
 	}
 
-	LOGD << "Screen res: " << screen_res << ", buffer size: " << buf_sz;
+	convar brt_cv;
+	std::thread brt_thr([&] { adjustBrightness(brt_cv); });
 
 	// Buffer to store screen pixels
 	std::vector<uint8_t> buf;
-
 	std::mutex m;
 
 	int img_delta = 0;
@@ -148,8 +142,8 @@ void GammaCtl::captureScreen()
 		while (cfg["auto_br"] && !quit) {
 			LOGV << "Taking screenshot";
 			getSnapshot(buf);
-
-			const int img_br = calcBrightness(buf);
+			LOGV << "Calculating brightness";
+			const int img_br = calcBrightness(buf, 4, 1024);
 			img_delta += abs(prev_img_br - img_br);
 
 			if (img_delta > cfg["threshold"] || force) {
@@ -178,8 +172,6 @@ void GammaCtl::captureScreen()
 		buf.shrink_to_fit();
 	}
 
-	LOGV << "Screenshot loop ended. Notifying adjustBrightness";
-
 	{
 		std::lock_guard<std::mutex> lock (br_mtx);
 		br_needs_change = true;
@@ -187,8 +179,28 @@ void GammaCtl::captureScreen()
 
 	brt_cv.notify_one();
 	brt_thr.join();
+}
 
-	LOGV << "adjustBrightness joined.";
+int GammaCtl::calcBrightness(const std::vector<uint8_t> &buf, int bpp, int skip_mult)
+{
+	const uint64_t len = buf.size();
+	const uint64_t res = len / bpp;
+
+	uint64_t r = 0;
+	uint64_t g = 0;
+	uint64_t b = 0;
+
+	int bits_to_skip = bpp * skip_mult;
+
+	for (uint64_t i = 0; i < len; i += bits_to_skip) {
+		r += buf[i + 2];
+		g += buf[i + 1];
+		b += buf[i];
+	}
+
+	int lum = (r * 0.2126 + g * 0.7152 + b * 0.0722) * skip_mult / res;
+
+	return lum;
 }
 
 void GammaCtl::adjustBrightness(convar &brt_cv)

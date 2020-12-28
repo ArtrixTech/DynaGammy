@@ -17,8 +17,6 @@ int roundup(int val, int multiple);
 
 void setColors(int temp, std::array<double, 3> &c);
 
-int calcBrightness(const std::vector<uint8_t> &buf);
-
 // Windows functions
 
 void getGDISnapshot(std::vector<uint8_t> &buf);

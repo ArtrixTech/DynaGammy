@@ -38,32 +38,6 @@ void setColors(int temp_step, std::array<double, 3> &c)
 	c[2] = interpTemp(temp_step, 2);
 };
 
-int calcBrightness(const std::vector<uint8_t> &buf)
-{
-	LOGV << "Calculating brightness";
-	uint64_t r{}, g{}, b{};
-
-	static const uint64_t len = buf.size();
-
-	// Remove the last 4 bits to avoid going out of bounds
-	for (auto i = len - 4; i > 0; i -= 4) {
-		r += buf[i + 2];
-		g += buf[i + 1];
-		b += buf[i];
-	}
-
-	/**
-	 * The proper way would be to calculate perceived lightness as explained here: stackoverflow.com/a/56678483
-	 * But that's too heavy. We calculate luminance only, which still gives okay results.
-	 * Here it's converted to a 0-255 range by the RGB sums.
-	 */
-	const static auto screen_res = len / 4;
-
-	int brightness = int((r * 0.2126 + g * 0.7152 + b * 0.0722) / screen_res);
-
-	return brightness;
-}
-
 double easeOutExpo(double t, double b , double c, double d)
 {
 	return (t == d) ? b + c : c * (-pow(2, -10 * t / d) + 1) + b;
