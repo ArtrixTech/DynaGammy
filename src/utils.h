@@ -17,11 +17,11 @@ int roundup(int val, int multiple);
 
 void setColors(int temp, std::array<double, 3> &c);
 
-// Windows functions
+double interpTemp(int step, size_t color_ch);
 
+// Windows functions
 void getGDISnapshot(std::vector<uint8_t> &buf);
 void setGDIGamma(int brightness, int temp);
-
 void checkInstance();
 void checkGammaRange();
 void toggleRegkey(bool);

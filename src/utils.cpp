@@ -26,16 +26,9 @@ double remap(double value, double from_min, double from_max, double to_min, doub
 	return lerp(to_min, to_max, normalize(from_min, from_max, value));
 }
 
-double interpTemp(int temp_step, size_t offset)
+double interpTemp(int temp_step, size_t color_ch)
 {
-	return remap(temp_slider_steps - temp_step, 0, temp_slider_steps, ingo_thies_table[offset], 1);
-};
-
-void setColors(int temp_step, std::array<double, 3> &c)
-{
-	c[0] = interpTemp(temp_step, 0);
-	c[1] = interpTemp(temp_step, 1);
-	c[2] = interpTemp(temp_step, 2);
+	return remap(temp_slider_steps - temp_step, 0, temp_slider_steps, ingo_thies_table[color_ch], 1);
 };
 
 double easeOutExpo(double t, double b , double c, double d)
@@ -88,25 +81,25 @@ void getGDISnapshot(std::vector<uint8_t> &buf)
     DeleteDC(memoryDC);
 }
 
-void setGDIGamma(int brightness, int temp)
+void setGDIGamma(int brt_step, int temp_step)
 {
-    if (brightness > brt_slider_steps) {
+    if (brt_step > brt_slider_steps) {
         return;
     }
 
-    std::array c{1.0, 1.0, 1.0};
-
-    setColors(temp, c);
+    const double r_mult = interpTemp(temp_step, 0),
+                 g_mult = interpTemp(temp_step, 1),
+                 b_mult = interpTemp(temp_step, 2);
 
     WORD ramp[3][256];
 
-    for (WORD i = 0; i < 256; ++i)
-    {
-        const int val = remap(brightness, 0, brt_slider_steps, 0, 255) * i;
+    const auto brt_mult = remap(brt_step, 0, brt_slider_steps, 0, 255);
 
-        ramp[0][i] = WORD(val * c[0]);
-        ramp[1][i] = WORD(val * c[1]);
-        ramp[2][i] = WORD(val * c[2]);
+    for (WORD i = 0; i < 256; ++i) {
+        const int val = i * brt_mult;
+        ramp[0][i] = WORD(val * r_mult);
+        ramp[1][i] = WORD(val * g_mult);
+        ramp[2][i] = WORD(val * b_mult);
     }
 
     SetDeviceGammaRamp(screenDC, ramp);
