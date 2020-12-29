@@ -84,8 +84,8 @@ int main(int argc, char **argv)
 	init();
 
 	QApplication app(argc, argv);
-	GammaCtl     gmm;
 	MainWindow   wnd;
+	GammaCtl     gmm;
 	Mediator     m(&gmm, &wnd);
 
 	p_wnd = &wnd;

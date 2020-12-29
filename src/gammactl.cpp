@@ -8,14 +8,14 @@
 GammaCtl::GammaCtl()
 {
 	// If auto brightness is on, start at max brightness
-	if (cfg["auto_br"])
+	if (cfg["auto_br"].get<bool>())
 		cfg["brightness"] = brt_slider_steps;
 
 	// If auto temp is on, start at max temp for a smooth transition
-	if (cfg["auto_temp"])
+	if (cfg["auto_temp"].get<bool>())
 		cfg["temp_step"] = 0;
 
-	setGamma(cfg["brightness"], cfg["temp_step"]);
+	setGamma(cfg["brightness"].get<int>(), cfg["temp_step"].get<int>());
 }
 
 void GammaCtl::start()

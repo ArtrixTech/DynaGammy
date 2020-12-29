@@ -35,8 +35,8 @@ void MainWindow::init()
 	setSliders();
 
 	// Set Auto checkboxes
-	ui->autoCheck->setChecked(cfg["auto_br"]);
-	emit on_autoCheck_toggled(cfg["auto_br"]);
+	ui->autoBrtCheck->setChecked(cfg["auto_br"]);
+	emit on_autoBrtCheck_toggled(cfg["auto_br"]);
 	ui->autoTempCheck->setChecked(cfg["auto_temp"]);
 
 	createTrayIcon(icon);
@@ -46,7 +46,7 @@ void MainWindow::init()
 
 void MainWindow::setLabels()
 {
-	ui->statusLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brightness"].get<int>(), 0, brt_slider_steps, 0, 100))));
+	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brightness"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
@@ -84,15 +84,16 @@ void MainWindow::setWindowProperties(QIcon &icon)
 
 void MainWindow::setSliders()
 {
-	ui->extendBr->setChecked(cfg["extend_br"]);
-	toggleBrtSlidersRange(cfg["extend_br"]);
-
 	ui->brtSlider->setValue(cfg["brightness"]);
-	ui->offsetSlider->setValue(cfg["offset"]);
+	ui->extendBr->setChecked(cfg["extend_br"]);
 
+	if (cfg["extend_br"].get<bool>()) {
+		toggleBrtSlidersRange(true);
+	}
+
+	ui->offsetSlider->setValue(cfg["offset"]);
 	ui->tempSlider->setRange(0, temp_slider_steps);
 	ui->tempSlider->setValue(cfg["temp_step"]);
-
 	ui->speedSlider->setValue(cfg["speed"]);
 	ui->thresholdSlider->setValue(cfg["threshold"]);
 	ui->pollingSlider->setValue(cfg["polling_rate"]);
@@ -274,11 +275,11 @@ void MainWindow::on_brtSlider_actionTriggered(int action)
 	if (action == QAbstractSlider::SliderMove)
 		return;
 
-	if (ui->autoCheck->isChecked())
-		ui->autoCheck->setChecked(false);
+	if (ui->autoBrtCheck->isChecked())
+		ui->autoBrtCheck->setChecked(false);
 
 	int val = ui->brtSlider->sliderPosition();
-	on_brtSlider_sliderMoved(val);
+	emit on_brtSlider_sliderMoved(val);
 	updateBrtLabel(val);
 }
 
@@ -301,7 +302,6 @@ void MainWindow::on_tempSlider_actionTriggered(int action)
  */
 void MainWindow::on_brtSlider_valueChanged(int val)
 {
-	LOGD << "value changed";
 	updateBrtLabel(val);
 }
 
@@ -311,8 +311,8 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 }
 
 /**
- * Triggered when the sliders are moved manually by the user.
- * We need to notify the gamma controller to apply the new values.
+ * Triggered when the sliders are moved manually by the user or this instance.
+ * We notify the gamma controller to apply the new values.
  */
 void MainWindow::on_brtSlider_sliderMoved(int val)
 {
@@ -347,24 +347,29 @@ void MainWindow::toggleBrtSlidersRange(bool extend)
 	if (extend)
 		br_limit *= 2;
 
-	// Get them before setMaximum
-	const int max = cfg["max_br"].get<int>();
 	const int min = cfg["min_br"].get<int>();
+	const int max = cfg["max_br"].get<int>();
 	ui->brRange->setMaximum(br_limit);
-
 	// We set the upper/lower values again because they reset after setMaximum
 	ui->brRange->setUpperValue(max);
 	ui->brRange->setLowerValue(min);
 
+	const int prev_pos = ui->brtSlider->sliderPosition();
 	ui->brtSlider->setRange(100, br_limit);
-	on_brtSlider_sliderMoved(ui->brtSlider->value());
+	const int cur_pos = ui->brtSlider->sliderPosition();
+
+	if (cur_pos != prev_pos) {
+		ui->brtSlider->setValue(cur_pos);
+		emit on_brtSlider_sliderMoved(cur_pos);
+	}
+
 	ui->offsetSlider->setRange(0, br_limit);
 }
 
 void MainWindow::updateBrtLabel(int val)
 {
 	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
-	ui->statusLabel->setText(QStringLiteral("%1 %").arg(val));
+	ui->brtLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::updateTempLabel(int val)
@@ -416,8 +421,8 @@ void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
 
 void MainWindow::on_brtSlider_sliderPressed()
 {
-	if (ui->autoCheck->isChecked())
-		ui->autoCheck->setChecked(false);
+	if (ui->autoBrtCheck->isChecked())
+		ui->autoBrtCheck->setChecked(false);
 }
 
 void MainWindow::on_tempSlider_sliderPressed()
@@ -426,7 +431,7 @@ void MainWindow::on_tempSlider_sliderPressed()
 		ui->autoTempCheck->setChecked(false);
 }
 
-void MainWindow::on_autoCheck_toggled(bool checked)
+void MainWindow::on_autoBrtCheck_toggled(bool checked)
 {
 	cfg["auto_br"] = checked;
 	mediator->notify(this, AUTO_BRT_TOGGLED);
@@ -434,19 +439,23 @@ void MainWindow::on_autoCheck_toggled(bool checked)
 	// Toggle visibility of br range and offset sliders
 	toggleMainBrSliders(checked);
 
-	// Allow adv. settings button input when auto br is enabled
+	// Enable advanced settings button when auto brt is enabled
 	ui->advBrSettingsBtn->setEnabled(checked);
 	ui->advBrSettingsBtn->setChecked(false);
 
-	const auto btn_color = checked ? "color:white" : "color:rgba(0,0,0,0)";
+	auto btn_color = "color:rgba(0,0,0,0)";
+	auto height    = 170;
+
+	if (checked) {
+		btn_color = "color:white";
+		height = wnd_height;
+	}
+
 	ui->advBrSettingsBtn->setStyleSheet(btn_color);
 
-	const int h = checked ? wnd_height : 170;
-
-	this->setMinimumHeight(h);
-	this->setMaximumHeight(h);
+	this->setMinimumHeight(height);
+	this->setMaximumHeight(height);
 }
-
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
