@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (C) 2019 Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
@@ -12,20 +12,14 @@
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusConnection>
 #include <thread>
-
 #include "cfg.h"
-#include "gammactl.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tempscheduler.h"
 
-MainWindow::MainWindow(GammaCtl *gammactl): ui(new Ui::MainWindow), tray_icon(new QSystemTrayIcon(this))
+MainWindow::MainWindow(): ui(new Ui::MainWindow), tray_icon(new QSystemTrayIcon(this))
 {
-	this->ui->setupUi(this);
-	this->gammactl = gammactl;
-	this->gammactl->setWindow(this);
-	this->gammactl->start();
-	this->init();
+	ui->setupUi(this);
 }
 
 void MainWindow::init()
@@ -173,18 +167,14 @@ void MainWindow::wakeupSlot(bool status)
 	if (status)
 		return;
 
-	LOGD << "System woke up from sleep.";
-
-	// Force autotemp change if enabled
-	gammactl->notify_temp(true);
+	mediator->notify(this, SYSTEM_WAKE_UP);
 }
 
 void MainWindow::quit(bool prev_gamma)
 {
 	this->prev_gamma = prev_gamma;
 	tray_icon->hide();
-	gammactl->stop();
-	gammactl->setInitialGamma(prev_gamma);
+	mediator->notify(this, prev_gamma ? APP_QUIT : APP_QUIT_PURE_GAMMA);
 	config::write();
 	QApplication::quit();
 }
@@ -216,7 +206,7 @@ void MainWindow::showOnTop()
 	move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
 
 	show();
-	updateBrLabel();
+	updateBrtLabel(cfg["brightness"]);
 }
 
 QMenu* MainWindow::createMenu()
@@ -260,16 +250,80 @@ QMenu* MainWindow::createMenu()
 	return menu;
 }
 
+/**
+ * These are called by the mediator when brt/temp is getting adjusted.
+ * Triggers a valueChanged, but not a sliderMoved. This allows us
+ * to differentiate between app and user action.
+ */
 void MainWindow::setBrtSlider(int val)
 {
 	ui->brtSlider->setValue(val);
 }
 
-void MainWindow::on_brtSlider_valueChanged(int value)
+void MainWindow::setTempSlider(int val)
 {
-	cfg["brightness"] = value;
-	gammactl->setGamma(cfg["brightness"], cfg["temp_step"]);
-	updateBrLabel();
+	ui->tempSlider->setValue(val);
+}
+
+/**
+ * Trigger slider move when the slider is moved via single or page step
+ *
+ */
+void MainWindow::on_brtSlider_actionTriggered(int action)
+{
+	if (action == QAbstractSlider::SliderMove)
+		return;
+
+	if (ui->autoCheck->isChecked())
+		ui->autoCheck->setChecked(false);
+
+	int val = ui->brtSlider->sliderPosition();
+	on_brtSlider_sliderMoved(val);
+	updateBrtLabel(val);
+}
+
+void MainWindow::on_tempSlider_actionTriggered(int action)
+{
+	if (action == QAbstractSlider::SliderMove)
+		return;
+
+	if (ui->autoTempCheck->isChecked())
+		ui->autoTempCheck->setChecked(false);
+
+	int val = ui->tempSlider->sliderPosition();
+	ui->tempSlider->setValue(val);
+	on_tempSlider_sliderMoved(val);
+}
+
+/**
+ * Triggered when the sliders are moved automatically by the gamma control.
+ * In this case, the gamma has already been adjusted, no need to do it here.
+ */
+void MainWindow::on_brtSlider_valueChanged(int val)
+{
+	LOGD << "value changed";
+	updateBrtLabel(val);
+}
+
+void MainWindow::on_tempSlider_valueChanged(int val)
+{
+	updateTempLabel(val);
+}
+
+/**
+ * Triggered when the sliders are moved manually by the user.
+ * We need to notify the gamma controller to apply the new values.
+ */
+void MainWindow::on_brtSlider_sliderMoved(int val)
+{
+	cfg["brightness"] = val;
+	mediator->notify(this, GAMMA_SLIDER_MOVED);
+}
+
+void MainWindow::on_tempSlider_sliderMoved(int val)
+{
+	cfg["temp_step"] = val;
+	mediator->notify(this, GAMMA_SLIDER_MOVED);
 }
 
 void MainWindow::on_brRange_lowerValueChanged(int val)
@@ -286,33 +340,38 @@ void MainWindow::on_brRange_upperValueChanged(int val)
 	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
-void MainWindow::updateBrLabel()
+void MainWindow::toggleBrtSlidersRange(bool extend)
 {
-	int val = int(ceil(remap(cfg["brightness"], 0, brt_slider_steps, 0, 100)));
+	int br_limit = brt_slider_steps;
+
+	if (extend)
+		br_limit *= 2;
+
+	// Get them before setMaximum
+	const int max = cfg["max_br"].get<int>();
+	const int min = cfg["min_br"].get<int>();
+	ui->brRange->setMaximum(br_limit);
+
+	// We set the upper/lower values again because they reset after setMaximum
+	ui->brRange->setUpperValue(max);
+	ui->brRange->setLowerValue(min);
+
+	ui->brtSlider->setRange(100, br_limit);
+	on_brtSlider_sliderMoved(ui->brtSlider->value());
+	ui->offsetSlider->setRange(0, br_limit);
+}
+
+void MainWindow::updateBrtLabel(int val)
+{
+	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
 	ui->statusLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
-void MainWindow::setTempSlider(int val)
+void MainWindow::updateTempLabel(int val)
 {
-	ui->tempSlider->setValue(val);
-}
-
-void MainWindow::on_tempSlider_valueChanged(int val)
-{
-	cfg["temp_step"] = val;
-
-	gammactl->setGamma(cfg["brightness"], cfg["temp_step"]);
 	double temp_kelvin = remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
 	temp_kelvin = floor(temp_kelvin / 10) * 10;
 	ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
-}
-
-void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-	if (reason == QSystemTrayIcon::Trigger) {
-		MainWindow::updateBrLabel();
-		MainWindow::show();
-	}
 }
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
@@ -337,27 +396,6 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 	cfg["polling_rate"] = val;
 }
 
-void MainWindow::on_autoCheck_toggled(bool checked)
-{
-	cfg["auto_br"] = checked;
-	gammactl->notify_ss();
-
-	// Toggle visibility of br range and offset sliders
-	toggleMainBrSliders(checked);
-
-	// Allow adv. settings button input when auto br is enabled
-	ui->advBrSettingsBtn->setEnabled(checked);
-	ui->advBrSettingsBtn->setChecked(false);
-
-	const auto btn_color = checked ? "color:white" : "color:rgba(0,0,0,0)";
-	ui->advBrSettingsBtn->setStyleSheet(btn_color);
-
-	const int h = checked ? wnd_height : 170;
-
-	this->setMinimumHeight(h);
-	this->setMaximumHeight(h);
-}
-
 void MainWindow::toggleMainBrSliders(bool checked)
 {
 	ui->rangeWidget->setVisible(checked);
@@ -376,10 +414,44 @@ void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
 	this->setMaximumHeight(h);
 }
 
+void MainWindow::on_brtSlider_sliderPressed()
+{
+	if (ui->autoCheck->isChecked())
+		ui->autoCheck->setChecked(false);
+}
+
+void MainWindow::on_tempSlider_sliderPressed()
+{
+	if (ui->autoTempCheck->isChecked())
+		ui->autoTempCheck->setChecked(false);
+}
+
+void MainWindow::on_autoCheck_toggled(bool checked)
+{
+	cfg["auto_br"] = checked;
+	mediator->notify(this, AUTO_BRT_TOGGLED);
+
+	// Toggle visibility of br range and offset sliders
+	toggleMainBrSliders(checked);
+
+	// Allow adv. settings button input when auto br is enabled
+	ui->advBrSettingsBtn->setEnabled(checked);
+	ui->advBrSettingsBtn->setChecked(false);
+
+	const auto btn_color = checked ? "color:white" : "color:rgba(0,0,0,0)";
+	ui->advBrSettingsBtn->setStyleSheet(btn_color);
+
+	const int h = checked ? wnd_height : 170;
+
+	this->setMinimumHeight(h);
+	this->setMaximumHeight(h);
+}
+
+
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
 	cfg["auto_temp"] = checked;
-	gammactl->notify_temp(true);
+	this->mediator->notify(this, AUTO_TEMP_TOGGLED);
 }
 
 void MainWindow::on_extendBr_clicked(bool checked)
@@ -388,29 +460,9 @@ void MainWindow::on_extendBr_clicked(bool checked)
 	toggleBrtSlidersRange(cfg["extend_br"]);
 }
 
-void MainWindow::toggleBrtSlidersRange(bool extend)
-{
-	int br_limit = brt_slider_steps;
-
-	if (extend)
-		br_limit *= 2;
-
-	int max = cfg["max_br"];
-	int min = cfg["min_br"];
-
-	ui->brRange->setMaximum(br_limit);
-
-	// We set the upper/lower values again because they reset after setMaximum
-	ui->brRange->setUpperValue(max);
-	ui->brRange->setLowerValue(min);
-
-	ui->brtSlider->setRange(100, br_limit);
-	ui->offsetSlider->setRange(0, br_limit);
-}
-
 void MainWindow::on_pushButton_clicked()
 {
-	TempScheduler ts(nullptr, gammactl);
+	TempScheduler ts(this->mediator);
 	ts.exec();
 }
 
@@ -431,16 +483,12 @@ void MainWindow::setPollingRange(int min, int max)
 	ui->pollingSlider->setValue(poll);
 }
 
-void MainWindow::on_brtSlider_sliderPressed()
+void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-	if (ui->autoCheck->isChecked())
-		ui->autoCheck->setChecked(false);
-}
-
-void MainWindow::on_tempSlider_sliderPressed()
-{
-	if (ui->autoTempCheck->isChecked())
-		ui->autoTempCheck->setChecked(false);
+	if (reason == QSystemTrayIcon::Trigger) {
+		updateBrtLabel(cfg["brightness"]);
+		show();
+	}
 }
 
 MainWindow::~MainWindow()

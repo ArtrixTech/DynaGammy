@@ -20,7 +20,9 @@ CONFIG(release) {
 }
 
 HEADERS += src/mainwindow.h src/utils.h \
+    src/component.h \
     src/gammactl.h \
+    src/mediator.h \
     src/screenctl.h \
     src/tempscheduler.h \
     src/cfg.h \
@@ -28,7 +30,9 @@ HEADERS += src/mainwindow.h src/utils.h \
     src/defs.h
 
 SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
+    src/component.cpp \
     src/gammactl.cpp \
+    src/mediator.cpp \
     src/screenctl.cpp \
     src/tempscheduler.cpp \
     src/cfg.cpp \

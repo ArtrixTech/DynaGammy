@@ -1,6 +1,5 @@
 ﻿#include <QTime>
 #include <thread>
-
 #include "gammactl.h"
 #include "defs.h"
 #include "utils.h"
@@ -17,11 +16,6 @@ GammaCtl::GammaCtl()
 		cfg["temp_step"] = 0;
 
 	setGamma(cfg["brightness"], cfg["temp_step"]);
-}
-
-void GammaCtl::setWindow(MainWindow *w)
-{
-	this->wnd = w;
 }
 
 void GammaCtl::start()
@@ -99,7 +93,6 @@ void GammaCtl::captureScreen()
 
 	if (windows && !initDXGI()) {
 		LOGE << "DXGI init failed. Using GDI instead.";
-		wnd->setPollingRange(1000, 5000);
 	}
 
 	convar brt_cv;
@@ -248,7 +241,10 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 		while (cfg["brightness"] != target && !br_needs_change && cfg["auto_br"] && !quit) {
 			time += time_incr;
 			cfg["brightness"] = std::round(easeOutExpo(time, start, distance, duration_s));
-			wnd->setBrtSlider(cfg["brightness"]);
+
+			setGamma(cfg["brightness"], cfg["temp_step"]);
+			mediator->notify(this, BRT_CHANGED);
+
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
@@ -410,7 +406,10 @@ void GammaCtl::adjustTemperature()
 
 			time += time_incr;
 			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration_s));
-			wnd->setTempSlider(cfg["temp_step"]);
+
+			setGamma(cfg["brightness"], cfg["temp_step"]);
+			mediator->notify(this, TEMP_CHANGED);
+
 			sleep_for(milliseconds(1000 / FPS));
 		}
 

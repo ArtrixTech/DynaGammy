@@ -4,8 +4,9 @@
 #include <QDialog>
 #include "utils.h"
 #include "defs.h"
+#include "component.h"
 
-class GammaCtl;
+class Mediator;
 
 namespace Ui {
 class TempScheduler;
@@ -16,21 +17,15 @@ class TempScheduler : public QDialog
 	Q_OBJECT
 
 public:
-	explicit TempScheduler(QWidget *parent = nullptr);
-	explicit TempScheduler(QWidget *parent = nullptr, GammaCtl* gammactl = nullptr);
+	explicit TempScheduler(IMediator *mediator = nullptr);
 	~TempScheduler();
 
 private slots:
 	void on_buttonBox_accepted();
-
 	void on_tempStartBox_valueChanged(int);
-
 	void on_tempEndBox_valueChanged(int);
-
 	void on_timeStartBox_timeChanged(const QTime &time);
-
 	void on_timeEndBox_timeChanged(const QTime &time);
-
 	void on_doubleSpinBox_valueChanged(double arg1);
 
 private:
@@ -43,7 +38,7 @@ private:
 	int low_temp;
 	double adaptation_time_m;
 
-	GammaCtl *gammactl;
+	IMediator *mediator;
 
 	void setDates();
 };

@@ -9,68 +9,72 @@
 #include <QHelpEvent>
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include <QAbstractSlider>
+
+#include "component.h"
+#include "mediator.h"
 
 namespace Ui {
 class MainWindow;
 }
 
-class GammaCtl;
-class ScreenCtl;
-
-class MainWindow : public QMainWindow
+class MainWindow : public QMainWindow, public Component
 {
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget *parent = nullptr);
-	explicit MainWindow(GammaCtl *gammactl);
-
+	explicit MainWindow();
 	~MainWindow();
 
 	bool prev_gamma = true;
-	bool ignore_closeEvent  = true;
 
+	void init();
 	void setTempSlider(int);
 	void setBrtSlider(int);
-	void updateBrLabel();
 	void setPollingRange(int, int);
 	void quit(bool prev_gamma);
 
 private slots:
 	void iconActivated(QSystemTrayIcon::ActivationReason reason);
 
+	void on_brtSlider_valueChanged(int val);
+	void on_tempSlider_valueChanged(int val);
+	void on_brtSlider_sliderMoved(int val);
+	void on_tempSlider_sliderMoved(int val);
+
+	void on_brtSlider_sliderPressed();
+	void on_tempSlider_sliderPressed();
+	void on_brtSlider_actionTriggered(int action);
+	void on_tempSlider_actionTriggered(int action);
+
 	void on_brRange_lowerValueChanged(int val);
 	void on_brRange_upperValueChanged(int val);
 	void on_offsetSlider_valueChanged(int val);
 	void on_speedSlider_valueChanged(int val);
-	void on_tempSlider_valueChanged(int val);
+
 	void on_thresholdSlider_valueChanged(int val);
 	void on_pollingSlider_valueChanged(int val);
-	void on_brtSlider_valueChanged(int value);
 	void on_extendBr_clicked(bool checked);
 	void on_autoCheck_toggled(bool checked);
 	void on_autoTempCheck_toggled(bool checked);
 	void on_pushButton_clicked();
-	void on_brtSlider_sliderPressed();
-	void on_tempSlider_sliderPressed();
+
 	void on_advBrSettingsBtn_toggled(bool checked);
 	void wakeupSlot(bool);
-
 private:
 	Ui::MainWindow  *ui;
 	QSystemTrayIcon *tray_icon;
-	QMenu           *createMenu();
-	GammaCtl        *gammactl;
+	QMenu *createMenu();
 
-	void toggleMainBrSliders(bool show);
-	void toggleBrtSlidersRange(bool);
-	void closeEvent(QCloseEvent *);
 	bool listenWakeupSignal();
-
-	void init();
 	void setWindowProperties(QIcon &icon);
 	void setLabels();
 	void setSliders();
+	void toggleMainBrSliders(bool show);
+	void toggleBrtSlidersRange(bool);
+	void updateBrtLabel(int);
+	void updateTempLabel(int);
+	void closeEvent(QCloseEvent *);
 	void createTrayIcon(QIcon &icon);
 	void checkTray();
 	bool systray_available = false;

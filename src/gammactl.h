@@ -3,25 +3,22 @@
 
 #include <vector>
 #include <thread>
-
 #include "defs.h"
-
-#include "mainwindow.h"
+#include "component.h"
+#include "mediator.h"
 #include "screenctl.h"
 
-class GammaCtl : public ScreenCtl
+class GammaCtl : public ScreenCtl, public Component
 {
 public:
 	GammaCtl();
 
-	void setWindow(MainWindow*);
 	void start();
 	void stop();
 
 	void notify_ss();
 	void notify_temp(bool force = false);
 private:
-	MainWindow *wnd;
 
 	convar ss_cv;
 	convar temp_cv;

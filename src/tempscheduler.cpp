@@ -3,13 +3,9 @@
 #include "cfg.h"
 #include "gammactl.h"
 
-TempScheduler::TempScheduler(QWidget *parent, GammaCtl *gammactl) :
-	QDialog(parent),
-        ui(new Ui::TempScheduler)
+TempScheduler::TempScheduler(IMediator *m) :ui(new Ui::TempScheduler), mediator(m)
 {
 	ui->setupUi(this);
-
-	this->gammactl = gammactl;
 
 	ui->tempStartBox->setValue(high_temp = cfg["temp_high"]);
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
@@ -45,8 +41,7 @@ void TempScheduler::on_buttonBox_accepted()
 	cfg["temp_speed"] = adaptation_time_m;
 
 	config::write();
-
-	gammactl->notify_temp(true);
+	mediator->notify(nullptr, Component::AUTO_TEMP_TOGGLED);
 }
 
 void TempScheduler::on_tempStartBox_valueChanged(int val)
