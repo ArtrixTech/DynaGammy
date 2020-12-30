@@ -12,7 +12,7 @@ Mediator::Mediator(GammaCtl *g, MainWindow *w) : gammactl(g), wnd(w)
 	wnd->init();
 }
 
-void Mediator::notify(Component *sender, Component::Event e) const
+void Mediator::notify([[maybe_unused]] Component *sender, Component::Event e) const
 {
 	switch (e) {
 	case Component::BRT_CHANGED:
