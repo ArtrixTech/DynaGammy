@@ -14,15 +14,14 @@ constexpr bool windows = false;
 #endif
 
 constexpr const char* g_app_version = "v0.9.6";
-constexpr const char* config_name = "gammyconf.json";
+constexpr const char* config_name   = "gammyconf";
 
-constexpr int min_temp_kelvin    = 2000;
-constexpr int max_temp_kelvin    = 6500;
-
-constexpr int brt_slider_steps   = 500;
-constexpr int temp_slider_steps  = 500;
-constexpr size_t temp_arr_ch_len = 46;
-constexpr size_t temp_arr_len    = temp_arr_ch_len * 3;
+constexpr int    brt_slider_steps   = 500;
+constexpr int    temp_slider_steps  = 500;
+constexpr int    min_temp_kelvin    = 2000;
+constexpr int    max_temp_kelvin    = 6500;
+constexpr size_t temp_arr_ch_len    = 46;
+constexpr size_t temp_arr_len       = temp_arr_ch_len * 3;
 
 // Color ramp by Ingo Thies. From Redshift:
 // https://github.com/jonls/redshift/blob/master/README-colorramp

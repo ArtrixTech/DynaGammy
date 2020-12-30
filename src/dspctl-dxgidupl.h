@@ -12,6 +12,12 @@
 #include <stdint.h>
 #include <vector>
 
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "DXGI.lib")
+#pragma comment(lib, "D3D11.lib")
+#pragma comment(lib, "Advapi32.lib")
+
 namespace GDI {
 void setGamma();
 void getSnapshot();

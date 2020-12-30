@@ -21,7 +21,7 @@ std::wstring config::getExecutablePath()
 	std::wstring appname = L"gammy.exe";
 	path.erase(path.find(appname), appname.length());
 
-	path += L"gammyconf.json";
+	path += L"gammyconf.txt";
 
 	return path;
 }
@@ -47,26 +47,28 @@ json getDefault()
 {
 	return
 	{
+		{"brt_auto", true},
 		{"brt_fps", 60},
+		{"brt_step", brt_slider_steps},
+		{"brt_min", brt_slider_steps / 2},
+		{"brt_max", brt_slider_steps},
+		{"brt_offset", brt_slider_steps / 3},
+		{"brt_speed", 2},
+		{"brt_threshold", 8},
+		{"brt_polling_rate", 100},
+		{"brt_extend", false},
+
+		{"temp_auto", false},
 		{"temp_fps", 45},
-		{"brightness", brt_slider_steps},
-		{"min_br", brt_slider_steps / 2 },
-		{"max_br", brt_slider_steps },
-		{"offset", brt_slider_steps / 3 },
-		{"speed", 5 },
-		{"threshold", 36 },
-		{"polling_rate", 100 },
-		{"temp_speed", 60.0 },
-		{"temp_step", 0 },
-		{"temp_high", max_temp_kelvin },
-		{"temp_low", 3400 },
-		{"time_start", "17:00:00" },
-		{"time_end", "06:00:00" },
-		{"auto_br", true },
-		{"auto_temp", false },
-		{"extend_br", false },
-		{"log_lvl", plog::warning },
-		{"show_on_startup", false }
+		{"temp_step", 0},
+		{"temp_high", max_temp_kelvin},
+		{"temp_low", 3400},
+		{"temp_speed", 60.0},
+		{"temp_sunrise", "06:00:00"},
+		{"temp_sunset", "16:00:00"},
+
+		{"log_level", plog::warning},
+		{"show_on_startup", false}
 	};
 }
 

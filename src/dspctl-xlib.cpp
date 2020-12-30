@@ -3,15 +3,11 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "dspctl-xlib.h"
-#include <iostream>
-#include <cstring>
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
-#include "utils.h"
+#include "dspctl-xlib.h"
 #include "defs.h"
-#include <algorithm>
-#include <cmath>
+#include "utils.h"
 
 DspCtl::DspCtl()
 {

@@ -8,14 +8,14 @@
 GammaCtl::GammaCtl()
 {
 	// If auto brightness is on, start at max brightness
-	if (cfg["auto_br"].get<bool>())
-		cfg["brightness"] = brt_slider_steps;
+	if (cfg["brt_auto"].get<bool>())
+		cfg["brt_step"] = brt_slider_steps;
 
 	// If auto temp is on, start at max temp for a smooth transition
-	if (cfg["auto_temp"].get<bool>())
+	if (cfg["temp_auto"].get<bool>())
 		cfg["temp_step"] = 0;
 
-	setGamma(cfg["brightness"].get<int>(), cfg["temp_step"].get<int>());
+	setGamma(cfg["brt_step"].get<int>(), cfg["temp_step"].get<int>());
 }
 
 void GammaCtl::start()
@@ -83,7 +83,7 @@ void GammaCtl::reapplyGamma()
 		if (quit)
 			break;
 
-		setGamma(cfg["brightness"], cfg["temp_step"]);
+		setGamma(cfg["brt_step"], cfg["temp_step"]);
 	}
 }
 
@@ -113,14 +113,14 @@ void GammaCtl::captureScreen()
 			std::unique_lock<std::mutex> lock(m);
 
 			ss_cv.wait(lock, [&] {
-				return cfg["auto_br"] || quit;
+				return cfg["brt_auto"] || quit;
 			});
 		}
 
 		if (quit)
 			break;
 
-		if (cfg["auto_br"]) {
+		if (cfg["brt_auto"]) {
 			force = true;
 		} else {
 			buf.clear();
@@ -128,15 +128,15 @@ void GammaCtl::captureScreen()
 			continue;
 		}
 
-		while (cfg["auto_br"].get<bool>() && !quit) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(cfg["polling_rate"].get<int>()));
+		while (cfg["brt_auto"].get<bool>() && !quit) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"].get<int>()));
 			LOGV << "Taking screenshot";
 			getSnapshot(buf);
 			LOGV << "Calculating brightness";
 			const int img_br = calcBrightness(buf, 4, 1024);
 			img_delta += abs(prev_img_br - img_br);
 
-			if (img_delta > cfg["threshold"] || force) {
+			if (img_delta > cfg["brt_threshold"] || force) {
 				img_delta = 0;
 				force = false;
 
@@ -149,13 +149,13 @@ void GammaCtl::captureScreen()
 				brt_cv.notify_one();
 			}
 
-			if (cfg["min_br"] != prev_min || cfg["max_br"] != prev_max || cfg["offset"] != prev_offset)
+			if (cfg["brt_min"] != prev_min || cfg["brt_max"] != prev_max || cfg["brt_offset"] != prev_offset)
 				force = true;
 
 			prev_img_br = img_br;
-			prev_min    = cfg["min_br"];
-			prev_max    = cfg["max_br"];
-			prev_offset = cfg["offset"];
+			prev_min    = cfg["brt_min"];
+			prev_max    = cfg["brt_max"];
+			prev_offset = cfg["brt_offset"];
 		}
 
 		buf.clear();
@@ -215,17 +215,17 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 			img_br = this->ss_brightness;
 		}
 
-		int target = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps)) + cfg["offset"].get<int>();
-		target = std::clamp(target, cfg["min_br"].get<int>(), cfg["max_br"].get<int>());
+		int target = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps)) + cfg["brt_offset"].get<int>();
+		target = std::clamp(target, cfg["brt_min"].get<int>(), cfg["brt_max"].get<int>());
 
-		if (target == cfg["brightness"]) {
+		if (target == cfg["brt_step"]) {
 			LOGD << "Brt already at target (" << target << ')';
 			continue;
 		}
 
-		const int start         = cfg["brightness"];
+		const int start         = cfg["brt_step"];
 		const int end           = target;
-		double duration_s       = cfg["speed"];
+		double duration_s       = cfg["brt_speed"];
 		const int FPS           = cfg["brt_fps"];
 		const double iterations = FPS * duration_s;
 		const int distance      = end - start;
@@ -235,11 +235,11 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 
 		LOGD << "(" << start << "->" << end << ')';
 
-		while (cfg["brightness"] != target && !br_needs_change && cfg["auto_br"] && !quit) {
+		while (cfg["brt_step"] != target && !br_needs_change && cfg["brt_auto"] && !quit) {
 			time += time_incr;
-			cfg["brightness"] = std::round(easeOutExpo(time, start, distance, duration_s));
+			cfg["brt_step"] = std::round(easeOutExpo(time, start, distance, duration_s));
 
-			setGamma(cfg["brightness"], cfg["temp_step"]);
+			setGamma(cfg["brt_step"], cfg["temp_step"]);
 			mediator->notify(this, BRT_CHANGED);
 
 			sleep_for(milliseconds(1000 / FPS));
@@ -272,7 +272,7 @@ void GammaCtl::adjustTemperature()
 	};
 
 	const auto updateInterval = [&] {
-		std::string t_start = cfg["time_start"];
+		std::string t_start = cfg["temp_sunset"];
 		const int h = std::stoi(t_start.substr(0, 2));
 		const int m = std::stoi(t_start.substr(3, 2));
 
@@ -280,12 +280,12 @@ void GammaCtl::adjustTemperature()
 		const QTime adapted_start = QTime(h, m).addSecs(-adapt_time_s);
 
 		setTime(start_time, adapted_start.toString().toStdString());
-		setTime(end_time, cfg["time_end"]);
+		setTime(end_time, cfg["temp_sunrise"]);
 	};
 
 	updateInterval();
 
-	bool needs_change = cfg["auto_temp"];
+	bool needs_change = cfg["temp_auto"];
 
 	convar     clock_cv;
 	std::mutex clock_mtx;
@@ -303,7 +303,7 @@ void GammaCtl::adjustTemperature()
 			if (quit)
 				break;
 
-			if (!cfg["auto_temp"])
+			if (!cfg["temp_auto"])
 				continue;
 
 			{
@@ -337,7 +337,7 @@ void GammaCtl::adjustTemperature()
 			needs_change = false;
 		}
 
-		if (!cfg["auto_temp"])
+		if (!cfg["temp_auto"])
 			continue;
 
 
@@ -397,14 +397,14 @@ void GammaCtl::adjustTemperature()
 
 		LOGD << "(" << cur_step << "->" << target_step << ')';
 
-		while (cfg["temp_step"] != target_step && cfg["auto_temp"]) {
+		while (cfg["temp_step"] != target_step && cfg["temp_auto"]) {
 			if (force_temp_change || quit)
 				break;
 
 			time += time_incr;
 			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration_s));
 
-			setGamma(cfg["brightness"], cfg["temp_step"]);
+			setGamma(cfg["brt_step"], cfg["temp_step"]);
 			mediator->notify(this, TEMP_CHANGED);
 
 			sleep_for(milliseconds(1000 / FPS));

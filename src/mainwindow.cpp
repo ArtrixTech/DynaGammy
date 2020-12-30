@@ -35,9 +35,9 @@ void MainWindow::init()
 	setSliders();
 
 	// Set Auto checkboxes
-	ui->autoBrtCheck->setChecked(cfg["auto_br"]);
-	emit on_autoBrtCheck_toggled(cfg["auto_br"]);
-	ui->autoTempCheck->setChecked(cfg["auto_temp"]);
+	ui->autoBrtCheck->setChecked(cfg["brt_auto"]);
+	emit on_autoBrtCheck_toggled(cfg["brt_auto"]);
+	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
 	createTrayIcon(icon);
 	std::thread t([&] { checkTray(); });
@@ -46,12 +46,12 @@ void MainWindow::init()
 
 void MainWindow::setLabels()
 {
-	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brightness"].get<int>(), 0, brt_slider_steps, 0, 100))));
-	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["min_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["max_br"].get<int>(), 0, brt_slider_steps, 0, 100))));
-	ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["speed"].get<int>()));
-	ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["threshold"].get<int>()));
-	ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg["polling_rate"].get<int>()));
+	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_slider_steps, 0, 100))));
+	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_min"].get<int>(), 0, brt_slider_steps, 0, 100))));
+	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_max"].get<int>(), 0, brt_slider_steps, 0, 100))));
+	ui->speedLabel->setText(QStringLiteral("%1 s").arg(cfg["brt_speed"].get<int>()));
+	ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["brt_threshold"].get<int>()));
+	ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg["brt_polling_rate"].get<int>()));
 
 	double temp_kelvin = remap(temp_slider_steps - cfg["temp_step"].get<int>(), 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
 	temp_kelvin = floor(temp_kelvin / 100) * 100;
@@ -84,19 +84,19 @@ void MainWindow::setWindowProperties(QIcon &icon)
 
 void MainWindow::setSliders()
 {
-	ui->brtSlider->setValue(cfg["brightness"]);
-	ui->extendBr->setChecked(cfg["extend_br"]);
+	ui->brtSlider->setValue(cfg["brt_step"]);
+	ui->extendBr->setChecked(cfg["brt_extend"]);
 
-	if (cfg["extend_br"].get<bool>()) {
+	if (cfg["brt_extend"].get<bool>()) {
 		toggleBrtSlidersRange(true);
 	}
 
-	ui->offsetSlider->setValue(cfg["offset"]);
+	ui->offsetSlider->setValue(cfg["brt_offset"]);
 	ui->tempSlider->setRange(0, temp_slider_steps);
 	ui->tempSlider->setValue(cfg["temp_step"]);
-	ui->speedSlider->setValue(cfg["speed"]);
-	ui->thresholdSlider->setValue(cfg["threshold"]);
-	ui->pollingSlider->setValue(cfg["polling_rate"]);
+	ui->speedSlider->setValue(cfg["brt_speed"]);
+	ui->thresholdSlider->setValue(cfg["brt_threshold"]);
+	ui->pollingSlider->setValue(cfg["brt_polling_rate"]);
 }
 
 void MainWindow::checkTray()
@@ -207,7 +207,7 @@ void MainWindow::showOnTop()
 	move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
 
 	show();
-	updateBrtLabel(cfg["brightness"]);
+	updateBrtLabel(cfg["brt_step"]);
 }
 
 QMenu* MainWindow::createMenu()
@@ -316,7 +316,7 @@ void MainWindow::on_tempSlider_valueChanged(int val)
  */
 void MainWindow::on_brtSlider_sliderMoved(int val)
 {
-	cfg["brightness"] = val;
+	cfg["brt_step"] = val;
 	mediator->notify(this, GAMMA_SLIDER_MOVED);
 }
 
@@ -328,14 +328,14 @@ void MainWindow::on_tempSlider_sliderMoved(int val)
 
 void MainWindow::on_brRange_lowerValueChanged(int val)
 {
-	cfg["min_br"] = val;
+	cfg["brt_min"] = val;
 	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
 	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::on_brRange_upperValueChanged(int val)
 {
-	cfg["max_br"] = val;
+	cfg["brt_max"] = val;
 	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
 	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
@@ -347,8 +347,8 @@ void MainWindow::toggleBrtSlidersRange(bool extend)
 	if (extend)
 		br_limit *= 2;
 
-	const int min = cfg["min_br"].get<int>();
-	const int max = cfg["max_br"].get<int>();
+	const int min = cfg["brt_min"].get<int>();
+	const int max = cfg["brt_max"].get<int>();
 	ui->brRange->setMaximum(br_limit);
 	// We set the upper/lower values again because they reset after setMaximum
 	ui->brRange->setUpperValue(max);
@@ -381,24 +381,24 @@ void MainWindow::updateTempLabel(int val)
 
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
-	cfg["offset"] = val;
+	cfg["brt_offset"] = val;
 	ui->offsetLabel->setText(QStringLiteral("%1 %").arg(int(remap(val, 0, brt_slider_steps, 0, 100))));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
-	cfg["speed"] = val;
+	cfg["brt_speed"] = val;
 	ui->speedLabel->setText(QStringLiteral("%1 s").arg(val));
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)
 {
-	cfg["threshold"] = val;
+	cfg["brt_threshold"] = val;
 }
 
 void MainWindow::on_pollingSlider_valueChanged(int val)
 {
-	cfg["polling_rate"] = val;
+	cfg["brt_polling_rate"] = val;
 }
 
 void MainWindow::toggleMainBrSliders(bool checked)
@@ -433,7 +433,7 @@ void MainWindow::on_tempSlider_sliderPressed()
 
 void MainWindow::on_autoBrtCheck_toggled(bool checked)
 {
-	cfg["auto_br"] = checked;
+	cfg["brt_auto"] = checked;
 	mediator->notify(this, AUTO_BRT_TOGGLED);
 
 	// Toggle visibility of br range and offset sliders
@@ -459,14 +459,14 @@ void MainWindow::on_autoBrtCheck_toggled(bool checked)
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
-	cfg["auto_temp"] = checked;
+	cfg["temp_auto"] = checked;
 	this->mediator->notify(this, AUTO_TEMP_TOGGLED);
 }
 
 void MainWindow::on_extendBr_clicked(bool checked)
 {
-	cfg["extend_br"] = checked;
-	toggleBrtSlidersRange(cfg["extend_br"]);
+	cfg["brt_extend"] = checked;
+	toggleBrtSlidersRange(cfg["brt_extend"]);
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -477,16 +477,16 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::setPollingRange(int min, int max)
 {
-	const int poll = cfg["polling_rate"];
+	const int poll = cfg["brt_polling_rate"];
 
 	LOGD << "Setting polling rate slider range to: " << min << ", " << max;
 
 	ui->pollingSlider->setRange(min, max);
 
 	if (poll < min)
-		cfg["polling_rate"] = min;
+		cfg["brt_polling_rate"] = min;
 	else if (poll > max)
-		cfg["polling_rate"] = max;
+		cfg["brt_polling_rate"] = max;
 
 	ui->pollingLabel->setText(QString::number(poll));
 	ui->pollingSlider->setValue(poll);
@@ -495,7 +495,7 @@ void MainWindow::setPollingRange(int min, int max)
 void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
 	if (reason == QSystemTrayIcon::Trigger) {
-		updateBrtLabel(cfg["brightness"]);
+		updateBrtLabel(cfg["brt_step"]);
 		show();
 	}
 }

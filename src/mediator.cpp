@@ -16,13 +16,13 @@ void Mediator::notify([[maybe_unused]] Component *sender, Component::Event e) co
 {
 	switch (e) {
 	case Component::BRT_CHANGED:
-		wnd->setBrtSlider(cfg["brightness"]);
+		wnd->setBrtSlider(cfg["brt_step"]);
 		break;
 	case Component::TEMP_CHANGED:
 		wnd->setTempSlider(cfg["temp_step"]);
 		break;
 	case Component::GAMMA_SLIDER_MOVED:
-		gammactl->setGamma(cfg["brightness"], cfg["temp_step"]);
+		gammactl->setGamma(cfg["brt_step"], cfg["temp_step"]);
 		break;
 	case Component::AUTO_BRT_TOGGLED:
 		LOGD << "Auto brt toggled.";

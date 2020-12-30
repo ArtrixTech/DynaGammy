@@ -11,11 +11,11 @@ TempScheduler::TempScheduler(IMediator *m) :ui(new Ui::TempScheduler), mediator(
 	ui->tempEndBox->setValue(low_temp = cfg["temp_low"]);
 	ui->doubleSpinBox->setValue(adaptation_time_m = cfg["temp_speed"]);
 
-	const auto sunrise = cfg["time_end"].get<std::string>();
+	const auto sunrise = cfg["temp_sunrise"].get<std::string>();
 	sunrise_h = std::stoi(sunrise.substr(0, 2));
 	sunrise_m = std::stoi(sunrise.substr(3, 2));
 
-	const auto sunset = cfg["time_start"].get<std::string>();
+	const auto sunset = cfg["temp_sunset"].get<std::string>();
 	sunset_h = std::stoi(sunset.substr(0, 2));
 	sunset_m = std::stoi(sunset.substr(3, 2));
 
@@ -34,11 +34,11 @@ void TempScheduler::on_buttonBox_accepted()
 		t_sunrise = t_sunset_adaptated;
 	}
 
-	cfg["time_start"] = t_sunset.toString().toStdString();
-	cfg["time_end"]   = t_sunrise.toString().toStdString();
-	cfg["temp_high"]  = high_temp;
-	cfg["temp_low"]   = low_temp;
-	cfg["temp_speed"] = adaptation_time_m;
+	cfg["temp_sunset"]  = t_sunset.toString().toStdString();
+	cfg["temp_sunrise"] = t_sunrise.toString().toStdString();
+	cfg["temp_high"]    = high_temp;
+	cfg["temp_low"]     = low_temp;
+	cfg["temp_speed"]   = adaptation_time_m;
 
 	config::write();
 	mediator->notify(nullptr, Component::AUTO_TEMP_TOGGLED);

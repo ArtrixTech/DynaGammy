@@ -16,9 +16,9 @@ const int scLeftRightMargin = 1;
 RangeSlider::RangeSlider(QWidget* aParent)
     : QWidget(aParent),
       mMinimum(100),
-      mMaximum(cfg["extend_br"].get<bool>() ? brt_slider_steps * 2 : brt_slider_steps),
-      mLowerValue(cfg["min_br"]),
-      mUpperValue(cfg["max_br"]),
+      mMaximum(cfg["brt_extend"].get<bool>() ? brt_slider_steps * 2 : brt_slider_steps),
+      mLowerValue(cfg["brt_min"]),
+      mUpperValue(cfg["brt_max"]),
       mFirstHandlePressed(false),
       mSecondHandlePressed(false),
       mInterval(mMaximum - mMinimum),
