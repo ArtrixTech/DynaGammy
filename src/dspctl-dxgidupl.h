@@ -12,25 +12,33 @@
 #include <stdint.h>
 #include <vector>
 
-class DXGIDupl
+namespace GDI {
+void setGamma();
+void getSnapshot();
+}
+
+class DspCtl
 {
+public:
+    DspCtl();
+
+    void setGamma(int, int);
+    void getSnapshot(std::vector<uint8_t> &buf) noexcept;
+
+    ~DspCtl();
+private:
+    bool init();
+    bool useDXGI = false;
+
     ID3D11Device            *d3d_device;
     ID3D11DeviceContext     *d3d_context;
     IDXGIOutput1            *output1;
     IDXGIOutputDuplication  *duplication;
     D3D11_TEXTURE2D_DESC    tex_desc;
 
-public:
-    DXGIDupl();
-
-    bool init();
-    bool getSnapshot(std::vector<uint8_t> &buf) noexcept;
+    bool getFrame(std::vector<uint8_t> &buf);
     void restart();
-
-    ~DXGIDupl();
 };
-
-extern DXGIDupl dx;
 
 #endif // DXGIDUPL_H
 

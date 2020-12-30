@@ -1,7 +1,7 @@
 #ifndef SCREENCTL_H
 #define SCREENCTL_H
 
-class X11;
+class DspCtl;
 class DXGIDupl;
 
 #include <vector>
@@ -9,7 +9,7 @@ class DXGIDupl;
 #ifdef _WIN32
 #include "dxgidupl.h"
 #else
-#include "x11.h"
+#include "dspctl-xlib.h"
 #undef Status
 #undef Bool
 #undef CursorShape
@@ -31,7 +31,7 @@ private:
 	DXGIDupl dx;
 	bool useDXGI;
 #else
-	X11 x11;
+	DspCtl x11;
 #endif
 
 };

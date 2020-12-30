@@ -46,165 +46,95 @@ double easeInOutQuad(double t, double b, double c, double d)
 };
 
 #ifdef _WIN32
-
-static const HDC screenDC = GetDC(nullptr);
-
-void getGDISnapshot(std::vector<uint8_t> &buf)
-{
-    const static uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
-                          h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
-
-    static BITMAPINFOHEADER info;
-    ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
-    info.biSize = sizeof(BITMAPINFOHEADER);
-    info.biWidth = w;
-    info.biHeight = -h;
-    info.biPlanes = 1;
-    info.biBitCount = 32;
-    info.biCompression = BI_RGB;
-    info.biSizeImage = buf.size();
-    info.biClrUsed = 0;
-    info.biClrImportant = 0;
-
-    HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
-    HDC memoryDC = CreateCompatibleDC(screenDC);
-
-    HGDIOBJ oldObj = SelectObject(memoryDC, hBitmap);
-
-    BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
-
-    GetDIBits(memoryDC, hBitmap, 0, h, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
-
-    SelectObject(memoryDC, oldObj);
-    DeleteObject(hBitmap);
-    DeleteObject(oldObj);
-    DeleteDC(memoryDC);
-}
-
-void setGDIGamma(int brt_step, int temp_step)
-{
-    if (brt_step > brt_slider_steps) {
-        return;
-    }
-
-    const double r_mult = interpTemp(temp_step, 0),
-                 g_mult = interpTemp(temp_step, 1),
-                 b_mult = interpTemp(temp_step, 2);
-
-    WORD ramp[3][256];
-
-    const auto brt_mult = remap(brt_step, 0, brt_slider_steps, 0, 255);
-
-    for (WORD i = 0; i < 256; ++i) {
-        const int val = i * brt_mult;
-        ramp[0][i] = WORD(val * r_mult);
-        ramp[1][i] = WORD(val * g_mult);
-        ramp[2][i] = WORD(val * b_mult);
-    }
-
-    SetDeviceGammaRamp(screenDC, ramp);
-}
-
 void checkGammaRange()
 {
-    LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ICM";
-    LSTATUS s;
+	LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ICM";
+	LSTATUS s;
 
-    s = RegGetValueW(HKEY_LOCAL_MACHINE, subKey, L"GdiICMGammaRange", RRF_RT_REG_DWORD, nullptr, nullptr, nullptr);
+	s = RegGetValueW(HKEY_LOCAL_MACHINE, subKey, L"GdiICMGammaRange", RRF_RT_REG_DWORD, nullptr, nullptr, nullptr);
 
-    if (s == ERROR_SUCCESS)
-    {
-        LOGI << "Gamma regkey already set";
-        return;
-    }
+	if (s == ERROR_SUCCESS) {
+		LOGI << "Gamma regkey already set";
+		return;
+	}
 
-    LOGW << "Gamma regkey not set. Creating one...";
+	LOGW << "Gamma regkey not set. Creating one...";
 
-    HKEY hKey;
+	HKEY hKey;
 
-    s = RegCreateKeyExW(HKEY_LOCAL_MACHINE, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &hKey, nullptr);
+	s = RegCreateKeyExW(HKEY_LOCAL_MACHINE, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &hKey, nullptr);
 
-    if (s == ERROR_SUCCESS)
-    {
-        LOGI << "Gamma registry key created";
+	if (s == ERROR_SUCCESS) {
+		LOGI << "Gamma registry key created";
+		DWORD val = 256;
+		s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, LPBYTE(&val), sizeof(val));
 
-        DWORD val = 256;
+		if (s == ERROR_SUCCESS) {
+			MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
 
-        s = RegSetValueExW(hKey, L"GdiICMGammaRange", 0, REG_DWORD, LPBYTE(&val), sizeof(val));
+			LOGI << "Gamma regvalue set";
+		}
+		else {
+			LOGE << "Error when setting Gamma registry value";
+		}
+	} else {
+		LOGE << "** Error when creating/opening gamma regkey";
+		if (s == ERROR_ACCESS_DENIED) {
+			LOGE << "** ACCESS_DENIED";
+		}
+	}
 
-        if (s == ERROR_SUCCESS)
-        {
-            MessageBoxW(nullptr, L"Gammy has extended the brightness range. Restart to apply the changes.", L"Gammy", 0);
-
-            LOGI << "Gamma regvalue set";
-        }
-        else LOGE << "Error when setting Gamma registry value";
-    }
-    else
-    {
-        LOGE << "** Error when creating/opening gamma regkey";
-
-        if (s == ERROR_ACCESS_DENIED)
-        {
-            LOGE << "** ACCESS_DENIED";
-        }
-    }
-
-    if (hKey) RegCloseKey(hKey);
+	if (hKey)
+		RegCloseKey(hKey);
 }
 
-void toggleRegkey(bool isChecked)
+void toggleRegkey(bool checked)
 {
-    LSTATUS s;
-    HKEY hKey = nullptr;
-    LPCWSTR subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+	LSTATUS s;
+	HKEY hKey = nullptr;
+	LPCWSTR subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
-    if (isChecked)
-    {
-        WCHAR path[MAX_PATH + 3], tmpPath[MAX_PATH + 3];
-        GetModuleFileName(nullptr, tmpPath, MAX_PATH + 1);
-        wsprintfW(path, L"\"%s\"", tmpPath);
+	if (checked) {
+		WCHAR path[MAX_PATH + 3], tmpPath[MAX_PATH + 3];
+		GetModuleFileName(nullptr, tmpPath, MAX_PATH + 1);
+		wsprintfW(path, L"\"%s\"", tmpPath);
 
-        s = RegCreateKeyExW(HKEY_CURRENT_USER, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | KEY_WOW64_64KEY, nullptr, &hKey, nullptr);
+		s = RegCreateKeyExW(HKEY_CURRENT_USER, subKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | KEY_WOW64_64KEY, nullptr, &hKey, nullptr);
 
-        if (s == ERROR_SUCCESS)
-        {
-            s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
+		if (s == ERROR_SUCCESS) {
+			s = RegSetValueExW(hKey, L"Gammy", 0, REG_SZ, LPBYTE(path), int((wcslen(path) * sizeof(WCHAR))));
+			if (s == ERROR_SUCCESS)
+				LOGI << "Startup regkey set";
+			else
+				LOGE << "Failed to set startup regvalue";
+		}
+		else {
+			LOGE << "Failed to open startup regkey";
+		}
+	} else {
+		s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
+		if (s == ERROR_SUCCESS)
+			LOGI << "Run at startup unset";
+		else
+			LOGE << "Failed to delete startup regkey";
+	}
 
-            if (s == ERROR_SUCCESS)
-            {
-                LOGI << "Startup regkey set";
-            }
-            else LOGE << "Failed to set startup regvalue";
-        }
-        else LOGE << "Failed to open startup regkey";
-    }
-    else
-    {
-        s = RegDeleteKeyValueW(HKEY_CURRENT_USER, subKey, L"Gammy");
-
-            if (s == ERROR_SUCCESS)
-                LOGI << "Run at startup unset";
-            else
-                LOGE << "Failed to delete startup regkey";
-    }
-
-    if(hKey) RegCloseKey(hKey);
+	if (hKey)
+		RegCloseKey(hKey);
 }
 
 void checkInstance()
 {
-    LOGV << "Checking for multiple instances";
+	LOGV << "Checking for multiple instances";
 
-    HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
+	HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
 
-    if (GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-        CloseHandle(hStartEvent);
-        hStartEvent = nullptr;
+	if (GetLastError() == ERROR_ALREADY_EXISTS) {
+		CloseHandle(hStartEvent);
+		hStartEvent = nullptr;
 
-        LOGV << "Another instance of Gammy is running. Closing";
-        exit(0);
-    }
+		LOGV << "Another instance of Gammy is running. Closing";
+		exit(0);
+	}
 }
 #endif

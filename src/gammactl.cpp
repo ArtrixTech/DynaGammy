@@ -91,10 +91,6 @@ void GammaCtl::captureScreen()
 {
 	LOGV << "captureScreen() start";
 
-	if (windows && !initDXGI()) {
-		LOGE << "DXGI init failed. Using GDI instead.";
-	}
-
 	convar brt_cv;
 	std::thread brt_thr([&] { adjustBrightness(brt_cv); });
 
@@ -132,7 +128,8 @@ void GammaCtl::captureScreen()
 			continue;
 		}
 
-		while (cfg["auto_br"] && !quit) {
+		while (cfg["auto_br"].get<bool>() && !quit) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(cfg["polling_rate"].get<int>()));
 			LOGV << "Taking screenshot";
 			getSnapshot(buf);
 			LOGV << "Calculating brightness";
@@ -144,7 +141,7 @@ void GammaCtl::captureScreen()
 				force = false;
 
 				{
-					std::lock_guard lock(br_mtx);
+					std::lock_guard lock(brt_mtx);
 					this->ss_brightness = img_br;
 					br_needs_change = true;
 				}
@@ -166,7 +163,7 @@ void GammaCtl::captureScreen()
 	}
 
 	{
-		std::lock_guard<std::mutex> lock (br_mtx);
+		std::lock_guard<std::mutex> lock (brt_mtx);
 		br_needs_change = true;
 	}
 
@@ -205,7 +202,7 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 		int img_br;
 
 		{
-			std::unique_lock<std::mutex> lock(br_mtx);
+			std::unique_lock<std::mutex> lock(brt_mtx);
 
 			brt_cv.wait(lock, [&] {
 				return br_needs_change;

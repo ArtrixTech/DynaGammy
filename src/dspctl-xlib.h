@@ -10,10 +10,12 @@
 #include <cstdint>
 #include <vector>
 
-class X11
+/**
+ * @brief Xlib display controller
+ */
+class DspCtl
 {
 	Display *dsp;
-
 	Screen *scr;
 	Window root;
 
@@ -26,18 +28,17 @@ class X11
 	unsigned w, h;
 
 	void fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp);
-
-	public:
-	X11();
-
-	uint32_t getWidth();
-	uint32_t getHeight();
+public:
+	DspCtl();
 
 	void getSnapshot(std::vector<uint8_t> &buf) noexcept;
 	void setGamma(int brt, int temp);
 	void setInitialGamma(bool set_previous);
 
-	~X11();
+	uint32_t getWidth();
+	uint32_t getHeight();
+
+	~DspCtl();
 };
 
 #endif // X11_H

@@ -33,7 +33,6 @@ SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
     src/component.cpp \
     src/gammactl.cpp \
     src/mediator.cpp \
-    src/screenctl.cpp \
     src/tempscheduler.cpp \
     src/cfg.cpp \
     src/RangeSlider.cpp
@@ -42,15 +41,16 @@ FORMS   += src/mainwindow.ui \
     src/tempscheduler.ui \
 
 win32:{
-    SOURCES += src/dxgidupl.cpp
-    HEADERS += src/dxgidupl.h \
-                   winres.h winres.rc
+    SOURCES += src/dspctl-dxgidupl.cpp \
+    src/dspctl-xlib.cpp \
+    HEADERS += src/dspctl-dxgidupl.h \
+    winres.h winres.rc
     RC_FILE = winres.rc
 }
 
 unix:{
-    HEADERS += src/x11.h
-    SOURCES += src/x11.cpp
+    HEADERS += src/dspctl-xlib.h
+    SOURCES += src/dspctl-xlib.cpp
     LIBS += -lX11 -lXxf86vm
 
     isEmpty(PREFIX) {

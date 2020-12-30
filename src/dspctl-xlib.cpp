@@ -3,7 +3,7 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "x11.h"
+#include "dspctl-xlib.h"
 #include <iostream>
 #include <cstring>
 #include <X11/Xutil.h>
@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
-X11::X11()
+DspCtl::DspCtl()
 {
 	if (!XInitThreads()) {
 		LOGE << "Failed to initialize XThreads. App may crash unexpectedly.";
@@ -69,7 +69,7 @@ X11::X11()
 	}
 }
 
-void X11::getSnapshot(std::vector<uint8_t> &buf) noexcept
+void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
 {
 	const auto img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
 	buf.assign(img->data, img->data + (img->bytes_per_line * img->height));
@@ -82,7 +82,7 @@ void X11::getSnapshot(std::vector<uint8_t> &buf) noexcept
  * the RGB channels look like:
  * [ 0, 32, 64, 96, ... UINT16_MAX - 32 ]
  */
-void X11::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int temp_step)
+void DspCtl::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int temp_step)
 {
 	auto r = &ramp[0 * ramp_sz],
 	     g = &ramp[1 * ramp_sz],
@@ -103,35 +103,25 @@ void X11::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int te
 	}
 }
 
-void X11::setGamma(int scr_br, int temp)
+void DspCtl::setGamma(int scr_br, int temp)
 {
 	std::vector<uint16_t> r (3 * ramp_sz * sizeof(uint16_t));
 	fillRamp(r, scr_br, temp);
 	XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &r[0*ramp_sz], &r[1*ramp_sz], &r[2*ramp_sz]);
 }
 
-void X11::setInitialGamma(bool set_previous)
+void DspCtl::setInitialGamma(bool set_previous)
 {
 	if (set_previous && initial_ramp_exists) {
 		LOGI << "Setting previous gamma";
 		XF86VidModeSetGammaRamp(dsp, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
 	} else {
 		LOGI << "Setting pure gamma";
-		X11::setGamma(brt_slider_steps, 0);
+		setGamma(brt_slider_steps, 0);
 	}
 }
 
-uint32_t X11::getWidth()
-{
-	return w;
-}
-
-uint32_t X11::getHeight()
-{
-	return h;
-}
-
-X11::~X11()
+DspCtl::~DspCtl()
 {
 	if (dsp)
 		XCloseDisplay(dsp);
