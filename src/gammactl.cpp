@@ -130,7 +130,12 @@ void GammaCtl::captureScreen()
 		}
 
 		while (cfg["brt_auto"].get<bool>() && !quit) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"].get<int>()));
+
+			// On Windows, sleep in the base class.
+			if constexpr (!windows) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"].get<int>()));
+			}
+
 			LOGV << "Taking screenshot";
 			getSnapshot(buf);
 			LOGV << "Calculating brightness";

@@ -221,8 +221,8 @@ bool DspCtl::getFrame(std::vector<uint8_t> &buf)
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
 	IDXGIResource *desktop_resource;
 
+	LOGV << "Acquiring frame";
 	hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_resource);
-
 	switch (hr) {
 	case S_OK: {
 		// Get the texture interface
@@ -263,15 +263,17 @@ bool DspCtl::getFrame(std::vector<uint8_t> &buf)
 	D3D11_MAPPED_SUBRESOURCE map;
 
 	do {
-	//	Sleep(cfg["brt_polling_rate"]));
+		Sleep(cfg["brt_polling_rate"].get<int>());
 	} while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING);
 
 	d3d_context->Unmap(staging_tex, 0);
 	staging_tex->Release();
 	d3d_context->Release();
 
+	LOGV << "D31D11 map row pitch: " << map.RowPitch << ", depth pitch: " << map.DepthPitch;
+	uint8_t *x = reinterpret_cast<uint8_t*>(map.pData);
 	LOGV << "Copying buffer";
-	memcpy(buf.data(), reinterpret_cast<uint8_t*>(map.pData), buf.size());
+	buf.assign(x, x + map.DepthPitch);
 
 	return true;
 }
