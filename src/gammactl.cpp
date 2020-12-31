@@ -4,6 +4,7 @@
 #include "defs.h"
 #include "utils.h"
 #include "cfg.h"
+#include "mediator.h"
 
 GammaCtl::GammaCtl()
 {

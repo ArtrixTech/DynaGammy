@@ -5,14 +5,14 @@
 #include "component.h"
 #include "defs.h"
 
+class MainWindow;
+class GammaCtl;
+
 class IMediator
 {
 public:
 	virtual void notify(Component *sender, Component::Event e) const = 0;
 };
-
-class GammaCtl;
-class MainWindow;
 
 class Mediator : public IMediator
 {

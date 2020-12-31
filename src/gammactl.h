@@ -4,9 +4,18 @@
 #include <vector>
 #include <thread>
 #include "defs.h"
+
+#ifdef _WIN32
+#include "dspctl-dxgi.h"
+#else
+#include "dspctl-xlib.h"
+#undef Status
+#undef Bool
+#undef CursorShape
+#undef None
+#endif
+
 #include "component.h"
-#include "mediator.h"
-#include "screenctl.h"
 
 class GammaCtl : public DspCtl, public Component
 {

@@ -6,16 +6,6 @@ class DXGIDupl;
 
 #include <vector>
 
-#ifdef _WIN32
-#include "dxgidupl.h"
-#else
-#include "dspctl-xlib.h"
-#undef Status
-#undef Bool
-#undef CursorShape
-#undef None
-#endif
-
 class ScreenCtl
 {
 public:

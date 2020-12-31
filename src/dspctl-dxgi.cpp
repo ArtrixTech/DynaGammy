@@ -3,25 +3,34 @@
  * License: https://github.com/Fushko/gammy#license
  */
 
-#include "dspctl-dxgidupl.h"
-#include <thread>
-#include <chrono>
-#include <iostream>
-
-#include "utils.h"
-#include "cfg.h"
+#include "dspctl-dxgi.h"
 #include "defs.h"
-
-#include <locale>
-#include <codecvt>
-#define wchar_to_str(X) std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(X)
+#include "cfg.h"
+#include "utils.h"
 
 DspCtl::DspCtl()
 {
-	if (!init) {
-		LOGE << "DXGI init failed. Using GDI screenshots.";
-		useDXGI = false;
+	useDXGI = init();
+	LOGD << "DXGI available: " << useDXGI;
+}
+
+void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
+{
+	if (useDXGI) {
+		while (!this->getFrame(buf))
+			restart();
+	} else {
+		GDI::getSnapshot(buf);
 	}
+}
+
+/**
+ * DXGI Gamma control works only in fullscreen.
+ * We can only use GDI.
+ */
+void DspCtl::setGamma(int brt_step, int temp_step)
+{
+	GDI::setGamma(brt_step, temp_step);
 }
 
 bool DspCtl::init()
@@ -204,26 +213,7 @@ bool DspCtl::init()
 	return true;
 }
 
-void DspCtl::getSnapshot(std::vector<uint8_t> &buf)
-{
-	if (useDXGI) {
-		while (!this->getFrame(&buf))
-			restart();
-	} else {
-		GDI::getSnapshot(buf)
-	}
-}
-
-/**
- * DXGI Gamma control works only in fullscreen.
- * We can only use GDI.
- */
-void DspCtl::setGamma(int brt_step, int temp_step)
-{
-	GDI::setGamma(brt_step, temp_step);
-}
-
-bool DspCtl::getFrame(std::vector<uint8_t> &buf) noexcept
+bool DspCtl::getFrame(std::vector<uint8_t> &buf)
 {
 	HRESULT hr;
 
@@ -273,7 +263,7 @@ bool DspCtl::getFrame(std::vector<uint8_t> &buf) noexcept
 	D3D11_MAPPED_SUBRESOURCE map;
 
 	do {
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"]));
+	//	Sleep(cfg["brt_polling_rate"]));
 	} while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING);
 
 	d3d_context->Unmap(staging_tex, 0);
@@ -318,6 +308,11 @@ void DspCtl::restart()
 	output1->Release();
 }
 
+void DspCtl::setInitialGamma([[maybe_unused]]bool prev_gamma)
+{
+	setGamma(brt_slider_steps, temp_slider_steps);
+}
+
 DspCtl::~DspCtl()
 {
 	if (duplication)
@@ -331,10 +326,6 @@ DspCtl::~DspCtl()
 }
 
 // GDI ------------------------------------------------------------------------
-
-const static HDC screenDC = GetDC(nullptr);
-const static uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN),
-                      h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
 
 void GDI::getSnapshot(std::vector<uint8_t> &buf)
 {

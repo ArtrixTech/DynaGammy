@@ -19,36 +19,14 @@ CONFIG(release) {
     CONFIG += optimize_full
 }
 
-HEADERS += src/mainwindow.h src/utils.h \
-    src/component.h \
-    src/gammactl.h \
-    src/mediator.h \
-    src/screenctl.h \
-    src/tempscheduler.h \
-    src/cfg.h \
-    src/RangeSlider.h \
-    src/defs.h
-
-SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
-    src/component.cpp \
-    src/gammactl.cpp \
-    src/mediator.cpp \
-    src/tempscheduler.cpp \
-    src/cfg.cpp \
-    src/RangeSlider.cpp
-
-FORMS   += src/mainwindow.ui \
-    src/tempscheduler.ui \
-
-win32:{
-    SOURCES += src/dspctl-dxgidupl.cpp \
-    src/dspctl-xlib.cpp \
-    HEADERS += src/dspctl-dxgidupl.h \
-    winres.h winres.rc
+win32 {
+    HEADERS += winres.h
+    HEADERS += src/dspctl-dxgi.h
+    SOURCES += src/dspctl-dxgi.cpp
     RC_FILE = winres.rc
 }
 
-unix:{
+unix {
     HEADERS += src/dspctl-xlib.h
     SOURCES += src/dspctl-xlib.cpp
     LIBS += -lX11 -lXxf86vm
@@ -66,6 +44,26 @@ unix:{
 
     message(Install path: $$target.path)
 }
+
+HEADERS += src/mainwindow.h src/utils.h \
+    src/component.h \
+    src/gammactl.h \
+    src/mediator.h \
+    src/tempscheduler.h \
+    src/cfg.h \
+    src/RangeSlider.h \
+    src/defs.h
+
+SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
+    src/component.cpp \
+    src/gammactl.cpp \
+    src/mediator.cpp \
+    src/tempscheduler.cpp \
+    src/cfg.cpp \
+    src/RangeSlider.cpp
+
+FORMS += src/mainwindow.ui \
+    src/tempscheduler.ui \
 
 RESOURCES += res.qrc
 

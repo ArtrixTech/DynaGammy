@@ -1,7 +1,7 @@
 #include "mediator.h"
+#include "cfg.h"
 #include "mainwindow.h"
 #include "gammactl.h"
-#include "cfg.h"
 
 Mediator::Mediator(GammaCtl *g, MainWindow *w) : gammactl(g), wnd(w)
 {

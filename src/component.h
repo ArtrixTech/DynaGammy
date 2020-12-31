@@ -2,6 +2,7 @@
 #define COMPONENT_H
 
 class IMediator;
+
 class Component
 {
 protected:
@@ -22,4 +23,4 @@ public:
 	};
 };
 
-#endif // BASECOMPONENT_H
+#endif // COMPONENT_H

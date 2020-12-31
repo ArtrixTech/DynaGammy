@@ -1,7 +1,7 @@
 #include "tempscheduler.h"
 #include "ui_tempscheduler.h"
 #include "cfg.h"
-#include "gammactl.h"
+#include "mediator.h"
 
 TempScheduler::TempScheduler(IMediator *m) :ui(new Ui::TempScheduler), mediator(m)
 {

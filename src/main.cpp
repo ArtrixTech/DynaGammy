@@ -11,9 +11,9 @@
 #include "mainwindow.h"
 #include "gammactl.h"
 
+static MainWindow *p_wnd;
 #ifndef _WIN32
 #include <signal.h>
-static MainWindow *p_wnd;
 void sig_handler(int signo)
 {
 	LOGD_IF(signo == SIGINT) << "SIGINT received";
@@ -48,7 +48,7 @@ void init()
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	if (cfg["log_level"] == plog::verbose) {
-		FILE *f1, *f2, *f3;
+		FILE* f1, * f2, * f3;
 		AllocConsole();
 		freopen_s(&f1, "CONIN$", "r", stdin);
 		freopen_s(&f2, "CONOUT$", "w", stdout);
