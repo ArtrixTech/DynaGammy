@@ -316,7 +316,8 @@ void DspCtl::restart()
 
 void DspCtl::setInitialGamma([[maybe_unused]]bool prev_gamma)
 {
-	setGamma(brt_slider_steps, temp_slider_steps);
+	// @TODO: restore previous gamma
+	GDI::setGamma(brt_slider_steps, 0);
 }
 
 DspCtl::~DspCtl()
@@ -404,6 +405,7 @@ void GDI::setGamma(int brt_step, int temp_step)
 	}
 
 	int i = 0;
+
 	for (const auto &dc : hdcs) {
 		bool r;
 		if (i == GDI::primary_dc_idx)
