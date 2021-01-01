@@ -20,7 +20,7 @@ The latest Windows release can be found [here](https://getgammy.com/downloads.ht
 ##### Packages
 
 - git
-- build-essential 
+- build-essential
 - libgl1-mesa-dev
 - qt5-default (5.12+)
 
@@ -79,7 +79,7 @@ or from `pkg`, as soon as [accessibility/gammy](https://www.freshports.org/acces
 ```
 
 ## Usage
-Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings window. 
+Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings window.
 
 - The padlock icon allows the brightness range to go up to 200%. (Linux only)
 - The "Range" slider determines the minimum and maximum brightness.
@@ -90,7 +90,18 @@ Gammy starts minimized in the system tray (or maximized if the tray is absent). 
   - "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommended.
 - "The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
 
+## Known issues and limitations
+The brightness is adjusted by changing pixel values, instead of the LCD backlight. This is not ideal on screens with bad contrast.
+Theoretically, this app looks best on OLED screens, since they don't have a backlight. (If you have one, I'd love to know your experience).
+Backlight control is planned. However, controlling backlight via software is not supported by most screens.
+### Multimonitor
+On Windows, the brightness is detected and adjustable only on the primary screen. Temperature affects all screens, however.
+
+On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally.
+
 ## Troubleshooting
+### Linux
+If you don't see the system tray when running on startup, try [this](https://github.com/Fushko/gammy/issues/57#issuecomment-751358770).
 If you are experiencing an "Invalid gamma ramp size" fatal error, refer to [this post.](https://github.com/Fushko/gammy/issues/20#issuecomment-584473270)
 
 ## Third party
