@@ -11,16 +11,24 @@
 int64_t GDI::width = 0;
 int64_t GDI::height = 0;
 
+// Currently, adaptive brightness is only supported on the first screen. 
+constexpr int screen_idx = 0;
+
+/* Unlike DXGI, the primary screen index for GDI is not always 0. 
+ * We get it by comparing the first DXGI output name with every GDI DC name. */
+int GDI::primary_screen_idx = 0;
+
 DspCtl::DspCtl()
 {
-	GDI::createDCs();
+	useDXGI = init();
+	LOGD << "DXGI available: " << useDXGI;
+	
+	GDI::createDCs(this->primary_screen_name);
+	
 	if (GDI::hdcs.empty()) {
 		LOGF << "No GDI HDCs detected.";
 		exit(EXIT_FAILURE);
 	}
-
-	useDXGI = init();
-	LOGD << "DXGI available: " << useDXGI;
 }
 
 void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
@@ -99,7 +107,7 @@ bool DspCtl::init()
 		return false;
 	}
 
-	// Print monitor info
+	// Get monitor info
 	{
 		int i = 0;
 		for (auto &output : outputs) {
@@ -110,6 +118,11 @@ bool DspCtl::init()
 				continue;
 			}
 			LOGD << "Output: " << desc.DeviceName << ", attached to desktop: " << desc.AttachedToDesktop;
+			
+			if (i == 0) {
+				this->primary_screen_name = desc.DeviceName;
+			}
+			++i;
 		}
 	}
 
@@ -149,8 +162,8 @@ bool DspCtl::init()
 		}
 	}
 
-	// Currently, auto brightness is only supported on one screen
-	const int output_idx = 0;
+	// Currently, auto brightness is only supported on the first screen.
+	const int output_idx = screen_idx;
 
 	// Set texture properties
 	{
@@ -336,7 +349,7 @@ int GDI::numDisplays()
 	return attached_dsp;
 }
 
-void GDI::createDCs()
+void GDI::createDCs(std::wstring &primary_screen_name)
 {
 	const int num_dsp = GDI::numDisplays();
 	GDI::hdcs.reserve(num_dsp);
@@ -345,10 +358,11 @@ void GDI::createDCs()
 		DISPLAY_DEVICE dsp;
 		dsp.cb = sizeof(DISPLAY_DEVICE);
 		EnumDisplayDevices(NULL, i, &dsp, 0);
+		
 		HDC dc = CreateDC(NULL, dsp.DeviceName, NULL, 0);
-
-		// Get the resolution of the first screen
-		if (i == 0) {
+	
+		if (dsp.DeviceName == primary_screen_name) {
+			primary_screen_idx = i;
 			GDI::width  = GetDeviceCaps(dc, HORZRES);
 			GDI::height = GetDeviceCaps(dc, VERTRES);
 		}
@@ -392,7 +406,7 @@ void GDI::setGamma(int brt_step, int temp_step)
 	int i = 0;
 	for (const auto &dc : hdcs) {
 		bool r;
-		if (i == 0)
+		if (i == GDI::primary_screen_idx)
 			r = SetDeviceGammaRamp(dc, ramp);
 		else
 			r = SetDeviceGammaRamp(dc, ramp_full_brt);

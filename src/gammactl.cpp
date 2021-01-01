@@ -225,7 +225,7 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 		target = std::clamp(target, cfg["brt_min"].get<int>(), cfg["brt_max"].get<int>());
 
 		if (target == cfg["brt_step"]) {
-			LOGD << "Brt already at target (" << target << ')';
+			LOGV << "Brt already at target (" << target << ')';
 			continue;
 		}
 
@@ -239,7 +239,7 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 
 		double time = 0;
 
-		LOGD << "(" << start << "->" << end << ')';
+		LOGV << "(" << start << "->" << end << ')';
 
 		while (cfg["brt_step"] != target && !br_needs_change && cfg["brt_auto"] && !quit) {
 			time += time_incr;
@@ -251,7 +251,7 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
-		LOGD << "(" << start << "->" << end << ") done";
+		LOGV << "(" << start << "->" << end << ") done";
 	}
 }
 
@@ -365,7 +365,7 @@ void GammaCtl::adjustTemperature()
 
 			int secs_from_start = start_datetime.secsTo(cur_datetime);
 
-			LOGD << "secs_from_start: " << secs_from_start << " adapt_time_s: " << adapt_time_s;
+			LOGV << "secs_from_start: " << secs_from_start << " adapt_time_s: " << adapt_time_s;
 
 			if (secs_from_start > adapt_time_s)
 				secs_from_start = adapt_time_s;
@@ -381,18 +381,18 @@ void GammaCtl::adjustTemperature()
 			target_temp = cfg["temp_high"];
 		}
 
-		LOGD << "Duration: " << duration_s / 60 << " min";
+		LOGV << "Temp duration: " << duration_s / 60 << " min";
 
 		int cur_step    = cfg["temp_step"];
 		int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
 
 		if (cur_step == target_step) {
-			LOGD << "Temp already at target (" << target_temp << " K)";
+			LOGV << "Temp already at target (" << target_temp << " K)";
 			first_step_done = false;
 			continue;
 		}
 
-		LOGD << "Temp target: " << target_temp << " K";
+		LOGV << "Temp target: " << target_temp << " K";
 
 		const int    FPS        = cfg["temp_fps"];
 		const double iterations = FPS * duration_s;
@@ -401,7 +401,7 @@ void GammaCtl::adjustTemperature()
 
 		double time = 0;
 
-		LOGD << "(" << cur_step << "->" << target_step << ')';
+		LOGV << "(" << cur_step << "->" << target_step << ')';
 
 		while (cfg["temp_step"] != target_step && cfg["temp_auto"]) {
 			if (force_temp_change || quit)
@@ -418,7 +418,7 @@ void GammaCtl::adjustTemperature()
 
 		first_step_done = true;
 
-		LOGD << "(" << cur_step << "->" << target_step << ") done";
+		LOGV << "(" << cur_step << "->" << target_step << ") done";
 	}
 
 	LOGV << "Temp loop ended. Notifying clock thread";

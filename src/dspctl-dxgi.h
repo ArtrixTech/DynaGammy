@@ -12,6 +12,7 @@
 #include <d3d11.h>
 #include <stdint.h>
 #include <vector>
+#include <string>
 
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "user32.lib")
@@ -23,10 +24,10 @@ namespace GDI {
 extern int64_t width;
 extern int64_t height;
 static std::vector<HDC> hdcs;
+extern int primary_screen_idx;
 int  numDisplays();
-void createDCs();
+void createDCs(std::wstring &primary_screen_name);
 void setGamma(int, int);
-void setGammaOld(int, int);
 void getSnapshot(std::vector<uint8_t> &buf);
 }
 
@@ -46,6 +47,7 @@ private:
 	IDXGIOutputDuplication* duplication;
 	D3D11_TEXTURE2D_DESC    tex_desc;
 	bool useDXGI;
+    std::wstring primary_screen_name;
 	
 	bool init();
 	bool getFrame(std::vector<uint8_t> &buf);
