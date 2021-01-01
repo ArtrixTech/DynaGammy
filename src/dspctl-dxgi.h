@@ -24,7 +24,6 @@ namespace GDI {
 extern int64_t width;
 extern int64_t height;
 static std::vector<HDC> hdcs;
-static HDC *primary_DC;
 extern int  primary_dc_idx;
 int  numDisplays();
 void createDCs(std::wstring &primary_screen_name);

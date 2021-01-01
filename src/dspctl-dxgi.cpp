@@ -23,12 +23,10 @@ DspCtl::DspCtl()
 	useDXGI = init();
 	LOGD << "DXGI available: " << useDXGI;
 	
-	GDI::createDCs(this->primary_screen_name);
+	if (!useDXGI)
+		primary_screen_name.clear();
 	
-	if (GDI::hdcs.empty()) {
-		LOGF << "No GDI HDCs detected.";
-		exit(EXIT_FAILURE);
-	}
+	GDI::createDCs(this->primary_screen_name);
 }
 
 void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
@@ -91,7 +89,7 @@ bool DspCtl::init()
 	// Get the monitors attached to the GPUs
 	{
 		int i = 0;
-		for(auto &gpu : gpus) {
+		for (auto &gpu : gpus) {
 			int j = 0;
 			IDXGIOutput *output;
 			while (gpu->EnumOutputs(j, &output) != DXGI_ERROR_NOT_FOUND) {
@@ -187,7 +185,7 @@ bool DspCtl::init()
 		tex_desc.SampleDesc.Quality = 0;
 		tex_desc.BindFlags          = 0;
 		tex_desc.MiscFlags          = 0;
-		LOGD << "DXGI Res: " << tex_desc.Width << "*" << tex_desc.Height;
+		LOGD << "DXGI res: " << tex_desc.Width << "*" << tex_desc.Height;
 	}
 
 	// Initialize output duplication
@@ -364,7 +362,6 @@ void GDI::createDCs(std::wstring &primary_screen_name)
 	
 		// If we don't have the name, just pick the first one
 		if ((primary_screen_name.empty() && i == 0) || dsp.DeviceName == primary_screen_name) {
-			GDI::primary_DC = &dc;
 			GDI::primary_dc_idx = i;
 			GDI::width  = GetDeviceCaps(dc, HORZRES);
 			GDI::height = GetDeviceCaps(dc, VERTRES);
@@ -433,15 +430,18 @@ void GDI::getSnapshot(std::vector<uint8_t> &buf)
 	info.biClrUsed = 0;
 	info.biClrImportant = 0;
 
-	HBITMAP bitmap = CreateCompatibleBitmap(*primary_DC, width, height);
-	HDC     tmp    = CreateCompatibleDC(*primary_DC);
+	HDC     dc     = GetDC(NULL);
+	HBITMAP bitmap = CreateCompatibleBitmap(dc, width, height);
+	HDC     tmp    = CreateCompatibleDC(dc);
 	HGDIOBJ obj    = SelectObject(tmp, bitmap);
-
-	BitBlt(tmp, 0, 0, width, height, *primary_DC, 0, 0, SRCCOPY);
+	
+	buf.resize(info.biSizeImage); // should move this out of here
+	BitBlt(tmp, 0, 0, width, height, dc, 0, 0, SRCCOPY);
 	GetDIBits(tmp, bitmap, 0, height, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
-
+	
 	SelectObject(tmp, obj);
 	DeleteObject(bitmap);
 	DeleteObject(obj);
 	DeleteDC(tmp);
+	DeleteDC(dc);
 }
