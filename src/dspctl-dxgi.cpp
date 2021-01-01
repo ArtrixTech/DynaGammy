@@ -345,7 +345,7 @@ void GDI::getSnapshot(std::vector<uint8_t> &buf)
 	info.biPlanes = 1;
 	info.biBitCount = 32;
 	info.biCompression = BI_RGB;
-	info.biSizeImage = buf.size();
+	info.biSizeImage = w * h * 4;
 	info.biClrUsed = 0;
 	info.biClrImportant = 0;
 
@@ -440,6 +440,6 @@ void GDI::setGamma(int brt_step, int temp_step)
 	int i = 0;
 	for (auto &dc : hdcs) {
 		BOOL r = SetDeviceGammaRamp(dc, ramp);
-		LOGD << "screen " << i++ <<  " gamma set: " << r;
+		LOGV << "screen " << i++ <<  " gamma set: " << r;
 	}
 }
