@@ -10,6 +10,12 @@
 
 DspCtl::DspCtl()
 {
+	GDI::getDisplays();
+	if (GDI::hdcs.empty()) {
+		LOGF << "No GDI HDCs detected.";
+		exit(EXIT_FAILURE);
+	}
+
 	useDXGI = init();
 	LOGD << "DXGI available: " << useDXGI;
 }
@@ -331,7 +337,7 @@ DspCtl::~DspCtl()
 
 void GDI::getSnapshot(std::vector<uint8_t> &buf)
 {
-	static BITMAPINFOHEADER info;
+	BITMAPINFOHEADER info;
 	ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
 	info.biSize = sizeof(BITMAPINFOHEADER);
 	info.biWidth = w;
@@ -343,22 +349,21 @@ void GDI::getSnapshot(std::vector<uint8_t> &buf)
 	info.biClrUsed = 0;
 	info.biClrImportant = 0;
 
-	HBITMAP hBitmap = CreateCompatibleBitmap(screenDC, w, h);
-	HDC memoryDC = CreateCompatibleDC(screenDC);
+	HDC     dc     = GetDC(NULL);
+	HBITMAP bitmap = CreateCompatibleBitmap(dc, w, h);
+	HDC     tmp    = CreateCompatibleDC(dc);
+	HGDIOBJ obj    = SelectObject(tmp, bitmap);
 
-	HGDIOBJ oldObj = SelectObject(memoryDC, hBitmap);
+	BitBlt(tmp, 0, 0, w, h, dc, 0, 0, SRCCOPY);
+	GetDIBits(tmp, bitmap, 0, h, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
 
-	BitBlt(memoryDC, 0, 0, w, h, screenDC, 0, 0, SRCCOPY);
-
-	GetDIBits(memoryDC, hBitmap, 0, h, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
-
-	SelectObject(memoryDC, oldObj);
-	DeleteObject(hBitmap);
-	DeleteObject(oldObj);
-	DeleteDC(memoryDC);
+	SelectObject(tmp, obj);
+	DeleteObject(bitmap);
+	DeleteObject(obj);
+	DeleteDC(dc);
 }
 
-void GDI::setGamma(int brt_step, int temp_step)
+void GDI::setGammaOld(int brt_step, int temp_step)
 {
 	if (brt_step > brt_slider_steps) {
 		return;
@@ -379,5 +384,62 @@ void GDI::setGamma(int brt_step, int temp_step)
 		ramp[2][i] = WORD(val * b_mult);
 	}
 
-	SetDeviceGammaRamp(screenDC, ramp);
+	HDC dc = GetDC(nullptr);
+	BOOL r = SetDeviceGammaRamp(dc, ramp);
+	LOGD << "Gamma set: " << r;
+	ReleaseDC(nullptr, dc);
+}
+
+int GDI::numDisplays()
+{
+	DISPLAY_DEVICE dsp;
+	dsp.cb = sizeof(DISPLAY_DEVICE);
+
+	int i = 0;
+	int attached_dsp = 0;
+
+	while (EnumDisplayDevices(NULL, i++, &dsp, 0) && dsp.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
+		attached_dsp++;
+	}
+
+	return attached_dsp;
+}
+
+void GDI::getDisplays()
+{
+	const int num_dsp = GDI::numDisplays();
+	GDI::hdcs.reserve(num_dsp);
+
+	for (int i = 0; i < num_dsp; ++i) {
+		DISPLAY_DEVICE dsp;
+		dsp.cb = sizeof(DISPLAY_DEVICE);
+		EnumDisplayDevices(NULL, i, &dsp, 0);
+		GDI::hdcs.push_back(CreateDC(NULL, dsp.DeviceName, NULL, 0));
+	}
+
+	LOGD << "HDCs: " << GDI::hdcs.size();
+}
+
+void GDI::setGamma(int brt_step, int temp_step)
+{
+	const double r_mult = interpTemp(temp_step, 0),
+	             g_mult = interpTemp(temp_step, 1),
+	             b_mult = interpTemp(temp_step, 2);
+
+	WORD ramp[3][256];
+
+	const auto brt_mult = remap(brt_step, 0, brt_slider_steps, 0, 255);
+
+	for (WORD i = 0; i < 256; ++i) {
+		const int val = i * brt_mult;
+		ramp[0][i] = WORD(val * r_mult);
+		ramp[1][i] = WORD(val * g_mult);
+		ramp[2][i] = WORD(val * b_mult);
+	}
+
+	int i = 0;
+	for (auto &dc : hdcs) {
+		BOOL r = SetDeviceGammaRamp(dc, ramp);
+		LOGD << "screen " << i++ <<  " gamma set: " << r;
+	}
 }

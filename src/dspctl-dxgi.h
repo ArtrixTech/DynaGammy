@@ -20,10 +20,13 @@
 #pragma comment(lib, "Advapi32.lib")
 
 namespace GDI {
-const static HDC screenDC = GetDC(nullptr);
 const static uint64_t w = GetSystemMetrics(SM_CXVIRTUALSCREEN) - GetSystemMetrics(SM_XVIRTUALSCREEN);
 const static uint64_t h = GetSystemMetrics(SM_CYVIRTUALSCREEN) - GetSystemMetrics(SM_YVIRTUALSCREEN);
+static std::vector<HDC> hdcs;
+int  numDisplays();
+void getDisplays();
 void setGamma(int, int);
+void setGammaOld(int, int);
 void getSnapshot(std::vector<uint8_t> &buf);
 }
 
