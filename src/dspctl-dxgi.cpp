@@ -16,7 +16,7 @@ constexpr int screen_idx = 0;
 
 /* Unlike DXGI, the primary screen index for GDI is not always 0. 
  * We get it by comparing the first DXGI output name with every GDI DC name. */
-int GDI::primary_screen_idx = 0;
+int GDI::primary_dc_idx = 0;
 
 DspCtl::DspCtl()
 {
@@ -38,6 +38,7 @@ void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
 			restart();
 	} else {
 		GDI::getSnapshot(buf);
+		Sleep(cfg["brt_polling_rate"].get<int>());
 	}
 }
 
@@ -361,8 +362,10 @@ void GDI::createDCs(std::wstring &primary_screen_name)
 		
 		HDC dc = CreateDC(NULL, dsp.DeviceName, NULL, 0);
 	
-		if (dsp.DeviceName == primary_screen_name) {
-			primary_screen_idx = i;
+		// If we don't have the name, just pick the first one
+		if ((primary_screen_name.empty() && i == 0) || dsp.DeviceName == primary_screen_name) {
+			GDI::primary_DC = &dc;
+			GDI::primary_dc_idx = i;
 			GDI::width  = GetDeviceCaps(dc, HORZRES);
 			GDI::height = GetDeviceCaps(dc, VERTRES);
 		}
@@ -391,8 +394,8 @@ void GDI::setGamma(int brt_step, int temp_step)
 		ramp[2][i] = WORD(val * b_mult);
 	}
 
-	/* As auto brt is currently supported only on one screen,
-	 * We set this ramp to the screens whose image brightness is not detected. */
+	/* As auto brt is currently supported only on the primary screen,
+	 * We set this ramp to the screens whose image brightness is not controlled. */
 	WORD ramp_full_brt[3][256];
 	if (hdcs.size() > 1) {
 		for (WORD i = 0; i < 256; ++i) {
@@ -406,7 +409,7 @@ void GDI::setGamma(int brt_step, int temp_step)
 	int i = 0;
 	for (const auto &dc : hdcs) {
 		bool r;
-		if (i == GDI::primary_screen_idx)
+		if (i == GDI::primary_dc_idx)
 			r = SetDeviceGammaRamp(dc, ramp);
 		else
 			r = SetDeviceGammaRamp(dc, ramp_full_brt);
@@ -430,16 +433,15 @@ void GDI::getSnapshot(std::vector<uint8_t> &buf)
 	info.biClrUsed = 0;
 	info.biClrImportant = 0;
 
-	HDC     dc     = GetDC(NULL);
-	HBITMAP bitmap = CreateCompatibleBitmap(dc, width, height);
-	HDC     tmp    = CreateCompatibleDC(dc);
+	HBITMAP bitmap = CreateCompatibleBitmap(*primary_DC, width, height);
+	HDC     tmp    = CreateCompatibleDC(*primary_DC);
 	HGDIOBJ obj    = SelectObject(tmp, bitmap);
 
-	BitBlt(tmp, 0, 0, width, height, dc, 0, 0, SRCCOPY);
+	BitBlt(tmp, 0, 0, width, height, *primary_DC, 0, 0, SRCCOPY);
 	GetDIBits(tmp, bitmap, 0, height, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
 
 	SelectObject(tmp, obj);
 	DeleteObject(bitmap);
 	DeleteObject(obj);
-	DeleteDC(dc);
+	DeleteDC(tmp);
 }
