@@ -1,4 +1,9 @@
-﻿#include <QTime>
+﻿/**
+ * Copyright (C) Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
+#include <QTime>
 #include <thread>
 #include "gammactl.h"
 #include "defs.h"

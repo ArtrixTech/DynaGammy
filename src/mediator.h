@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 

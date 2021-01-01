@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) Francesco Fusco. All rights reserved.
+ * License: https://github.com/Fushko/gammy#license
+ */
+
 #include "tempscheduler.h"
 #include "ui_tempscheduler.h"
 #include "cfg.h"

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2019 Francesco Fusco. All rights reserved.
+ * Copyright (C) Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
 
