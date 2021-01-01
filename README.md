@@ -103,7 +103,7 @@ On Linux, currently every screen is treated as one single screen when calculatin
 
 ## Troubleshooting
 ### Linux
-If you don't see the system tray when running on startup, try [this](https://github.com/Fushko/gammy/issues/57#issuecomment-751358770).
+If you are using a command to run it on startup, and the tray icon does not appear, try [this.](https://github.com/Fushko/gammy/issues/57#issuecomment-751358770)
 
 If you are experiencing an "Invalid gamma ramp size" fatal error, refer to [this post.](https://github.com/Fushko/gammy/issues/20#issuecomment-584473270)
 
