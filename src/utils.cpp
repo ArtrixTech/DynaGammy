@@ -38,11 +38,10 @@ double easeOutExpo(double t, double b , double c, double d)
 
 double easeInOutQuad(double t, double b, double c, double d)
 {
-	if ((t /= d / 2) < 1) {
+	if ((t /= d / 2) < 1)
 		return c / 2 * t * t + b;
-	} else {
-		return -c / 2 * ((--t) * (t - 2) - 1) + b;
-	}
+	else
+		return -c / 2 * ((t - 1) * (t - 3) - 1) + b;
 };
 
 #ifdef _WIN32
