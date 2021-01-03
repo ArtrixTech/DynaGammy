@@ -53,7 +53,7 @@ json getDefault()
 		{"brt_min", brt_slider_steps / 2},
 		{"brt_max", brt_slider_steps},
 		{"brt_offset", brt_slider_steps / 3},
-		{"brt_speed", 2},
+		{"brt_speed", 1000},
 		{"brt_threshold", 8},
 		{"brt_polling_rate", 100},
 		{"brt_extend", false},
