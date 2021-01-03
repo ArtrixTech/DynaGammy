@@ -122,9 +122,6 @@ void MainWindow::createTrayIcon(QIcon &icon)
 	QMenu *menu = createMenu();
 	tray_icon->setContextMenu(menu);
 
-	if (windows)
-		menu->setStyleSheet("color:black");
-
 	tray_icon->setToolTip(QString("Gammy"));
 	tray_icon->setIcon(icon);
 
@@ -212,7 +209,7 @@ void MainWindow::showOnTop()
 
 QMenu* MainWindow::createMenu()
 {
-	QMenu *menu = new QMenu(this);
+	QMenu *menu = new QMenu(nullptr);
 
 #ifdef _WIN32
 	QAction *run_startup = new QAction("&Run at startup", this);
