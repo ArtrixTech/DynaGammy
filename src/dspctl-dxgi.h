@@ -21,14 +21,15 @@
 #pragma comment(lib, "Advapi32.lib")
 
 namespace GDI {
-extern int64_t width;
-extern int64_t height;
-static std::vector<HDC> hdcs;
-extern int  primary_dc_idx;
+static std::vector<HDC>     hdcs;
+static std::vector<uint8_t> buf;
+extern int64_t              width;
+extern int64_t              height;
+extern int                  primary_dc_idx;
 int  numDisplays();
+int  getScreenBrightness();
 void createDCs(std::wstring &primary_screen_name);
 void setGamma(int, int);
-void getSnapshot(std::vector<uint8_t> &buf);
 }
 
 class DspCtl
@@ -37,20 +38,19 @@ public:
 	DspCtl();
 	~DspCtl();
 
-	void setGamma(int, int);
-	void getSnapshot(std::vector<uint8_t> &buf) noexcept;
-	void setInitialGamma(bool);
+	int  getScreenBrightness() noexcept;
+	void setGamma(int brt, int temp);
+	void setInitialGamma(bool set_previous);
 private:
-	ID3D11Device* d3d_device;
-	ID3D11DeviceContext* d3d_context;
-	IDXGIOutput1* output1;
+	ID3D11Device*           d3d_device;
+	ID3D11DeviceContext*    d3d_context;
+	IDXGIOutput1*           output1;
 	IDXGIOutputDuplication* duplication;
 	D3D11_TEXTURE2D_DESC    tex_desc;
+	std::wstring            primary_screen_name;
+
 	bool useDXGI;
-    std::wstring primary_screen_name;
-	
 	bool init();
-	bool getFrame(std::vector<uint8_t> &buf);
 	void restart();
 };
 

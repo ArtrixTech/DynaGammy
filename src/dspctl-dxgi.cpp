@@ -20,33 +20,12 @@ int GDI::primary_dc_idx = 0;
 
 DspCtl::DspCtl()
 {
-	useDXGI = init();
-	LOGD << "DXGI available: " << useDXGI;
-	
-	if (!useDXGI)
+	if (!(useDXGI = init())) {
+		LOGD << "DXGI unavailable.";
 		primary_screen_name.clear();
+	}
 	
 	GDI::createDCs(this->primary_screen_name);
-}
-
-void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
-{
-	if (useDXGI) {
-		while (!this->getFrame(buf))
-			restart();
-	} else {
-		GDI::getSnapshot(buf);
-		Sleep(cfg["brt_polling_rate"].get<int>());
-	}
-}
-
-/**
- * DXGI Gamma control works only in fullscreen.
- * We can only use GDI.
- */
-void DspCtl::setGamma(int brt_step, int temp_step)
-{
-	GDI::setGamma(brt_step, temp_step);
 }
 
 bool DspCtl::init()
@@ -217,69 +196,52 @@ bool DspCtl::init()
 	return true;
 }
 
-bool DspCtl::getFrame(std::vector<uint8_t> &buf)
+int DspCtl::getScreenBrightness() noexcept
 {
-	HRESULT hr;
+	if (!useDXGI) {
+		Sleep(cfg["brt_polling_rate"].get<int>());
+		return GDI::getScreenBrightness();
+	}
+
+	DXGI_OUTDUPL_FRAME_INFO frame_info;
+	IDXGIResource           *desktop_res;
+	if (duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK)
+		this->restart();
 
 	ID3D11Texture2D *tex;
-	DXGI_OUTDUPL_FRAME_INFO frame_info;
-	IDXGIResource *desktop_resource;
-
-	LOGV << "Acquiring frame";
-	hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_resource);
-	switch (hr) {
-	case S_OK: {
-		// Get the texture interface
-		hr = desktop_resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&tex));
-
-		desktop_resource->Release();
-		tex->Release();
-
-		if (hr != S_OK) {
-			LOGE << "Failed to query the ID3D11Texture2D interface on the IDXGIResource";
-			return false;
-		}
-
-		break;
-	}
-	case DXGI_ERROR_ACCESS_LOST:
-		LOGE << "Received a DXGI_ERROR_ACCESS_LOST";
-		return false;
-	case DXGI_ERROR_WAIT_TIMEOUT:
-		LOGE << "Received a DXGI_ERROR_WAIT_TIMEOUT";
-		return false;
-	default:
-		LOGE << "Error: failed to acquire frame";
-		return false;
-	}
+	desktop_res->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&tex));
+	desktop_res->Release();
+	tex->Release();
 
 	ID3D11Texture2D *staging_tex;
-	hr = d3d_device->CreateTexture2D(&tex_desc, nullptr, &staging_tex);
-
-	if (hr != S_OK) {
-		LOGE << "Texture creation failed, error: " << hr;
-		return false;
-	}
-
+	d3d_device->CreateTexture2D(&this->tex_desc, nullptr, &staging_tex);
 	d3d_context->CopyResource(staging_tex, tex);
 	duplication->ReleaseFrame();
 
 	D3D11_MAPPED_SUBRESOURCE map;
 
-	do {
+	while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING)
 		Sleep(cfg["brt_polling_rate"].get<int>());
-	} while (d3d_context->Map(staging_tex, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map) == DXGI_ERROR_WAS_STILL_DRAWING);
 
 	d3d_context->Unmap(staging_tex, 0);
 	staging_tex->Release();
 	d3d_context->Release();
 
 	LOGV << "D31D11 map row pitch: " << map.RowPitch << ", depth pitch: " << map.DepthPitch;
-	uint8_t *x = reinterpret_cast<uint8_t*>(map.pData);
-	LOGV << "Copying buffer";
-	buf.assign(x, x + map.DepthPitch);
+	int brt = calcBrightness(reinterpret_cast<uint8_t*>(map.pData), map.DepthPitch, 4, 1024);
+	return brt;
+}
 
-	return true;
+void DspCtl::setGamma(int brt_step, int temp_step)
+{
+	// DXGI gamma control is only available on fullscreen.
+	GDI::setGamma(brt_step, temp_step);
+}
+
+void DspCtl::setInitialGamma([[maybe_unused]]bool prev_gamma)
+{
+	// @TODO: restore previous gamma
+	GDI::setGamma(brt_slider_steps, 0);
 }
 
 void DspCtl::restart()
@@ -289,35 +251,26 @@ void DspCtl::restart()
 	do {
 		hr = output1->DuplicateOutput(d3d_device, &duplication);
 
-		IF_PLOG(plog::debug)
-		{
+		IF_PLOG (plog::debug) {
 			if (hr != S_OK) {
-				LOGE << "** Unable to duplicate output. Reason:";
-
-				switch (hr)
-				{
-				case E_INVALIDARG:                          LOGE << "E_INVALIDARG"; break;
-				case E_ACCESSDENIED:                        LOGE << "E_ACCESSDENIED"; break;
-				case DXGI_ERROR_UNSUPPORTED:                LOGE << "E_DXGI_ERROR_UNSUPPORTED"; break;
-				case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE:    LOGE << "DXGI_ERROR_NOT_CURRENTLY_AVAILABLE"; break;
-				case DXGI_ERROR_SESSION_DISCONNECTED:       LOGE << "DXGI_ERROR_SESSION_DISCONNECTED"; break;
+				LOGE << "Screen capture failed. Reason:";
+				switch (hr) {
+				case E_INVALIDARG:                       LOGE << "E_INVALIDARG"; break;
+				case E_ACCESSDENIED:                     LOGE << "E_ACCESSDENIED"; break;
+				case DXGI_ERROR_UNSUPPORTED:             LOGE << "E_DXGI_ERROR_UNSUPPORTED"; break;
+				case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE: LOGE << "DXGI_ERROR_NOT_CURRENTLY_AVAILABLE"; break;
+				case DXGI_ERROR_SESSION_DISCONNECTED:    LOGE << "DXGI_ERROR_SESSION_DISCONNECTED"; break;
 				}
-
 				LOGD << "Retrying... (2.5 sec)";
 			}
 		}
+
 		Sleep(2500);
 	} while (hr != S_OK);
 
-	LOGI << "Output duplication restarted.";
+	LOGI << "Output duplication started.";
 
 	output1->Release();
-}
-
-void DspCtl::setInitialGamma([[maybe_unused]]bool prev_gamma)
-{
-	// @TODO: restore previous gamma
-	GDI::setGamma(brt_slider_steps, 0);
 }
 
 DspCtl::~DspCtl()
@@ -361,11 +314,12 @@ void GDI::createDCs(std::wstring &primary_screen_name)
 		
 		HDC dc = CreateDC(NULL, dsp.DeviceName, NULL, 0);
 	
-		// If we don't have the name, just pick the first one
+		// If we don't have the name, just pick the first one.
 		if ((primary_screen_name.empty() && i == 0) || dsp.DeviceName == primary_screen_name) {
 			GDI::primary_dc_idx = i;
 			GDI::width  = GetDeviceCaps(dc, HORZRES);
 			GDI::height = GetDeviceCaps(dc, VERTRES);
+			buf.resize(width * height * 4);
 		}
 
 		GDI::hdcs.push_back(dc);
@@ -418,7 +372,7 @@ void GDI::setGamma(int brt_step, int temp_step)
 	}
 }
 
-void GDI::getSnapshot(std::vector<uint8_t> &buf)
+int GDI::getScreenBrightness()
 {
 	BITMAPINFOHEADER info;
 	ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
@@ -437,7 +391,6 @@ void GDI::getSnapshot(std::vector<uint8_t> &buf)
 	HDC     tmp    = CreateCompatibleDC(dc);
 	HGDIOBJ obj    = SelectObject(tmp, bitmap);
 	
-	buf.resize(info.biSizeImage); // should move this out of here
 	BitBlt(tmp, 0, 0, width, height, dc, 0, 0, SRCCOPY);
 	GetDIBits(tmp, bitmap, 0, height, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
 	
@@ -446,4 +399,7 @@ void GDI::getSnapshot(std::vector<uint8_t> &buf)
 	DeleteObject(obj);
 	DeleteDC(tmp);
 	DeleteDC(dc);
+
+	int brt = calcBrightness(buf.data(), buf.size(), 4, 1024);
+	return brt;
 }
