@@ -359,8 +359,6 @@ void MainWindow::toggleBrtSlidersRange(bool extend)
 		ui->brtSlider->setValue(cur_pos);
 		emit on_brtSlider_sliderMoved(cur_pos);
 	}
-
-	ui->offsetSlider->setRange(0, br_limit);
 }
 
 void MainWindow::updateBrtLabel(int val)

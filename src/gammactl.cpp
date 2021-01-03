@@ -196,7 +196,9 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 		}
 
 		const int cur_step = cfg["brt_step"];
-		const int tmp = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps)) + cfg["brt_offset"].get<int>();
+		const int tmp = brt_slider_steps
+		                - int(remap(img_br, 0, 255, 0, brt_slider_steps))
+		                + int(remap(cfg["brt_offset"].get<int>(), 0, brt_slider_steps, 0, cfg["brt_max"].get<int>()));
 		const int target_step = std::clamp(tmp, cfg["brt_min"].get<int>(), cfg["brt_max"].get<int>());
 
 		if (cur_step == target_step) {
