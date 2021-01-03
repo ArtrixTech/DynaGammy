@@ -145,15 +145,12 @@ void toggleRegkey(bool checked)
 
 void checkInstance()
 {
-	LOGV << "Checking for multiple instances";
-
 	HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		CloseHandle(hStartEvent);
 		hStartEvent = nullptr;
-
-		LOGV << "Another instance of Gammy is running. Closing";
+		LOGW << "Another instance of Gammy is running. Closing";
 		exit(0);
 	}
 }
