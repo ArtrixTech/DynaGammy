@@ -1445,15 +1445,27 @@ background-color:rgb(100, 100, 100);
            <item>
             <widget class="QSlider" name="speedSlider">
              <property name="minimum">
-              <number>1</number>
+              <number>0</number>
              </property>
              <property name="maximum">
-              <number>20</number>
+              <number>20000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>1000</number>
              </property>
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
              <property name="invertedAppearance">
+              <bool>true</bool>
+             </property>
+             <property name="invertedControls">
               <bool>true</bool>
              </property>
             </widget>
@@ -1625,6 +1637,12 @@ background-color:rgb(100, 100, 100);
              </property>
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="invertedAppearance">
+              <bool>true</bool>
+             </property>
+             <property name="invertedControls">
+              <bool>true</bool>
              </property>
              <property name="tickInterval">
               <number>10</number>

@@ -383,7 +383,7 @@ void MainWindow::on_offsetSlider_valueChanged(int val)
 void MainWindow::on_speedSlider_valueChanged(int val)
 {
 	cfg["brt_speed"] = val;
-	ui->speedLabel->setText(QStringLiteral("%1 s").arg(val));
+	ui->speedLabel->setText(QStringLiteral("%1 s").arg(QString::number(val / 1000., 'g', 2)));
 }
 
 void MainWindow::on_thresholdSlider_valueChanged(int val)

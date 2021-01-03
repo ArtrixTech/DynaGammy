@@ -209,7 +209,7 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 		double time             = 0;
 		const int FPS           = cfg["brt_fps"];
 		const double slice      = 1. / FPS;
-		const double duration_s = cfg["brt_speed"];
+		const double duration_s = cfg["brt_speed"].get<double>() / 1000;
 		const int diff          = target_step - cur_step;
 
 		while (cfg["brt_step"].get<int>() != target_step) {
