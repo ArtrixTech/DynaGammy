@@ -195,37 +195,33 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 			img_br = this->ss_brightness;
 		}
 
-		int target = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps)) + cfg["brt_offset"].get<int>();
-		target = std::clamp(target, cfg["brt_min"].get<int>(), cfg["brt_max"].get<int>());
+		const int cur_step = cfg["brt_step"];
+		const int tmp = brt_slider_steps - int(remap(img_br, 0, 255, 0, brt_slider_steps));
+		const int target_step = std::clamp(tmp, cfg["brt_min"].get<int>(), cfg["brt_max"].get<int>());
 
-		if (target == cfg["brt_step"]) {
-			LOGV << "Brt already at target (" << target << ')';
+		if (cur_step == target_step) {
+			LOGV << "Brt already at target (" << target_step << ')';
 			continue;
 		}
 
-		const int start         = cfg["brt_step"];
-		const int end           = target;
-		double duration_s       = cfg["brt_speed"];
+		double time             = 0;
 		const int FPS           = cfg["brt_fps"];
-		const double iterations = FPS * duration_s;
-		const int distance      = end - start;
-		const double time_incr  = duration_s / iterations;
+		const double slice      = 1. / FPS;
+		const double duration_s = cfg["brt_speed"];
+		const int diff          = target_step - cur_step;
 
-		double time = 0;
+		while (cfg["brt_step"].get<int>() != target_step) {
 
-		LOGV << "(" << start << "->" << end << ')';
+			if (br_needs_change || !cfg["brt_auto"].get<bool>() || quit)
+				break;
 
-		while (cfg["brt_step"] != target && !br_needs_change && cfg["brt_auto"] && !quit) {
-			time += time_incr;
-			cfg["brt_step"] = std::round(easeOutExpo(time, start, distance, duration_s));
+			time += slice;
+			cfg["brt_step"] = int(std::round(easeOutExpo(time, cur_step, diff, duration_s)));
 
 			setGamma(cfg["brt_step"], cfg["temp_step"]);
 			mediator->notify(this, BRT_CHANGED);
-
 			sleep_for(milliseconds(1000 / FPS));
 		}
-
-		LOGV << "(" << start << "->" << end << ") done";
 	}
 }
 
@@ -361,38 +357,29 @@ void GammaCtl::adjustTemperature()
 		int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
 
 		if (cur_step == target_step) {
-			LOGV << "Temp already at target (" << target_temp << " K)";
 			first_step_done = false;
 			continue;
 		}
 
-		LOGV << "Temp target: " << target_temp << " K";
+		double time        = 0;
+		const int FPS      = cfg["temp_fps"];
+		const double slice = 1. / FPS;
+		const int diff     = target_step - cur_step;
 
-		const int    FPS        = cfg["temp_fps"];
-		const double iterations = FPS * duration_s;
-		const double time_incr  = duration_s / iterations;
-		const int    distance   = target_step - cur_step;
+		while (cfg["temp_step"].get<int>() != target_step) {
 
-		double time = 0;
-
-		LOGV << "(" << cur_step << "->" << target_step << ')';
-
-		while (cfg["temp_step"] != target_step && cfg["temp_auto"]) {
-			if (force_temp_change || quit)
+			if (force_temp_change || !cfg["temp_auto"].get<bool>() || quit)
 				break;
 
-			time += time_incr;
-			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, distance, duration_s));
+			time += slice;
+			cfg["temp_step"] = int(easeInOutQuad(time, cur_step, diff, duration_s));
 
 			setGamma(cfg["brt_step"], cfg["temp_step"]);
 			mediator->notify(this, TEMP_CHANGED);
-
 			sleep_for(milliseconds(1000 / FPS));
 		}
 
 		first_step_done = true;
-
-		LOGV << "(" << cur_step << "->" << target_step << ") done";
 	}
 
 	LOGV << "Temp loop ended. Notifying clock thread";
