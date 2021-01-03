@@ -1612,10 +1612,10 @@ background-color:rgb(100, 100, 100);
               <number>-2</number>
              </property>
              <property name="minimum">
-              <number>10</number>
+              <number>0</number>
              </property>
              <property name="maximum">
-              <number>500</number>
+              <number>1000</number>
              </property>
              <property name="singleStep">
               <number>1</number>
