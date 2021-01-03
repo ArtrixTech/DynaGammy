@@ -97,16 +97,12 @@ void GammaCtl::captureScreen()
 {
 	LOGV << "captureScreen() start";
 
-	convar brt_cv;
+	convar      brt_cv;
 	std::thread brt_thr([&] { adjustBrightness(brt_cv); });
-
-	// Buffer to store screen pixels
-	std::vector<uint8_t> buf;
-	std::mutex m;
+	std::mutex  m;
 
 	int img_delta = 0;
-
-	bool force = false;
+	bool force    = false;
 
 	int
 	prev_img_br = 0,
@@ -126,13 +122,10 @@ void GammaCtl::captureScreen()
 		if (quit)
 			break;
 
-		if (cfg["brt_auto"]) {
+		if (cfg["brt_auto"])
 			force = true;
-		} else {
-			buf.clear();
-			buf.shrink_to_fit();
+		else
 			continue;
-		}
 
 		while (cfg["brt_auto"].get<bool>() && !quit) {
 
@@ -141,13 +134,14 @@ void GammaCtl::captureScreen()
 				std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"].get<int>()));
 			}
 
-			LOGV << "Taking screenshot";
-			getSnapshot(buf);
-			LOGV << "Calculating brightness";
-			const int img_br = calcBrightness(buf, 4, 1024);
+			LOGV << "Getting screen brightness";
+
+			const int img_br = DspCtl::getScreenBrightness();
+
 			img_delta += abs(prev_img_br - img_br);
 
 			if (img_delta > cfg["brt_threshold"] || force) {
+
 				img_delta = 0;
 				force = false;
 
@@ -168,9 +162,6 @@ void GammaCtl::captureScreen()
 			prev_max    = cfg["brt_max"];
 			prev_offset = cfg["brt_offset"];
 		}
-
-		buf.clear();
-		buf.shrink_to_fit();
 	}
 
 	{
@@ -180,28 +171,6 @@ void GammaCtl::captureScreen()
 
 	brt_cv.notify_one();
 	brt_thr.join();
-}
-
-int GammaCtl::calcBrightness(const std::vector<uint8_t> &buf, int bpp, int skip_mult)
-{
-	const uint64_t len = buf.size();
-	const uint64_t res = len / bpp;
-
-	uint64_t r = 0;
-	uint64_t g = 0;
-	uint64_t b = 0;
-
-	int bits_to_skip = bpp * skip_mult;
-
-	for (uint64_t i = 0; i < len; i += bits_to_skip) {
-		r += buf[i + 2];
-		g += buf[i + 1];
-		b += buf[i];
-	}
-
-	int lum = (r * 0.2126 + g * 0.7152 + b * 0.0722) * skip_mult / res;
-
-	return lum;
 }
 
 void GammaCtl::adjustBrightness(convar &brt_cv)

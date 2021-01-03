@@ -10,13 +10,11 @@
 #include <vector>
 #include "stdint.h"
 
+int calcBrightness(uint8_t *buf, uint64_t buf_sz, int bytes_per_pixel, int skip_mult);
+
 double lerp(double start, double end, double factor);
 double normalize(double start, double end, double value);
 double remap(double value, double from_min, double from_max, double to_min, double to_max);
-int roundup(int val, int multiple);
-
-void setColors(int temp, std::array<double, 3> &c);
-
 double interpTemp(int step, size_t color_ch);
 
 // Windows functions

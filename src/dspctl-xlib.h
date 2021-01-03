@@ -15,6 +15,14 @@
  */
 class DspCtl
 {
+public:
+	DspCtl();
+	~DspCtl();
+
+	int  getScreenBrightness() noexcept;
+	void setGamma(int brt, int temp);
+	void setInitialGamma(bool set_previous);
+private:
 	Display *dsp;
 	Screen *scr;
 	Window root;
@@ -28,17 +36,6 @@ class DspCtl
 	unsigned w, h;
 
 	void fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp);
-public:
-	DspCtl();
-
-	void getSnapshot(std::vector<uint8_t> &buf) noexcept;
-	void setGamma(int brt, int temp);
-	void setInitialGamma(bool set_previous);
-
-	uint32_t getWidth();
-	uint32_t getHeight();
-
-	~DspCtl();
 };
 
 #endif // X11_H

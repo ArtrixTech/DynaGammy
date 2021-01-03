@@ -65,11 +65,12 @@ DspCtl::DspCtl()
 	}
 }
 
-void DspCtl::getSnapshot(std::vector<uint8_t> &buf) noexcept
+int DspCtl::getScreenBrightness() noexcept
 {
 	const auto img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
-	buf.assign(img->data, img->data + (img->bytes_per_line * img->height));
+	int brt = calcBrightness(reinterpret_cast<uint8_t*>(img->data), img->bytes_per_line * img->height, img->bits_per_pixel / 8, 1024);
 	img->f.destroy_image(img);
+	return brt;
 }
 
 /**
