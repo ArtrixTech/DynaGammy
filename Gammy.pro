@@ -32,7 +32,7 @@ unix {
     LIBS += -lX11 -lXxf86vm
 
     isEmpty(PREFIX) {
-        PREFIX = /usr/opt
+        PREFIX = /opt
     }
 
     isEmpty(BINDIR) {
