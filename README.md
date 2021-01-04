@@ -4,42 +4,29 @@ is a GUI tool for adjusting pixel brightness/temperature automatically or manual
 It can dim the screen if its content is too bright, or brighten it otherwise. This can help your eyes adjust when switching between dark and light windows, especially at night or in suboptimal lighting conditions.
 
 Screenshots available on its [website](https://getgammy.com).
-## Installation
 
-### Windows
+## Windows
 #### Requirements
 [Visual C++ 2017](https://aka.ms/vs/16/release/vc_redist.x64.exe)
 
 #### Run
-The latest Windows release can be found [here](https://getgammy.com/downloads.html) or [here](https://github.com/Fushko/gammy/releases). Unpack and run it, no installation required.
+The latest Windows release can be found [here](https://getgammy.com/downloads.html) or [here](https://github.com/Fushko/gammy/releases).
+Unpack and run it, no installation required.
 
 ### Important!
 If the sliders don't work beyond a certain value, start the app in admin mode once, then restart the system. 
 
 This disables a limit that Windows imposes on how much an app can change screen values.
 
-### Linux
+## Linux (X11 only)
+### Build
 #### Requirements
-- X11
 - g++ or Clang compiler with C++17 support
-##### Packages
 
-- build-essential
-- libgl1-mesa-dev
-- libxxf86vm-dev
-- qt5-default
-
-On Debian-based distros:
+- Ubuntu/Debian packages:
 ```
 sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev qt5-default
 ```
-
-Additionally, the "qt5ct" plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
-
-```
-sudo apt install qt5ct
-```
-
 #### Build and run
 ```
 git clone https://github.com/Fushko/gammy.git
@@ -48,14 +35,25 @@ qmake Gammy.pro
 make
 ./gammy
 ```
-NOTE: If make fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, the Qt version provided by your distro is older than 5.12.
-Updating Qt is recommended, but as a workaround you can delete the offending lines in ui_mainwindow.h, then run make again.
+NOTE: If `make` fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, the Qt version provided by your distro is older than 5.12.
+Updating Qt is recommended, but as a workaround you can delete the offending lines in ui_mainwindow.h, then run `make` again.
+
+Additionally, the `qt5ct` plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
+
+```
+sudo apt install qt5ct
+```
+
+### Packages
+
+#### Arch
+An AUR package is provided [here.](https://aur.archlinux.org/packages/gammy-git/)
 
 #### Gentoo
 
-On Gentoo-based distros:
+On Gentoo-based distros, Gammy is included in GURU Gentoo overlay.
 ```bash
-# Gammy is included in GURU Gentoo overlay, so let's emerge the tool to enable the overlay
+# emerge the tool to enable the overlay
 sudo emerge -av app-eselect/eselect-repository
 # Setup the GURU overlay
 sudo eselect repository enable guru
@@ -66,7 +64,7 @@ sudo emerge -av --autounmask x11-misc/gammy
 
 ## FreeBSD
 
-On FreeBSD, Gammy can be installed from either `ports`:
+On FreeBSD, Gammy can be installed from `ports`:
 
 ```sh
 % cd /usr/ports
@@ -86,7 +84,7 @@ or from `pkg`, as soon as [accessibility/gammy](https://www.freshports.org/acces
 ## Usage
 Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings window.
 
-- The padlock icon allows the brightness range to go up to 200%. (Linux only)
+-  (Linux only) The padlock icon allows the brightness range to go up to 200%.
 - The "Range" slider determines the minimum and maximum brightness.
 - The "Offset" slider adds to the screen brightness calculation. Higher = brighter image.
 - Clicking on the first "..." button shows additional options related to adaptive brightness:
@@ -122,3 +120,4 @@ If you are experiencing an "Invalid gamma ramp size" fatal error, refer to [this
 Copyright (C) Francesco Fusco.
 
 [GPLv3](https://github.com/Fushko/gammy/blob/master/LICENSE)
+
