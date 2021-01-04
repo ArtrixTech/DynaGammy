@@ -11,22 +11,27 @@ Screenshots available on its [website](https://getgammy.com).
 [Visual C++ 2017](https://aka.ms/vs/16/release/vc_redist.x64.exe)
 
 #### Run
-The latest Windows release can be found [here](https://getgammy.com/downloads.html). Unpack and run it, no installation required.
+The latest Windows release can be found [here](https://getgammy.com/downloads.html) or [here](https://github.com/Fushko/gammy/releases). Unpack and run it, no installation required.
+
+### Important!
+If the sliders don't work beyond a certain value, start the app in admin mode once, then restart the system. 
+
+This disables a limit that Windows imposes on how much an app can change screen values.
 
 ### Linux
 #### Requirements
 - X11
-- g++ compiler with C++17 support
+- g++ or Clang compiler with C++17 support
 ##### Packages
 
-- git
 - build-essential
 - libgl1-mesa-dev
-- qt5-default (5.12+)
+- libxxf86vm-dev
+- qt5-default
 
 On Debian-based distros:
 ```
-sudo apt install git build-essential libgl1-mesa-dev qt5-default libxxf86vm-dev
+sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev qt5-default
 ```
 
 Additionally, the "qt5ct" plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
@@ -43,7 +48,7 @@ qmake Gammy.pro
 make
 ./gammy
 ```
-NOTE: If make fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, your Qt version is older than 5.12.
+NOTE: If make fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, the Qt version provided by your distro is older than 5.12.
 Updating Qt is recommended, but as a workaround you can delete the offending lines in ui_mainwindow.h, then run make again.
 
 #### Gentoo
@@ -61,7 +66,7 @@ sudo emerge -av --autounmask x11-misc/gammy
 
 ## FreeBSD
 
-On FreeBSD, gammy can either be installed from `ports`:
+On FreeBSD, Gammy can be installed from either `ports`:
 
 ```sh
 % cd /usr/ports
@@ -91,15 +96,15 @@ Gammy starts minimized in the system tray (or maximized if the tray is absent). 
 - "The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
 
 ## Known issues and limitations
-The brightness is adjusted by changing pixel values, instead of the LCD backlight. This is not ideal on screens with bad contrast.
+The brightness is adjusted by changing pixel values, instead of the LCD backlight. This has wildly varying results based on the quality of your screen.
 
-Theoretically, this app looks best on OLED screens, since they don't have a backlight. (If you have one, I'd love to know your experience).
+Theoretically, this app looks best on OLEDs, since they don't have a backlight. (If you have one, I'd love to know your experience).
 
 Backlight control is planned. However, controlling backlight via software is not supported by most screens.
 ### Multimonitor
-On Windows, the brightness is detected and adjustable only on the primary screen. Temperature affects all screens, however.
+On Windows, the brightness is detected and adjustable only on the monitor that is set as the primary screen. Temperature affects all screens, however.
 
-On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally.
+On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally. This will be fixed in the future.
 
 ## Troubleshooting
 ### Linux
