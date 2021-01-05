@@ -32,7 +32,7 @@ unix {
     LIBS += -lX11 -lXxf86vm
 
     isEmpty(PREFIX) {
-        PREFIX = /opt
+        PREFIX = /usr/local
     }
 
     isEmpty(BINDIR) {
