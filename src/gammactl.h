@@ -44,8 +44,6 @@ private:
 	convar temp_cv;
 	convar reapply_cv;
 	std::mutex brt_mtx;
-	int brt_step;
-	int temp_step;
 	int ss_brightness = 0;
 	bool br_needs_change   = false;
 	bool force_temp_change = false;
