@@ -136,7 +136,7 @@ void GammaCtl::captureScreen()
 
 			LOGV << "Getting screen brightness";
 
-			const int img_br = DspCtl::getScreenBrightness();
+			const int img_br = getScreenBrightness();
 
 			img_delta += abs(prev_img_br - img_br);
 

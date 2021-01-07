@@ -29,7 +29,7 @@ win32 {
 unix {
     HEADERS += src/dspctl-xlib.h
     SOURCES += src/dspctl-xlib.cpp
-    LIBS += -lX11 -lXxf86vm
+    LIBS += -lX11 -lXxf86vm -lXext
 
     isEmpty(PREFIX) {
         PREFIX = /usr/local

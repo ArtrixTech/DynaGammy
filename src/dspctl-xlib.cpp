@@ -5,29 +5,45 @@
 
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
+#include <X11/extensions/XShm.h>
 #include "dspctl-xlib.h"
 #include "defs.h"
 #include "utils.h"
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
-DspCtl::DspCtl()
+XLib::XLib()
 {
 	if (!XInitThreads()) {
 		LOGE << "Failed to initialize XThreads. App may crash unexpectedly.";
 	}
 
-	LOGD << "Initializing XDisplay...";
-
-	dsp     = XOpenDisplay(nullptr);
-	root    = DefaultRootWindow(dsp);
-
-	scr     = DefaultScreenOfDisplay(dsp);
-	scr_num = XDefaultScreen(dsp);
+	dsp      = XOpenDisplay(nullptr);
+	root_wnd = DefaultRootWindow(dsp);
+	scr      = DefaultScreenOfDisplay(dsp);
+	scr_num  = XDefaultScreen(dsp);
 
 	LOGD << "XDisplay initialized on screen " << scr_num;
+}
 
-	w = uint32_t(scr->width);
-	h = uint32_t(scr->height);
+XLib::~XLib()
+{
+	if (dsp)
+		XCloseDisplay(dsp);
+}
 
+int XLib::getScreenBrightness() noexcept
+{
+	const auto img = XGetImage(dsp, root_wnd, 0, 0, scr->width, scr->height, AllPlanes, ZPixmap);
+	int brt = calcBrightness(reinterpret_cast<uint8_t*>(img->data), img->bytes_per_line * img->height, img->bits_per_pixel / 8, 1024);
+	img->f.destroy_image(img);
+	return brt;
+}
+
+// Vidmode ---------------------------------------------------------------
+
+Vidmode::Vidmode()
+{
 	int ev_base, err_base;
 
 	if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base)) {
@@ -65,22 +81,19 @@ DspCtl::DspCtl()
 	}
 }
 
-int DspCtl::getScreenBrightness() noexcept
+Vidmode::~Vidmode()
 {
-	const auto img = XGetImage(dsp, root, 0, 0, w, h, AllPlanes, ZPixmap);
-	int brt = calcBrightness(reinterpret_cast<uint8_t*>(img->data), img->bytes_per_line * img->height, img->bits_per_pixel / 8, 1024);
-	img->f.destroy_image(img);
-	return brt;
+	init_ramp.clear();
 }
 
-/**
- * The ramp multiplier equals 32 when ramp_sz = 2048, 64 when 1024, etc.
- * Assuming ramp_sz = 2048 and pure state (default brightness/temp)
- * the RGB channels look like:
- * [ 0, 32, 64, 96, ... UINT16_MAX - 32 ]
- */
-void DspCtl::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int temp_step)
+void Vidmode::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int temp_step)
 {
+	/**
+	 * The ramp multiplier equals 32 when ramp_sz = 2048, 64 when 1024, etc.
+	 * Assuming ramp_sz = 2048 and pure state (default brightness/temp)
+	 * the RGB channels look like:
+	 * [ 0, 32, 64, 96, ... UINT16_MAX - 32 ]
+	 */
 	auto r = &ramp[0 * ramp_sz],
 	     g = &ramp[1 * ramp_sz],
 	     b = &ramp[2 * ramp_sz];
@@ -100,14 +113,14 @@ void DspCtl::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int
 	}
 }
 
-void DspCtl::setGamma(int scr_br, int temp)
+void Vidmode::setGamma(int scr_br, int temp)
 {
-	std::vector<uint16_t> r (3 * ramp_sz * sizeof(uint16_t));
-	fillRamp(r, scr_br, temp);
-	XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &r[0*ramp_sz], &r[1*ramp_sz], &r[2*ramp_sz]);
+	std::vector<uint16_t> ramp (3 * ramp_sz * sizeof(uint16_t));
+	fillRamp(ramp, scr_br, temp);
+	XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0], &ramp[ramp_sz], &ramp[2 * ramp_sz]);
 }
 
-void DspCtl::setInitialGamma(bool set_previous)
+void Vidmode::setInitialGamma(bool set_previous)
 {
 	if (set_previous && initial_ramp_exists) {
 		LOGI << "Setting previous gamma";
@@ -118,8 +131,71 @@ void DspCtl::setInitialGamma(bool set_previous)
 	}
 }
 
-DspCtl::~DspCtl()
+// XShm ------------------------------------------------------------------
+
+Xshm::Xshm()
 {
-	if (dsp)
-		XCloseDisplay(dsp);
+	int ignore;
+
+	if (!XQueryExtension(dsp, "MIT-SHM", &ignore, &ignore, &ignore)) {
+		LOGE << "Failed to query XShm";
+	}
+
+	int major, minor;
+	int pixmaps;
+
+	if (!XShmQueryVersion(dsp, &major, &minor, &pixmaps)) {
+		LOGE << "Failed to query Xshm version";
+	}
+
+	LOGV << "XImage support: " << (pixmaps == 1);
+	LOGV << "Pixmap support: " << (pixmaps == 2);
+
+	vis = XDefaultVisual(dsp, 0);
+	shi = allocXImage();
+
+	if (!shi) {
+		LOGE << "Shared image unavailable";
+	}
 }
+
+Xshm::~Xshm()
+{
+	XDestroyImage(shi);
+}
+
+XImage* Xshm::allocXImage()
+{
+	XImage *img;
+	img = XShmCreateImage(dsp, vis, scr->root_depth, ZPixmap, nullptr, &shminfo, scr->width, scr->height);
+
+	if (!img) {
+		LOGE << "XShmCreateImage failed";
+		return nullptr;
+	}
+
+	shminfo.shmid    = shmget(IPC_PRIVATE, img->bytes_per_line * img->height, IPC_CREAT|0777);
+	shminfo.shmaddr  = img->data = reinterpret_cast<char*>(shmat(shminfo.shmid, 0, 0));
+	shminfo.readOnly = False;
+
+	if (!XShmAttach(dsp, &shminfo)) {
+		XFlush(dsp);
+		img->f.destroy_image(img);
+		shmdt(shminfo.shmaddr);
+		shmctl(shminfo.shmid, IPC_RMID, 0);
+		return nullptr;
+	}
+
+	XSync(dsp, False);
+	shmctl(shminfo.shmid, IPC_RMID, 0);
+
+	return img;
+}
+
+int Xshm::getScreenBrightness() noexcept
+{
+	XShmGetImage(dsp, root_wnd, shi, 0, 0, AllPlanes);
+	int brt = calcBrightness(reinterpret_cast<uint8_t*>(shi->data), shi->bytes_per_line * shi->height, shi->bits_per_pixel / 8, 1024);
+	return brt;
+}
+

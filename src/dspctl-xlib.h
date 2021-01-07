@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (C) Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
@@ -7,35 +7,51 @@
 #define X11_H
 
 #include <X11/Xlib.h>
+#include <X11/extensions/XShm.h>
 #include <cstdint>
 #include <vector>
 
-/**
- * @brief Xlib display controller
- */
-class DspCtl
+class XLib
 {
 public:
-	DspCtl();
-	~DspCtl();
-
-	int  getScreenBrightness() noexcept;
-	void setGamma(int brt, int temp);
-	void setInitialGamma(bool set_previous);
-private:
+	XLib();
+	~XLib();
+	int getScreenBrightness() noexcept;
+protected:
 	Display *dsp;
-	Screen *scr;
-	Window root;
+	Window  root_wnd;
+	Screen  *scr;
+	int     scr_num;
+};
 
+class Vidmode : public XLib
+{
+public:
+	Vidmode();
+	~Vidmode();
+	void setGamma(int, int);
+	void setInitialGamma(bool);
+protected:
 	int ramp_sz;
-	int scr_num;
-
-	std::vector<uint16_t> init_ramp;
 	bool initial_ramp_exists = true;
-
-	unsigned w, h;
+	std::vector<uint16_t> init_ramp;
 
 	void fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp);
 };
+
+class Xshm : public Vidmode
+{
+public:
+	Xshm();
+	~Xshm();
+	int getScreenBrightness() noexcept;
+private:
+	XShmSegmentInfo shminfo;
+	XImage *shi;
+	Visual *vis;
+	XImage* allocXImage();
+};
+
+typedef Xshm DspCtl;
 
 #endif // X11_H
