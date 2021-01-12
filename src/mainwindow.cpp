@@ -11,7 +11,6 @@
 #include <QMenu>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusConnection>
-#include <thread>
 #include "cfg.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -39,9 +38,7 @@ void MainWindow::init()
 	emit on_autoBrtCheck_toggled(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
-	createTrayIcon(icon);
-	std::thread t([&] { checkTray(); });
-	t.detach();
+    createTrayIcon(icon);
 }
 
 void MainWindow::setLabels()
@@ -99,33 +96,20 @@ void MainWindow::setSliders()
 	ui->pollingSlider->setValue(cfg["brt_polling_rate"]);
 }
 
-void MainWindow::checkTray()
-{
-	int c = 3;
-	do {
-		systray_available = QSystemTrayIcon::isSystemTrayAvailable();
-
-		if (systray_available) {
-			tray_icon->show();
-			return;
-		}
-
-		std::this_thread::sleep_for(std::chrono::seconds(10));
-	} while (c--);
-
-	LOGW << "System tray unavailable. Closing the window will quit the app.";
-	this->show();
-}
-
 void MainWindow::createTrayIcon(QIcon &icon)
 {
 	QMenu *menu = createMenu();
 	tray_icon->setContextMenu(menu);
-
 	tray_icon->setToolTip(QString("Gammy"));
 	tray_icon->setIcon(icon);
-
 	connect(tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+    tray_icon->show();
+
+    systray_available = QSystemTrayIcon::isSystemTrayAvailable();
+
+    if (!systray_available) {
+        LOGE << "Systray unavailable. Closing the window will quit the app.";
+    }
 }
 
 bool MainWindow::listenWakeupSignal()
