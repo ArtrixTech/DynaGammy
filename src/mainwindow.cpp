@@ -38,7 +38,7 @@ void MainWindow::init()
 	emit on_autoBrtCheck_toggled(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
-    createTrayIcon(icon);
+	createTrayIcon(icon);
 }
 
 void MainWindow::setLabels()
