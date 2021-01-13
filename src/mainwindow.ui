@@ -495,14 +495,21 @@ QSlider::handle:horizontal{
 }
 QWidget{
 font-family:Ubuntu, sans-serif;
-color:white;
 }
 QLabel{
 font-family:Ubuntu, sans-serif;
 font-size:14px;
+color:white;
 }
 QPushButton{
+color:white;
 background-color:rgb(20,22,35);
+}
+QCheckBox:unchecked{
+color: white; 
+}
+QCheckBox:checked{
+color: white; 
 }
 </string>
   </property>
@@ -1134,7 +1141,7 @@ background-color:rgb(20,22,35);
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true">color:white;</string>
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>Auto</string>
@@ -1168,8 +1175,7 @@ background-color:rgb(20,22,35);
              </size>
             </property>
             <property name="styleSheet">
-             <string notr="true">background-color:rgb(20,22,35);
-</string>
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>...</string>
@@ -2165,7 +2171,7 @@ background-color:rgb(100, 100, 100);
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true">color:white;</string>
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>Auto</string>
@@ -2192,7 +2198,7 @@ background-color:rgb(100, 100, 100);
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true">background-color:rgb(20,22,35);</string>
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>...</string>
