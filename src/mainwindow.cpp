@@ -43,9 +43,10 @@ void MainWindow::init()
 
 void MainWindow::setLabels()
 {
+
 	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_slider_steps, 0, 100))));
-	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_min"].get<int>(), 0, brt_slider_steps, 0, 100))));
-	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_max"].get<int>(), 0, brt_slider_steps, 0, 100))));
+	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_min"].get<int>(), 0, brt_slider_steps, 0, 100)))));
+	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_max"].get<int>(), 0, brt_slider_steps, 0, 100)))));
 	ui->speedLabel->setText(QStringLiteral("%1 s").arg(QString::number(cfg["brt_speed"].get<int>() / 1000., 'g', 2)));
 	ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["brt_threshold"].get<int>()));
 	ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg["brt_polling_rate"].get<int>()));
