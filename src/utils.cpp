@@ -142,16 +142,29 @@ void toggleRegkey(bool checked)
 	if (hKey)
 		RegCloseKey(hKey);
 }
+#endif
 
-void checkInstance()
+bool alreadyRunning()
 {
-	HANDLE hStartEvent = CreateEventA(nullptr, true, false, "Gammy");
-
+#ifdef _WIN32
+	HANDLE ev = CreateEventA(nullptr, true, false, "Gammy");
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		CloseHandle(hStartEvent);
-		hStartEvent = nullptr;
-		LOGW << "Another instance of Gammy is running. Closing";
-		exit(0);
+		ev = nullptr;
+		return true;
 	}
-}
+#else
+	static int fd;
+	struct flock fl;
+	fl.l_type   = F_WRLCK;
+	fl.l_whence = SEEK_SET;
+	fl.l_start  = 0;
+	fl.l_len    = 1;
+
+	fd = open("/tmp/gammy.lock", O_WRONLY | O_CREAT, 0666);
+
+	if (fd == -1 || fcntl(fd, F_SETLK, &fl) == -1)
+		return true;
 #endif
+	return false;
+}

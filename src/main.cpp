@@ -31,29 +31,30 @@ void init()
 {
 	static plog::RollingFileAppender<plog::TxtFormatter> f("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> c;
-
 	plog::init(plog::Severity(plog::debug), &c);
+	const auto logger = plog::get();
+	logger->addAppender(&f);
+
+	if (alreadyRunning()) {
+		LOGE << "Process already running";
+		exit(1);
+	}
 
 	config::read();
-
-	plog::get()->addAppender(&f);
-	plog::get()->setMaxSeverity(plog::Severity(cfg["log_level"]));
+	logger->setMaxSeverity(plog::Severity(cfg["log_level"]));
 
 #ifndef _WIN32
 	signal(SIGINT, sig_handler);
 	signal(SIGQUIT, sig_handler);
 	signal(SIGTERM, sig_handler);
 #else
-	checkInstance();
-
 	if (cfg["log_level"] == plog::verbose) {
-		FILE* f1, * f2, * f3;
+		FILE *f1, *f2, *f3;
 		AllocConsole();
 		freopen_s(&f1, "CONIN$", "r", stdin);
 		freopen_s(&f2, "CONOUT$", "w", stdout);
 		freopen_s(&f3, "CONOUT$", "w", stderr);
 	}
-
 	checkGammaRange();
 #endif
 }
