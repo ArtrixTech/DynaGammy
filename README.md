@@ -14,7 +14,7 @@ The latest Windows release can be found [here](https://getgammy.com/downloads.ht
 Unpack and run it, no installation required.
 
 ### Important!
-If the sliders don't work beyond a certain value, start the app in admin mode once, then restart the system. 
+If the sliders don't work beyond a certain value, start the app in admin mode once, then restart the system.
 
 This disables a limit that Windows imposes on how much an app can change screen values.
 
@@ -25,23 +25,32 @@ This disables a limit that Windows imposes on how much an app can change screen 
 
 - Ubuntu/Debian packages:
 ```
-sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev qt5-default
+sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev libxext-dev qt5-default
 ```
 #### Build and run
 ```
 git clone https://github.com/Fushko/gammy.git
 cd gammy
-qmake Gammy.pro
+qmake
 make
-./gammy
+sudo make install
+gammy
 ```
+
 NOTE: If `make` fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, the Qt version provided by your distro is older than 5.12.
-Updating Qt is recommended, but as a workaround you can delete the offending lines in ui_mainwindow.h, then run `make` again.
+As a workaround you can delete the offending lines in ui_mainwindow.h, then run `make` again.
+
 
 Additionally, the `qt5ct` plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
 
 ```
 sudo apt install qt5ct
+```
+
+To uninstall:
+```
+# just removes gammy from /usr/local/bin
+sudo make uninstall
 ```
 
 ### Packages
@@ -86,14 +95,14 @@ or from `pkg`, as soon as [accessibility/gammy](https://www.freshports.org/acces
 ## Usage
 Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings window.
 
--  (Linux only) The padlock icon allows the brightness range to go up to 200%.
+- (Linux only) The padlock icon allows the brightness range to go up to 200%.
 - The "Range" slider determines the minimum and maximum brightness.
 - The "Offset" slider adds to the screen brightness calculation. Higher = brighter image.
 - Clicking on the first "..." button shows additional options related to adaptive brightness:
   - "Adaptation speed" controls how quickly the brightness adapts when a change is detected.
   - "Threshold" controls how much the screen has to change in order to trigger adaptation.
   - "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommended.
-- "The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
+- The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
 
 ## Known issues and limitations
 The brightness is adjusted by changing pixel values, instead of the LCD backlight. This has wildly varying results based on the quality of your screen.
@@ -101,10 +110,12 @@ The brightness is adjusted by changing pixel values, instead of the LCD backligh
 Theoretically, this app looks best on OLEDs, since they don't have a backlight. (If you have one, I'd love to know your experience).
 
 Backlight control is planned. However, controlling backlight via software is not supported by most screens.
-### Multimonitor
-On Windows, the brightness is detected and adjustable only on the monitor that is set as the primary screen. Temperature affects all screens, however.
+### Multimonitor issues
+On Windows, currently the brightness is detected and adjustable only on the monitor that is set as the primary screen. Temperature affects all screens, however.
 
-On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally. This will be fixed in the future.
+On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally.
+
+Proper multimonitor support is planned.
 
 ## Troubleshooting
 ### Linux
