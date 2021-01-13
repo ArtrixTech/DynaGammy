@@ -35,7 +35,6 @@ void MainWindow::init()
 
 	// Set Auto checkboxes
 	ui->autoBrtCheck->setChecked(cfg["brt_auto"]);
-	emit on_autoBrtCheck_toggled(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
 	createTrayIcon(icon);
@@ -43,7 +42,6 @@ void MainWindow::init()
 
 void MainWindow::setLabels()
 {
-
 	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_slider_steps, 0, 100))));
 	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_min"].get<int>(), 0, brt_slider_steps, 0, 100)))));
 	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_max"].get<int>(), 0, brt_slider_steps, 0, 100)))));
@@ -250,38 +248,35 @@ void MainWindow::setTempSlider(int val)
 }
 
 /**
- * Trigger slider move when the slider is moved via single or page step
- *
+ * Triggered when the user changes the slider manually via:
+ * left click, middle click, single step, page step.
+ * We need to update the gamma manually in this case.
  */
-void MainWindow::on_brtSlider_actionTriggered(int action)
+void MainWindow::on_brtSlider_actionTriggered([[maybe_unused]] int action)
 {
-	if (action == QAbstractSlider::SliderMove)
-		return;
-
 	if (ui->autoBrtCheck->isChecked())
 		ui->autoBrtCheck->setChecked(false);
 
 	int val = ui->brtSlider->sliderPosition();
-	emit on_brtSlider_sliderMoved(val);
+	cfg["brt_step"] = val;
+	mediator->notify(this, GAMMA_SLIDER_MOVED);
 	updateBrtLabel(val);
 }
 
-void MainWindow::on_tempSlider_actionTriggered(int action)
+void MainWindow::on_tempSlider_actionTriggered([[maybe_unused]] int action)
 {
-	if (action == QAbstractSlider::SliderMove)
-		return;
-
 	if (ui->autoTempCheck->isChecked())
 		ui->autoTempCheck->setChecked(false);
 
 	int val = ui->tempSlider->sliderPosition();
-	ui->tempSlider->setValue(val);
-	on_tempSlider_sliderMoved(val);
+	cfg["temp_step"] = val;
+	mediator->notify(this, GAMMA_SLIDER_MOVED);
+	updateTempLabel(val);
 }
 
 /**
- * Triggered when the sliders are moved automatically by the gamma control.
- * In this case, the gamma has already been adjusted, no need to do it here.
+ * Triggered when the sliders are moved by the gamma controller.
+ * Just update the labels, since the gamma has been adjusted already.
  */
 void MainWindow::on_brtSlider_valueChanged(int val)
 {
@@ -291,22 +286,6 @@ void MainWindow::on_brtSlider_valueChanged(int val)
 void MainWindow::on_tempSlider_valueChanged(int val)
 {
 	updateTempLabel(val);
-}
-
-/**
- * Triggered when the sliders are moved manually by the user or this instance.
- * We notify the gamma controller to apply the new values.
- */
-void MainWindow::on_brtSlider_sliderMoved(int val)
-{
-	cfg["brt_step"] = val;
-	mediator->notify(this, GAMMA_SLIDER_MOVED);
-}
-
-void MainWindow::on_tempSlider_sliderMoved(int val)
-{
-	cfg["temp_step"] = val;
-	mediator->notify(this, GAMMA_SLIDER_MOVED);
 }
 
 void MainWindow::on_brRange_lowerValueChanged(int val)
@@ -325,25 +304,24 @@ void MainWindow::on_brRange_upperValueChanged(int val)
 
 void MainWindow::toggleBrtSlidersRange(bool extend)
 {
-	int br_limit = brt_slider_steps;
+	int brt_limit = brt_slider_steps;
 
 	if (extend)
-		br_limit *= 2;
+		brt_limit *= 2;
 
 	const int min = cfg["brt_min"].get<int>();
 	const int max = cfg["brt_max"].get<int>();
-	ui->brRange->setMaximum(br_limit);
+	ui->brRange->setMaximum(brt_limit);
+
 	// We set the upper/lower values again because they reset after setMaximum
 	ui->brRange->setUpperValue(max);
 	ui->brRange->setLowerValue(min);
 
-	const int prev_pos = ui->brtSlider->sliderPosition();
-	ui->brtSlider->setRange(100, br_limit);
-	const int cur_pos = ui->brtSlider->sliderPosition();
+	ui->brtSlider->setRange(100, brt_limit);
 
-	if (cur_pos != prev_pos) {
-		ui->brtSlider->setValue(cur_pos);
-		emit on_brtSlider_sliderMoved(cur_pos);
+	if (!cfg["brt_auto"].get<bool>()) {
+		ui->brtSlider->setValue(cfg["brt_step"]);
+		emit on_brtSlider_actionTriggered(QAbstractSlider::SliderMove);
 	}
 }
 
@@ -398,18 +376,6 @@ void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
 
 	this->setMinimumHeight(h);
 	this->setMaximumHeight(h);
-}
-
-void MainWindow::on_brtSlider_sliderPressed()
-{
-	if (ui->autoBrtCheck->isChecked())
-		ui->autoBrtCheck->setChecked(false);
-}
-
-void MainWindow::on_tempSlider_sliderPressed()
-{
-	if (ui->autoTempCheck->isChecked())
-		ui->autoTempCheck->setChecked(false);
 }
 
 void MainWindow::on_autoBrtCheck_toggled(bool checked)

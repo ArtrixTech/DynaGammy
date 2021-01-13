@@ -37,15 +37,11 @@ public:
 private slots:
 	void iconActivated(QSystemTrayIcon::ActivationReason reason);
 
-	void on_brtSlider_valueChanged(int val);
-	void on_tempSlider_valueChanged(int val);
-	void on_brtSlider_sliderMoved(int val);
-	void on_tempSlider_sliderMoved(int val);
-
-	void on_brtSlider_sliderPressed();
-	void on_tempSlider_sliderPressed();
 	void on_brtSlider_actionTriggered(int action);
 	void on_tempSlider_actionTriggered(int action);
+
+	void on_brtSlider_valueChanged(int val);
+	void on_tempSlider_valueChanged(int val);
 
 	void on_brRange_lowerValueChanged(int val);
 	void on_brRange_upperValueChanged(int val);
