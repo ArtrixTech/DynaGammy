@@ -45,7 +45,6 @@ void init()
 	signal(SIGTERM, sig_handler);
 #else
 	checkInstance();
-	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
 	if (cfg["log_level"] == plog::verbose) {
 		FILE* f1, * f2, * f3;
