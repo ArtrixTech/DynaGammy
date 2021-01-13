@@ -73,6 +73,7 @@ void MainWindow::setWindowProperties(QIcon &icon)
 	ui->speedWidget->hide();
 	ui->threshWidget->hide();
 	ui->pollingWidget->hide();
+	ui->line->setPalette(QPalette(qRgb(25, 27, 37)));
 
 	// Move window to bottom right
 	QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
@@ -103,13 +104,13 @@ void MainWindow::createTrayIcon(QIcon &icon)
 	tray_icon->setToolTip(QString("Gammy"));
 	tray_icon->setIcon(icon);
 	connect(tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
-    tray_icon->show();
+	tray_icon->show();
 
-    systray_available = QSystemTrayIcon::isSystemTrayAvailable();
+	systray_available = QSystemTrayIcon::isSystemTrayAvailable();
 
-    if (!systray_available) {
-        LOGE << "Systray unavailable. Closing the window will quit the app.";
-    }
+	if (!systray_available) {
+		LOGE << "Systray unavailable. Closing the window will quit the app.";
+	}
 }
 
 bool MainWindow::listenWakeupSignal()
