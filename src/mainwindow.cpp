@@ -108,6 +108,7 @@ void MainWindow::createTrayIcon(QIcon &icon)
 	systray_available = QSystemTrayIcon::isSystemTrayAvailable();
 
 	if (!systray_available) {
+		this->show();
 		LOGE << "Systray unavailable. Closing the window will quit the app.";
 	}
 }
