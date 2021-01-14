@@ -9,50 +9,16 @@
 #include <fstream>
 #include <iostream>
 
-#ifdef _WIN32
-#include <Windows.h> // GetModuleFileNameW
-
-std::wstring config::getExecutablePath()
-{
-	wchar_t buf[FILENAME_MAX] {};
-	GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
-	std::wstring path(buf);
-
-	std::wstring appname = L"gammy.exe";
-	path.erase(path.find(appname), appname.length());
-
-	path += L"gammyconf.txt";
-
-	return path;
-}
-#else
-std::string config::getPath()
-{
-	const char *home   = getenv("XDG_CONFIG_HOME");
-	const char *format = "/";
-
-	if (!home) {
-		format = "/.config/";
-		home = getenv("HOME");
-	}
-
-	std::stringstream ss;
-	ss << home << format << config_name;
-
-	return ss.str();
-}
-#endif
-
 json getDefault()
 {
 	return
 	{
 		{"brt_auto", true},
 		{"brt_fps", 60},
-		{"brt_step", brt_slider_steps},
-		{"brt_min", brt_slider_steps / 2},
-		{"brt_max", brt_slider_steps},
-		{"brt_offset", brt_slider_steps / 3},
+		{"brt_step", brt_steps_max},
+		{"brt_min", brt_steps_max / 2},
+		{"brt_max", brt_steps_max},
+		{"brt_offset", brt_steps_max / 3},
 		{"brt_speed", 1000},
 		{"brt_threshold", 8},
 		{"brt_polling_rate", 100},
@@ -61,7 +27,7 @@ json getDefault()
 		{"temp_auto", false},
 		{"temp_fps", 45},
 		{"temp_step", 0},
-		{"temp_high", max_temp_kelvin},
+		{"temp_high", temp_k_min},
 		{"temp_low", 3400},
 		{"temp_speed", 60.0},
 		{"temp_sunrise", "06:00:00"},
@@ -76,31 +42,23 @@ json cfg = getDefault();
 
 void config::read()
 {
-#ifdef _WIN32
-	const std::wstring path = getExecutablePath();
-#else
-	const std::string path = config::getPath();
-#endif
+	const auto path = config::getPath();
+	LOGV << "Reading from: " << path;
 
 	std::ifstream file(path, std::fstream::in | std::fstream::app);
 
 	if (!file.good() || !file.is_open()) {
-		LOGE << "Unable to open config at path: " << path;
+		LOGE << "Unable to open config";
 		return;
 	}
 
-	LOGD << "Reading from: " << path;
-
-	// Seek file end
 	file.seekg(0, std::ios::end);
 
-	// If end position is 0, create the file
 	if (file.tellg() == 0) {
 		config::write();
 		return;
 	}
 
-	// Seek file start
 	file.seekg(0);
 
 	json tmp;
@@ -121,20 +79,15 @@ void config::read()
 
 void config::write()
 {
-#ifdef _WIN32
-	const std::wstring path = getExecutablePath();
-#else
-	const std::string path = getPath();
-#endif
+	const auto path = config::getPath();
+	LOGV << "Writing to: " << path;
 
 	std::ofstream file(path, std::ofstream::out);
 
 	if (!file.good() || !file.is_open()) {
-		LOGE << "Unable to open config file";
+		LOGE << "Unable to open config";
 		return;
 	}
-
-	LOGD << "Writing to: " << path;
 
 	try {
 		file << std::setw(4) << cfg;
@@ -145,3 +98,34 @@ void config::write()
 
 	LOGV << "Config set";
 }
+
+#ifdef _WIN32
+#include <Windows.h>
+std::wstring config::getPath()
+{
+	wchar_t buf[FILENAME_MAX] {};
+	GetModuleFileNameW(nullptr, buf, FILENAME_MAX);
+
+	std::wstring path(buf);
+	std::wstring appname = L"gammy.exe";
+
+	path.erase(path.find(appname), appname.length());
+	path += L"gammyconf.txt";
+	return path;
+}
+#else
+std::string config::getPath()
+{
+	const char *home   = getenv("XDG_CONFIG_HOME");
+	const char *format = "/";
+
+	if (!home) {
+		format = "/.config/";
+		home = getenv("HOME");
+	}
+
+	std::stringstream ss;
+	ss << home << format << config_name;
+	return ss.str();
+}
+#endif

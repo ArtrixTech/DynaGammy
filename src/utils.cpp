@@ -32,24 +32,24 @@ int calcBrightness(uint8_t *buf, uint64_t buf_sz, int bytes_per_pixel, int skip_
 	return lum;
 }
 
-double lerp(double start, double end, double factor)
+double lerp(double x, double a, double b)
 {
-	return start * (1 - factor) + end * factor;
+	return (1 - x) * a + x * b;
 }
 
-double normalize(double start, double end, double value)
+double normalize(double x, double a, double b)
 {
-	return (value - start) / (end - start);
+	return (x - a) / (b - a);
 }
 
-double remap(double value, double from_min, double from_max, double to_min, double to_max)
+double remap(double x, double a, double b, double ay, double by)
 {
-	return lerp(to_min, to_max, normalize(from_min, from_max, value));
+	return lerp(normalize(x, a, b), ay, by);
 }
 
 double interpTemp(int temp_step, size_t color_ch)
 {
-	return remap(temp_slider_steps - temp_step, 0, temp_slider_steps, ingo_thies_table[color_ch], 1);
+	return remap(temp_steps_max - temp_step, 0, temp_steps_max, ingo_thies_table[color_ch], 1);
 };
 
 double easeOutExpo(double t, double b , double c, double d)

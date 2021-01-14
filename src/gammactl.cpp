@@ -15,7 +15,7 @@ GammaCtl::GammaCtl()
 {
 	// If auto brightness is on, start at max brightness
 	if (cfg["brt_auto"].get<bool>())
-		cfg["brt_step"] = brt_slider_steps;
+		cfg["brt_step"] = brt_steps_max;
 
 	// If auto temp is on, start at max temp for a smooth transition
 	if (cfg["temp_auto"].get<bool>())
@@ -115,32 +115,24 @@ void GammaCtl::captureScreen()
 			std::unique_lock<std::mutex> lock(m);
 
 			ss_cv.wait(lock, [&] {
-				return cfg["brt_auto"] || quit;
+				return cfg["brt_auto"].get<bool>() || quit;
 			});
 		}
 
 		if (quit)
 			break;
 
-		if (cfg["brt_auto"])
+		if (cfg["brt_auto"].get<bool>())
 			force = true;
 		else
 			continue;
 
 		while (cfg["brt_auto"].get<bool>() && !quit) {
 
-			// On Windows, sleep in the base class.
-			if constexpr (!windows) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"].get<int>()));
-			}
-
-			LOGV << "Getting screen brightness";
-
 			const int img_br = getScreenBrightness();
-
 			img_delta += abs(prev_img_br - img_br);
 
-			if (img_delta > cfg["brt_threshold"] || force) {
+			if (img_delta > cfg["brt_threshold"].get<int>() || force) {
 
 				img_delta = 0;
 				force = false;
@@ -161,6 +153,11 @@ void GammaCtl::captureScreen()
 			prev_min    = cfg["brt_min"];
 			prev_max    = cfg["brt_max"];
 			prev_offset = cfg["brt_offset"];
+
+			// On Windows, we sleep in getScreenBrightness()
+			if constexpr (!windows) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(cfg["brt_polling_rate"].get<int>()));
+			}
 		}
 	}
 
@@ -196,9 +193,9 @@ void GammaCtl::adjustBrightness(convar &brt_cv)
 		}
 
 		const int cur_step = cfg["brt_step"];
-		const int tmp = brt_slider_steps
-		                - int(remap(img_br, 0, 255, 0, brt_slider_steps))
-		                + int(remap(cfg["brt_offset"].get<int>(), 0, brt_slider_steps, 0, cfg["brt_max"].get<int>()));
+		const int tmp = brt_steps_max
+		                - int(remap(img_br, 0, 255, 0, brt_steps_max))
+		                + int(remap(cfg["brt_offset"].get<int>(), 0, brt_steps_max, 0, cfg["brt_max"].get<int>()));
 		const int target_step = std::clamp(tmp, cfg["brt_min"].get<int>(), cfg["brt_max"].get<int>());
 
 		if (cur_step == target_step) {
@@ -356,7 +353,7 @@ void GammaCtl::adjustTemperature()
 		LOGV << "Temp duration: " << duration_s / 60 << " min";
 
 		int cur_step    = cfg["temp_step"];
-		int target_step = int(remap(target_temp, min_temp_kelvin, max_temp_kelvin, temp_slider_steps, 0));
+		int target_step = int(remap(target_temp, temp_k_max, temp_k_min, temp_steps_max, 0));
 
 		if (cur_step == target_step) {
 			first_step_done = false;

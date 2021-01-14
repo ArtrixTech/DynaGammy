@@ -241,7 +241,7 @@ void DspCtl::setGamma(int brt_step, int temp_step)
 void DspCtl::setInitialGamma([[maybe_unused]]bool prev_gamma)
 {
 	// @TODO: restore previous gamma
-	GDI::setGamma(brt_slider_steps, 0);
+	GDI::setGamma(brt_steps_max, 0);
 }
 
 void DspCtl::restart()
@@ -337,7 +337,7 @@ void GDI::setGamma(int brt_step, int temp_step)
 
 	WORD ramp[3][256];
 
-	const auto brt_mult = remap(brt_step, 0, brt_slider_steps, 0, 255);
+	const auto brt_mult = remap(brt_step, 0, brt_steps_max, 0, 255);
 
 	for (WORD i = 0; i < 256; ++i) {
 		const int val = i * brt_mult;

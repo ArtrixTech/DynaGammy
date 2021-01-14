@@ -23,7 +23,7 @@ XLib::XLib()
 	scr      = DefaultScreenOfDisplay(dsp);
 	scr_num  = XDefaultScreen(dsp);
 
-	LOGD << "XDisplay initialized on screen " << scr_num;
+	LOGV << "XDisplay initialized";
 }
 
 XLib::~XLib()
@@ -47,19 +47,11 @@ Vidmode::Vidmode()
 	int ev_base, err_base;
 
 	if (!XF86VidModeQueryExtension(dsp, &ev_base, &err_base)) {
-		LOGW << "Failed to query XF86VidMode extension";
+		LOGE << "Failed to query VidMode";
 	}
-
-	int major_ver, minor_ver;
-
-	if (!XF86VidModeQueryVersion(dsp, &major_ver, &minor_ver)) {
-		LOGW << "Failed to query XF86VidMode version";
-	}
-
-	LOGD << "XF86VidMode ver: " << major_ver << '.' << minor_ver;
 
 	if (!XF86VidModeGetGammaRampSize(dsp, scr_num, &ramp_sz)) {
-		LOGF << "Failed to get XF86 gamma ramp size";
+		LOGF << "Failed to get gamma ramp size";
 		exit(EXIT_FAILURE);
 	}
 
@@ -103,7 +95,7 @@ void Vidmode::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const in
 	             b_mult = interpTemp(temp_step, 2);
 
 	const int    ramp_mult = (UINT16_MAX + 1) / ramp_sz;
-	const double brt_mult  = normalize(0, brt_slider_steps, brt_step) * ramp_mult;
+	const double brt_mult  = normalize(brt_step, 0, brt_steps_max) * ramp_mult;
 
 	for (int i = 0; i < ramp_sz; ++i) {
 		const int val = std::clamp(int(i * brt_mult), 0, UINT16_MAX);
@@ -115,7 +107,7 @@ void Vidmode::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const in
 
 void Vidmode::setGamma(int scr_br, int temp)
 {
-	std::vector<uint16_t> ramp (3 * ramp_sz * sizeof(uint16_t));
+	std::vector<uint16_t> ramp(3 * ramp_sz * sizeof(uint16_t));
 	fillRamp(ramp, scr_br, temp);
 	XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0], &ramp[ramp_sz], &ramp[2 * ramp_sz]);
 }
@@ -127,7 +119,7 @@ void Vidmode::setInitialGamma(bool set_previous)
 		XF86VidModeSetGammaRamp(dsp, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
 	} else {
 		LOGI << "Setting pure gamma";
-		setGamma(brt_slider_steps, 0);
+		setGamma(brt_steps_max, 0);
 	}
 }
 

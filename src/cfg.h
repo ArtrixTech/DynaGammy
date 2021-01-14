@@ -14,8 +14,11 @@ using json = nlohmann::json;
 extern json cfg;
 
 namespace config {
+#ifdef _WIN32
+std::wstring getPath();
+#else
 std::string  getPath();
-std::wstring getExecutablePath();
+#endif
 void read();
 void write();
 }

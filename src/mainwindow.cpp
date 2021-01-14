@@ -42,14 +42,14 @@ void MainWindow::init()
 
 void MainWindow::setLabels()
 {
-	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_slider_steps, 0, 100))));
-	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_min"].get<int>(), 0, brt_slider_steps, 0, 100)))));
-	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_max"].get<int>(), 0, brt_slider_steps, 0, 100)))));
+	ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_steps_max, 0, 100))));
+	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_min"].get<int>(), 0, brt_steps_max, 0, 100)))));
+	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(int(ceil(remap(cfg["brt_max"].get<int>(), 0, brt_steps_max, 0, 100)))));
 	ui->speedLabel->setText(QStringLiteral("%1 s").arg(QString::number(cfg["brt_speed"].get<int>() / 1000., 'g', 2)));
 	ui->thresholdLabel->setText(QStringLiteral("%1").arg(cfg["brt_threshold"].get<int>()));
 	ui->pollingLabel->setText(QStringLiteral("%1").arg(cfg["brt_polling_rate"].get<int>()));
 
-	double temp_kelvin = remap(temp_slider_steps - cfg["temp_step"].get<int>(), 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
+	double temp_kelvin = remap(temp_steps_max - cfg["temp_step"].get<int>(), 0, temp_steps_max, temp_k_max, temp_k_min);
 	temp_kelvin = floor(temp_kelvin / 100) * 100;
 	ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
 }
@@ -89,7 +89,7 @@ void MainWindow::setSliders()
 	}
 
 	ui->offsetSlider->setValue(cfg["brt_offset"]);
-	ui->tempSlider->setRange(0, temp_slider_steps);
+	ui->tempSlider->setRange(0, temp_steps_max);
 	ui->tempSlider->setValue(cfg["temp_step"]);
 	ui->speedSlider->setValue(cfg["brt_speed"]);
 	ui->thresholdSlider->setValue(cfg["brt_threshold"]);
@@ -292,20 +292,20 @@ void MainWindow::on_tempSlider_valueChanged(int val)
 void MainWindow::on_brRange_lowerValueChanged(int val)
 {
 	cfg["brt_min"] = val;
-	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
+	val = int(ceil(remap(val, 0, brt_steps_max, 0, 100)));
 	ui->minBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::on_brRange_upperValueChanged(int val)
 {
 	cfg["brt_max"] = val;
-	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
+	val = int(ceil(remap(val, 0, brt_steps_max, 0, 100)));
 	ui->maxBrLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::toggleBrtSlidersRange(bool extend)
 {
-	int brt_limit = brt_slider_steps;
+	int brt_limit = brt_steps_max;
 
 	if (extend)
 		brt_limit *= 2;
@@ -328,13 +328,13 @@ void MainWindow::toggleBrtSlidersRange(bool extend)
 
 void MainWindow::updateBrtLabel(int val)
 {
-	val = int(ceil(remap(val, 0, brt_slider_steps, 0, 100)));
+	val = int(ceil(remap(val, 0, brt_steps_max, 0, 100)));
 	ui->brtLabel->setText(QStringLiteral("%1 %").arg(val));
 }
 
 void MainWindow::updateTempLabel(int val)
 {
-	double temp_kelvin = remap(temp_slider_steps - val, 0, temp_slider_steps, min_temp_kelvin, max_temp_kelvin);
+	double temp_kelvin = remap(temp_steps_max - val, 0, temp_steps_max, temp_k_max, temp_k_min);
 	temp_kelvin = floor(temp_kelvin / 10) * 10;
 	ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_kelvin));
 }
@@ -342,7 +342,7 @@ void MainWindow::updateTempLabel(int val)
 void MainWindow::on_offsetSlider_valueChanged(int val)
 {
 	cfg["brt_offset"] = val;
-	ui->offsetLabel->setText(QStringLiteral("%1 %").arg(int(remap(val, 0, brt_slider_steps, 0, 100))));
+	ui->offsetLabel->setText(QStringLiteral("%1 %").arg(int(remap(val, 0, brt_steps_max, 0, 100))));
 }
 
 void MainWindow::on_speedSlider_valueChanged(int val)
