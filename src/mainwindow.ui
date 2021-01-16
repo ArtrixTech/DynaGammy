@@ -493,11 +493,7 @@ QSlider::handle:horizontal{
     border-radius: 9px;
 	border: 6px solid transparent
 }
-QWidget{
-font-family:Ubuntu, sans-serif;
-}
 QLabel{
-font-family:Ubuntu, sans-serif;
 font-size:14px;
 color:white;
 }
@@ -577,12 +573,6 @@ color: white;
          <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0">
           <item>
            <widget class="QLabel" name="label_11">
-            <property name="font">
-             <font>
-              <family>Ubuntu,sans-serif</family>
-              <pointsize>-1</pointsize>
-             </font>
-            </property>
             <property name="text">
              <string>Brightness:</string>
             </property>
@@ -598,14 +588,6 @@ color: white;
               <width>16777215</width>
               <height>16777215</height>
              </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Ubuntu,sans-serif</family>
-              <pointsize>-1</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
             </property>
             <property name="text">
              <string notr="true">100</string>
@@ -1131,15 +1113,6 @@ background-color:rgb(20,22,35);
               </disabled>
              </palette>
             </property>
-            <property name="font">
-             <font>
-              <family>Ubuntu,sans-serif</family>
-              <pointsize>11</pointsize>
-              <weight>50</weight>
-              <italic>false</italic>
-              <bold>false</bold>
-             </font>
-            </property>
             <property name="styleSheet">
              <string notr="true"/>
             </property>
@@ -1241,12 +1214,6 @@ background-color:rgb(20,22,35);
           <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,1">
            <item>
             <widget class="QLabel" name="label_5">
-             <property name="font">
-              <font>
-               <family>Ubuntu,sans-serif</family>
-               <pointsize>-1</pointsize>
-              </font>
-             </property>
              <property name="text">
               <string>Range: </string>
              </property>
@@ -1254,14 +1221,6 @@ background-color:rgb(20,22,35);
            </item>
            <item>
             <widget class="QLabel" name="minBrLabel">
-             <property name="font">
-              <font>
-               <family>Ubuntu,sans-serif</family>
-               <pointsize>-1</pointsize>
-               <weight>50</weight>
-               <bold>false</bold>
-              </font>
-             </property>
              <property name="text">
               <string>100</string>
              </property>
@@ -1293,12 +1252,6 @@ background-color:rgb(20,22,35);
                <width>1000</width>
                <height>1000</height>
               </size>
-             </property>
-             <property name="font">
-              <font>
-               <family>Ubuntu,sans-serif</family>
-               <pointsize>-1</pointsize>
-              </font>
              </property>
              <property name="text">
               <string>100</string>
@@ -1347,12 +1300,6 @@ background-color:rgb(100, 100, 100);
           <layout class="QHBoxLayout" name="offsetHL" stretch="0,1">
            <item>
             <widget class="QLabel" name="label_12">
-             <property name="font">
-              <font>
-               <family>Ubuntu,sans-serif</family>
-               <pointsize>-1</pointsize>
-              </font>
-             </property>
              <property name="text">
               <string>Offset:</string>
              </property>
@@ -1360,12 +1307,6 @@ background-color:rgb(100, 100, 100);
            </item>
            <item>
             <widget class="QLabel" name="offsetLabel">
-             <property name="font">
-              <font>
-               <family>Ubuntu,sans-serif</family>
-               <pointsize>-1</pointsize>
-              </font>
-             </property>
              <property name="text">
               <string>100</string>
              </property>
@@ -1428,12 +1369,6 @@ background-color:rgb(100, 100, 100);
             <layout class="QHBoxLayout" name="speedHL" stretch="0,1">
              <item>
               <widget class="QLabel" name="label_13">
-               <property name="font">
-                <font>
-                 <family>Ubuntu,sans-serif</family>
-                 <pointsize>-1</pointsize>
-                </font>
-               </property>
                <property name="text">
                 <string>Adaptation speed:</string>
                </property>
@@ -1514,12 +1449,6 @@ background-color:rgb(100, 100, 100);
             <layout class="QHBoxLayout" name="threshHL" stretch="0,1">
              <item>
               <widget class="QLabel" name="label_6">
-               <property name="font">
-                <font>
-                 <family>Ubuntu,sans-serif</family>
-                 <pointsize>-1</pointsize>
-                </font>
-               </property>
                <property name="text">
                 <string>Threshold: </string>
                </property>
@@ -1527,12 +1456,6 @@ background-color:rgb(100, 100, 100);
              </item>
              <item>
               <widget class="QLabel" name="thresholdLabel">
-               <property name="font">
-                <font>
-                 <family>Ubuntu,sans-serif</family>
-                 <pointsize>-1</pointsize>
-                </font>
-               </property>
                <property name="text">
                 <string>255</string>
                </property>
@@ -1604,12 +1527,6 @@ background-color:rgb(100, 100, 100);
              </item>
              <item>
               <widget class="QLabel" name="pollingLabel">
-               <property name="font">
-                <font>
-                 <family>Ubuntu,sans-serif</family>
-                 <pointsize>-1</pointsize>
-                </font>
-               </property>
                <property name="text">
                 <string>500</string>
                </property>
@@ -1706,14 +1623,6 @@ background-color:rgb(100, 100, 100);
            <widget class="QLabel" name="tempLabel">
             <property name="enabled">
              <bool>true</bool>
-            </property>
-            <property name="font">
-             <font>
-              <family>Ubuntu,sans-serif</family>
-              <pointsize>-1</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
             </property>
             <property name="text">
              <string>6500</string>
@@ -2163,12 +2072,6 @@ background-color:rgb(100, 100, 100);
                </colorrole>
               </disabled>
              </palette>
-            </property>
-            <property name="font">
-             <font>
-              <family>Ubuntu,sans-serif</family>
-              <pointsize>11</pointsize>
-             </font>
             </property>
             <property name="styleSheet">
              <string notr="true"/>
