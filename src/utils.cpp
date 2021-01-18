@@ -149,7 +149,7 @@ bool alreadyRunning()
 #ifdef _WIN32
 	HANDLE ev = CreateEventA(nullptr, true, false, "Gammy");
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		CloseHandle(hStartEvent);
+		CloseHandle(ev);
 		ev = nullptr;
 		return true;
 	}

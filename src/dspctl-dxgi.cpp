@@ -8,19 +8,141 @@
 #include "cfg.h"
 #include "utils.h"
 
-int64_t GDI::width = 0;
-int64_t GDI::height = 0;
-
-// Currently, adaptive brightness is only supported on the first screen. 
-constexpr int screen_idx = 0;
-
-/* Unlike DXGI, the primary screen index for GDI is not always 0. 
- * We get it by comparing the first DXGI output name with every GDI DC name. */
-int GDI::primary_dc_idx = 0;
-
-DspCtl::DspCtl()
+GDI::GDI()
 {
-	if (!(useDXGI = init())) {
+
+}
+
+GDI::~GDI()
+{
+	for (const auto& hdc : hdcs) {
+		DeleteDC(hdc);
+	}
+}
+
+int GDI::numDisplays()
+{
+	DISPLAY_DEVICE dsp;
+	dsp.cb = sizeof(DISPLAY_DEVICE);
+	int i = 0;
+	int attached_dsp = 0;
+	while (EnumDisplayDevices(NULL, i++, &dsp, 0) && dsp.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP)
+		attached_dsp++;
+	return attached_dsp;
+}
+
+void GDI::createDCs(const std::wstring &primary_screen_name)
+{
+	const int num_dsp = numDisplays();
+	hdcs.reserve(num_dsp);
+
+	for (int i = 0; i < num_dsp; ++i) {
+		DISPLAY_DEVICE dsp;
+		dsp.cb = sizeof(DISPLAY_DEVICE);
+		EnumDisplayDevices(NULL, i, &dsp, 0);
+
+		HDC dc = CreateDC(NULL, dsp.DeviceName, NULL, 0);
+		hdcs.push_back(dc);
+
+		// If we don't have the name, just pick the first one.
+		if ((i == 0 && primary_screen_name.empty()) || dsp.DeviceName == primary_screen_name) {
+			primary_dc_idx = i;
+			width  = GetDeviceCaps(dc, HORZRES);
+			height = GetDeviceCaps(dc, VERTRES);
+			buf.resize(width * height * 4);
+			setBitmapInfo(width, height);
+		}
+	}
+
+	LOGD << "HDCs: " << hdcs.size();
+	LOGD << "GDI res: " << width << '*' << height;
+}
+
+void GDI::setGamma(int brt_step, int temp_step)
+{
+	const double r_mult = interpTemp(temp_step, 0),
+	             g_mult = interpTemp(temp_step, 1),
+	             b_mult = interpTemp(temp_step, 2);
+
+	WORD ramp[3][256];
+	const double brt_mult = remap(brt_step, 0, brt_steps_max, 0, 255);
+
+	for (WORD i = 0; i < 256; ++i) {
+		const int val = i * brt_mult;
+		ramp[0][i] = WORD(val * r_mult);
+		ramp[1][i] = WORD(val * g_mult);
+		ramp[2][i] = WORD(val * b_mult);
+	}
+
+	/* As auto brt is currently supported only on the primary screen,
+	 * We set this ramp to the screens whose image brightness is not controlled. */
+	WORD ramp_full_brt[3][256];
+	if (hdcs.size() > 1) {
+		for (WORD i = 0; i < 256; ++i) {
+			const int val = i * 255;
+			ramp_full_brt[0][i] = WORD(val * r_mult);
+			ramp_full_brt[1][i] = WORD(val * g_mult);
+			ramp_full_brt[2][i] = WORD(val * b_mult);
+		}
+	}
+
+	int i = 0;
+	for (const auto &dc : hdcs) {
+		bool r;
+		if (i == primary_dc_idx)
+			r = SetDeviceGammaRamp(dc, ramp);
+		else
+			r = SetDeviceGammaRamp(dc, ramp_full_brt);
+
+		LOGV << "screen " << i <<  " gamma set: " << r;
+		i++;
+	}
+}
+
+void GDI::setInitialGamma([[maybe_unused]] bool set_previous)
+{
+	// @TODO: restore previous gamma
+	GDI::setGamma(brt_steps_max, 0);
+}
+
+void GDI::setBitmapInfo(int width, int height)
+{
+	ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
+	info.biSize         = sizeof(BITMAPINFOHEADER);
+	info.biWidth        = width;
+	info.biHeight       = -height;
+	info.biPlanes       = 1;
+	info.biBitCount     = 32;
+	info.biCompression  = BI_RGB;
+	info.biSizeImage    = width * height * 4;
+	info.biClrUsed      = 0;
+	info.biClrImportant = 0;
+}
+
+int GDI::getScreenBrightness() noexcept
+{
+	HDC     dc  = GetDC(NULL);
+	HBITMAP bmp = CreateCompatibleBitmap(dc, width, height);
+	HDC     tmp = CreateCompatibleDC(dc);
+	HGDIOBJ obj = SelectObject(tmp, bmp);
+
+	BitBlt(tmp, 0, 0, width, height, dc, 0, 0, SRCCOPY);
+	GetDIBits(tmp, bmp, 0, height, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
+
+	SelectObject(tmp, obj);
+	DeleteObject(bmp);
+	DeleteObject(obj);
+	DeleteDC(tmp);
+	DeleteDC(dc);
+
+	int brt = calcBrightness(buf.data(), buf.size(), 4, 1024);
+	return brt;
+}
+
+DXGI::DXGI()
+{
+	if (!(useDXGI = init()) || true) {
+		useDXGI = false;
 		LOGD << "DXGI unavailable.";
 		primary_screen_name.clear();
 	}
@@ -28,7 +150,19 @@ DspCtl::DspCtl()
 	GDI::createDCs(this->primary_screen_name);
 }
 
-bool DspCtl::init()
+DXGI::~DXGI()
+{
+	if (duplication)
+		duplication->ReleaseFrame();
+	if (output1)
+		output1->Release();
+	if (d3d_context)
+		d3d_context->Release();
+	if (d3d_device)
+		d3d_device->Release();
+}
+
+bool DXGI::init()
 {
 	std::vector<IDXGIAdapter1*> gpus;
 	std::vector<IDXGIOutput*>   outputs;
@@ -141,7 +275,7 @@ bool DspCtl::init()
 	}
 
 	// Currently, auto brightness is only supported on the first screen.
-	const int output_idx = screen_idx;
+	const int output_idx = 0;
 
 	// Set texture properties
 	{
@@ -187,16 +321,16 @@ bool DspCtl::init()
 		d3d_device->Release();
 	}
 
-	for (auto adapter : gpus)
-		adapter->Release();
+	for (const auto &gpu : gpus)
+		gpu->Release();
 
-	for (auto output : outputs)
+	for (const auto &output : outputs)
 		output->Release();
 
 	return true;
 }
 
-int DspCtl::getScreenBrightness() noexcept
+int  DXGI::getScreenBrightness() noexcept
 {
 	if (!useDXGI) {
 		Sleep(cfg["brt_polling_rate"].get<int>());
@@ -227,30 +361,16 @@ int DspCtl::getScreenBrightness() noexcept
 	staging_tex->Release();
 	d3d_context->Release();
 
-	LOGV << "D31D11 map row pitch: " << map.RowPitch << ", depth pitch: " << map.DepthPitch;
 	int brt = calcBrightness(reinterpret_cast<uint8_t*>(map.pData), map.DepthPitch, 4, 1024);
 	return brt;
 }
 
-void DspCtl::setGamma(int brt_step, int temp_step)
-{
-	// DXGI gamma control is only available on fullscreen.
-	GDI::setGamma(brt_step, temp_step);
-}
-
-void DspCtl::setInitialGamma([[maybe_unused]]bool prev_gamma)
-{
-	// @TODO: restore previous gamma
-	GDI::setGamma(brt_steps_max, 0);
-}
-
-void DspCtl::restart()
+void DXGI::restart()
 {
 	HRESULT hr;
 
 	do {
 		hr = output1->DuplicateOutput(d3d_device, &duplication);
-
 		IF_PLOG (plog::debug) {
 			if (hr != S_OK) {
 				LOGE << "Screen capture failed. Reason:";
@@ -264,142 +384,9 @@ void DspCtl::restart()
 				LOGD << "Retrying... (2.5 sec)";
 			}
 		}
-
 		Sleep(2500);
 	} while (hr != S_OK);
 
 	LOGI << "Output duplication started.";
-
 	output1->Release();
-}
-
-DspCtl::~DspCtl()
-{
-	if (duplication)
-		duplication->ReleaseFrame();
-	if (output1)
-		output1->Release();
-	if (d3d_context)
-		d3d_context->Release();
-	if (d3d_device)
-		d3d_device->Release();
-}
-
-// GDI ------------------------------------------------------------------------
-
-int GDI::numDisplays()
-{
-	DISPLAY_DEVICE dsp;
-	dsp.cb = sizeof(DISPLAY_DEVICE);
-
-	int i = 0;
-	int attached_dsp = 0;
-
-	while (EnumDisplayDevices(NULL, i++, &dsp, 0) && dsp.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
-		attached_dsp++;
-	}
-
-	return attached_dsp;
-}
-
-void GDI::createDCs(std::wstring &primary_screen_name)
-{
-	const int num_dsp = GDI::numDisplays();
-	GDI::hdcs.reserve(num_dsp);
-
-	for (int i = 0; i < num_dsp; ++i) {
-		DISPLAY_DEVICE dsp;
-		dsp.cb = sizeof(DISPLAY_DEVICE);
-		EnumDisplayDevices(NULL, i, &dsp, 0);
-		
-		HDC dc = CreateDC(NULL, dsp.DeviceName, NULL, 0);
-	
-		// If we don't have the name, just pick the first one.
-		if ((primary_screen_name.empty() && i == 0) || dsp.DeviceName == primary_screen_name) {
-			GDI::primary_dc_idx = i;
-			GDI::width  = GetDeviceCaps(dc, HORZRES);
-			GDI::height = GetDeviceCaps(dc, VERTRES);
-			buf.resize(width * height * 4);
-		}
-
-		GDI::hdcs.push_back(dc);
-	}
-
-	LOGD << "HDCs: " << GDI::hdcs.size();
-	LOGD << "GDI res: " << GDI::width << "*" << GDI::height;
-}
-
-void GDI::setGamma(int brt_step, int temp_step)
-{
-	const double r_mult = interpTemp(temp_step, 0),
-	             g_mult = interpTemp(temp_step, 1),
-	             b_mult = interpTemp(temp_step, 2);
-
-	WORD ramp[3][256];
-
-	const auto brt_mult = remap(brt_step, 0, brt_steps_max, 0, 255);
-
-	for (WORD i = 0; i < 256; ++i) {
-		const int val = i * brt_mult;
-		ramp[0][i] = WORD(val * r_mult);
-		ramp[1][i] = WORD(val * g_mult);
-		ramp[2][i] = WORD(val * b_mult);
-	}
-
-	/* As auto brt is currently supported only on the primary screen,
-	 * We set this ramp to the screens whose image brightness is not controlled. */
-	WORD ramp_full_brt[3][256];
-	if (hdcs.size() > 1) {
-		for (WORD i = 0; i < 256; ++i) {
-			const int val = i * 255;
-			ramp_full_brt[0][i] = WORD(val * r_mult);
-			ramp_full_brt[1][i] = WORD(val * g_mult);
-			ramp_full_brt[2][i] = WORD(val * b_mult);
-		}
-	}
-
-	int i = 0;
-
-	for (const auto &dc : hdcs) {
-		bool r;
-		if (i == GDI::primary_dc_idx)
-			r = SetDeviceGammaRamp(dc, ramp);
-		else
-			r = SetDeviceGammaRamp(dc, ramp_full_brt);
-
-		LOGV << "screen " << i <<  " gamma set: " << r;
-		i++;
-	}
-}
-
-int GDI::getScreenBrightness()
-{
-	BITMAPINFOHEADER info;
-	ZeroMemory(&info, sizeof(BITMAPINFOHEADER));
-	info.biSize = sizeof(BITMAPINFOHEADER);
-	info.biWidth = width;
-	info.biHeight = -height;
-	info.biPlanes = 1;
-	info.biBitCount = 32;
-	info.biCompression = BI_RGB;
-	info.biSizeImage = width * height * 4;
-	info.biClrUsed = 0;
-	info.biClrImportant = 0;
-
-	HDC     dc     = GetDC(NULL);
-	HBITMAP bitmap = CreateCompatibleBitmap(dc, width, height);
-	HDC     tmp    = CreateCompatibleDC(dc);
-	HGDIOBJ obj    = SelectObject(tmp, bitmap);
-	
-	BitBlt(tmp, 0, 0, width, height, dc, 0, 0, SRCCOPY);
-	GetDIBits(tmp, bitmap, 0, height, buf.data(), LPBITMAPINFO(&info), DIB_RGB_COLORS);
-	
-	SelectObject(tmp, obj);
-	DeleteObject(bitmap);
-	DeleteObject(obj);
-	DeleteDC(tmp);
-	DeleteDC(dc);
-
-	int brt = calcBrightness(buf.data(), buf.size(), 4, 1024);
-	return brt;
 }

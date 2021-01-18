@@ -20,27 +20,39 @@
 #pragma comment(lib, "D3D11.lib")
 #pragma comment(lib, "Advapi32.lib")
 
-namespace GDI {
-static std::vector<HDC>     hdcs;
-static std::vector<uint8_t> buf;
-extern int64_t              width;
-extern int64_t              height;
-extern int                  primary_dc_idx;
-int  numDisplays();
-int  getScreenBrightness();
-void createDCs(std::wstring &primary_screen_name);
-void setGamma(int, int);
-}
-
-class DspCtl
+class GDI
 {
 public:
-	DspCtl();
-	~DspCtl();
+	GDI();
+	~GDI();
 
 	int  getScreenBrightness() noexcept;
 	void setGamma(int brt, int temp);
 	void setInitialGamma(bool set_previous);
+protected:
+	void createDCs(const std::wstring &primary_screen_name);
+private:
+	std::vector<HDC> hdcs;
+	BITMAPINFOHEADER info;
+	std::vector<uint8_t> buf;
+
+	/* In GDI, the index of the primary screen is not always 0, unlike DXGI.
+	 * We get the proper index by comparing the GDI output names with the first DXGI output name. */
+	int primary_dc_idx = 0;
+	int width;
+	int height;
+
+	int numDisplays();
+	void setBitmapInfo(int width, int height);
+};
+
+class DXGI : public GDI
+{
+public:
+	DXGI();
+	~DXGI();
+
+	int getScreenBrightness() noexcept;
 private:
 	ID3D11Device*           d3d_device;
 	ID3D11DeviceContext*    d3d_context;
@@ -53,6 +65,8 @@ private:
 	bool init();
 	void restart();
 };
+
+typedef DXGI DspCtl;
 
 #endif // DXGIDUPL_H
 
