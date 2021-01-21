@@ -77,9 +77,9 @@ private:
 
 	void showOnTop();
 
-	int wnd_offset_x = 17;
-	int wnd_offset_y = 35;
-	int wnd_height   = 300;
+	const int wnd_h_min    = 170;
+	const int wnd_h_normal = 300;
+	const int wnd_h_full   = 485;
 };
 
 #endif // MAINWINDOW_H

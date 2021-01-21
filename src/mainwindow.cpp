@@ -58,8 +58,6 @@ void MainWindow::setWindowProperties(QIcon &icon)
 {
 	setWindowTitle("Gammy");
 	setWindowIcon(icon);
-	setMinimumHeight(wnd_height);
-	setMaximumHeight(wnd_height);
 	setVisible(cfg["show_on_startup"]);
 
 	QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
@@ -367,18 +365,18 @@ void MainWindow::toggleBrtSliders(bool checked)
 	ui->advBrSettingsBtn->setEnabled(checked);
 	ui->advBrSettingsBtn->setChecked(false);
 
-	auto btn_color = "color:rgba(0,0,0,0)";
-	auto height    = 170;
+	QString btn_style = "color:rgba(0,0,0,0)";
+	int wnd_h = wnd_h_min;
 
 	if (checked) {
-		btn_color = "color:white";
-		height = wnd_height;
+		btn_style = "color:white";
+		wnd_h = wnd_h_normal;
 	}
 
-	ui->advBrSettingsBtn->setStyleSheet(btn_color);
+	ui->advBrSettingsBtn->setStyleSheet(btn_style);
 
-	this->setMinimumHeight(height);
-	this->setMaximumHeight(height);
+	setMinimumHeight(wnd_h);
+	setMaximumHeight(wnd_h);
 }
 
 void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
@@ -387,17 +385,15 @@ void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
 	ui->threshWidget->setVisible(checked);
 	ui->pollingWidget->setVisible(checked);
 
-	const int h = checked ? wnd_height + 185 : wnd_height;
-
-	this->setMinimumHeight(h);
-	this->setMaximumHeight(h);
+	const int h = checked ? wnd_h_full : wnd_h_normal;
+	setMinimumHeight(h);
+	setMaximumHeight(h);
 }
 
 void MainWindow::on_autoBrtCheck_toggled(bool checked)
 {
 	cfg["brt_auto"] = checked;
 	mediator->notify(this, AUTO_BRT_TOGGLED);
-
 	toggleBrtSliders(checked);
 }
 
