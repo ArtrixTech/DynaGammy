@@ -144,7 +144,7 @@ Xshm::Xshm()
 	LOGV << "Pixmap support: " << (pixmaps == 2);
 
 	vis = XDefaultVisual(dsp, 0);
-	shi = allocXImage();
+	shi = createImage();
 
 	if (!shi) {
 		LOGE << "Shared image unavailable";
@@ -154,32 +154,41 @@ Xshm::Xshm()
 Xshm::~Xshm()
 {
 	XDestroyImage(shi);
+	shmdt(shminfo.shmaddr);
+	shmctl(shminfo.shmid, IPC_RMID, nullptr);
 }
 
-XImage* Xshm::allocXImage()
+XImage* Xshm::createImage()
 {
-	XImage *img;
-	img = XShmCreateImage(dsp, vis, scr->root_depth, ZPixmap, nullptr, &shminfo, scr->width, scr->height);
+	XImage *img = XShmCreateImage(dsp, vis, scr->root_depth, ZPixmap, nullptr, &shminfo, scr->width, scr->height);
 
 	if (!img) {
-		LOGE << "XShmCreateImage failed";
-		return nullptr;
+		LOGF << "XShmCreateImage failed";
+		exit(1);
 	}
 
-	shminfo.shmid    = shmget(IPC_PRIVATE, img->bytes_per_line * img->height, IPC_CREAT|0777);
-	shminfo.shmaddr  = img->data = reinterpret_cast<char*>(shmat(shminfo.shmid, 0, 0));
+	shminfo.shmid = shmget(IPC_PRIVATE, img->bytes_per_line * img->height, IPC_CREAT | 0600 | SHM_NORESERVE);
+
+	if (shminfo.shmid == -1) {
+		LOGF << "shmget failed";
+		exit(1);
+	}
+
+	void *shm = shmat(shminfo.shmid, nullptr, SHM_RDONLY);
+
+	if (shm == (void*) -1) {
+		LOGF << "shmat failed";
+		exit(1);
+	}
+
+	shminfo.shmaddr = img->data = reinterpret_cast<char*>(shm);
 	shminfo.readOnly = False;
+	int status = XShmAttach(dsp, &shminfo);
 
-	if (!XShmAttach(dsp, &shminfo)) {
-		XFlush(dsp);
-		img->f.destroy_image(img);
-		shmdt(shminfo.shmaddr);
-		shmctl(shminfo.shmid, IPC_RMID, 0);
-		return nullptr;
+	if (!status) {
+		LOGF << "XShmAttach failed with code: " << status;
+		exit(1);
 	}
-
-	XSync(dsp, False);
-	shmctl(shminfo.shmid, IPC_RMID, 0);
 
 	return img;
 }

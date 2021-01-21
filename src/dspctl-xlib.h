@@ -49,7 +49,7 @@ private:
 	XShmSegmentInfo shminfo;
 	XImage *shi;
 	Visual *vis;
-	XImage* allocXImage();
+	XImage* createImage();
 };
 
 typedef Xshm DspCtl;
