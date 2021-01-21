@@ -33,7 +33,7 @@ void MainWindow::init()
 	setLabels();
 	setSliders();
 
-	// Set Auto checkboxes
+	toggleBrtSliders(cfg["brt_auto"]);
 	ui->autoBrtCheck->setChecked(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
@@ -63,7 +63,6 @@ void MainWindow::setWindowProperties(QIcon &icon)
 	setVisible(cfg["show_on_startup"]);
 
 	QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
-	setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
 	// Extending brightness range doesn't work yet on Windows
 	if (windows)
@@ -181,8 +180,6 @@ void MainWindow::showOnTop()
 {
 	if (!isHidden())
 		return;
-
-	setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
 
 	// Move the window to bottom right again. For some reason it moves up.
 	QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
@@ -361,10 +358,27 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 	cfg["brt_polling_rate"] = val;
 }
 
-void MainWindow::toggleMainBrSliders(bool checked)
+void MainWindow::toggleBrtSliders(bool checked)
 {
 	ui->rangeWidget->setVisible(checked);
 	ui->offsetWidget->setVisible(checked);
+
+	// Enable advanced settings button when auto brt is enabled
+	ui->advBrSettingsBtn->setEnabled(checked);
+	ui->advBrSettingsBtn->setChecked(false);
+
+	auto btn_color = "color:rgba(0,0,0,0)";
+	auto height    = 170;
+
+	if (checked) {
+		btn_color = "color:white";
+		height = wnd_height;
+	}
+
+	ui->advBrSettingsBtn->setStyleSheet(btn_color);
+
+	this->setMinimumHeight(height);
+	this->setMaximumHeight(height);
 }
 
 void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
@@ -384,25 +398,7 @@ void MainWindow::on_autoBrtCheck_toggled(bool checked)
 	cfg["brt_auto"] = checked;
 	mediator->notify(this, AUTO_BRT_TOGGLED);
 
-	// Toggle visibility of br range and offset sliders
-	toggleMainBrSliders(checked);
-
-	// Enable advanced settings button when auto brt is enabled
-	ui->advBrSettingsBtn->setEnabled(checked);
-	ui->advBrSettingsBtn->setChecked(false);
-
-	auto btn_color = "color:rgba(0,0,0,0)";
-	auto height    = 170;
-
-	if (checked) {
-		btn_color = "color:white";
-		height = wnd_height;
-	}
-
-	ui->advBrSettingsBtn->setStyleSheet(btn_color);
-
-	this->setMinimumHeight(height);
-	this->setMaximumHeight(height);
+	toggleBrtSliders(checked);
 }
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)

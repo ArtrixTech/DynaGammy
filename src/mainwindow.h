@@ -66,7 +66,7 @@ private:
 	void setWindowProperties(QIcon &icon);
 	void setLabels();
 	void setSliders();
-	void toggleMainBrSliders(bool show);
+	void toggleBrtSliders(bool show);
 	void toggleBrtSlidersRange(bool);
 	void updateBrtLabel(int);
 	void updateTempLabel(int);
