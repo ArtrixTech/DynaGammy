@@ -75,12 +75,11 @@ void MainWindow::setWindowProperties(QIcon &icon)
 	int x = cfg["wnd_x"].get<int>();
 	int y = cfg["wnd_y"].get<int>();
 
-	if (x == -1 && y == -1) {
+	if (x == -1 && y == -1)
 		move(QGuiApplication::screens().at(0)->geometry().center() - frameGeometry().center());
-		return;
-	}
+	else
+		setPos();
 
-	setPos();
 	if (cfg["wnd_show_on_startup"].get<bool>())
 		show();
 }
