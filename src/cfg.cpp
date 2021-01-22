@@ -34,7 +34,9 @@ json getDefault()
 		{"temp_sunset", "16:00:00"},
 
 		{"log_level", plog::warning},
-		{"show_on_startup", false}
+		{"wnd_show_on_startup", false},
+		{"wnd_x", -1},
+		{"wnd_y", -1}
 	};
 }
 

@@ -30,11 +30,9 @@ void Mediator::notify([[maybe_unused]] Component *sender, Component::Event e) co
 		gammactl->setGamma(cfg["brt_step"], cfg["temp_step"]);
 		break;
 	case Component::AUTO_BRT_TOGGLED:
-		LOGD << "Auto brt toggled";
 		gammactl->notify_ss();
 		break;
 	case Component::AUTO_TEMP_TOGGLED:
-		LOGD << "Auto temp toggled";
 		gammactl->notify_temp(true);
 		break;
 	case Component::SYSTEM_WAKE_UP:

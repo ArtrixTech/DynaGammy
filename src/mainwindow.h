@@ -26,13 +26,12 @@ public:
 	explicit MainWindow();
 	~MainWindow();
 
-	bool prev_gamma = true;
-
+	bool prev_gamma = false;
 	void init();
 	void setTempSlider(int);
 	void setBrtSlider(int);
 	void setPollingRange(int, int);
-	void quit(bool prev_gamma);
+	void shutdown();
 
 private slots:
 	void iconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -60,7 +59,7 @@ private slots:
 private:
 	Ui::MainWindow  *ui;
 	QSystemTrayIcon *tray_icon;
-	QMenu *createMenu();
+	QMenu *createTrayMenu();
 
 	bool listenWakeupSignal();
 	void setWindowProperties(QIcon &icon);
@@ -71,11 +70,12 @@ private:
 	void updateBrtLabel(int);
 	void updateTempLabel(int);
 	void closeEvent(QCloseEvent *);
+	void setPos();
+	void savePos();
+
 	void createTrayIcon(QIcon &icon);
 	void checkTray();
 	bool systray_available = false;
-
-	void showOnTop();
 
 	const int wnd_h_min    = 170;
 	const int wnd_h_normal = 300;

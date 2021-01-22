@@ -11,7 +11,6 @@
 #include "mainwindow.h"
 #include "gammactl.h"
 
-static MainWindow *p_wnd;
 #ifndef _WIN32
 #include <signal.h>
 void sig_handler(int signo)
@@ -19,11 +18,7 @@ void sig_handler(int signo)
 	LOGD_IF(signo == SIGINT) << "SIGINT received";
 	LOGD_IF(signo == SIGTERM) << "SIGTERM received";
 	LOGD_IF(signo == SIGQUIT) << "SIGQUIT received";
-
-	if (!p_wnd)
-		_exit(0);
-
-	p_wnd->quit(p_wnd->prev_gamma);
+	QApplication::quit();
 }
 #endif
 
@@ -74,8 +69,6 @@ int main(int argc, char **argv)
 	MainWindow   wnd;
 	GammaCtl     gmm;
 	Mediator     m(&gmm, &wnd);
-
-	p_wnd = &wnd;
 
 	return app.exec();
 }

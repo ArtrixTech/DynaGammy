@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (C) Francesco Fusco. All rights reserved.
  * License: https://github.com/Fushko/gammy#license
  */
@@ -29,15 +29,16 @@ void MainWindow::init()
 
 	QIcon icon = QIcon(":res/icons/128x128ball.ico");
 
-	setWindowProperties(icon);
 	setLabels();
 	setSliders();
-
 	toggleBrtSliders(cfg["brt_auto"]);
 	ui->autoBrtCheck->setChecked(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
 	createTrayIcon(icon);
+	setWindowProperties(icon);
+
+	connect(QApplication::instance(), &QApplication::aboutToQuit, this, &MainWindow::shutdown);
 }
 
 void MainWindow::setLabels()
@@ -56,9 +57,9 @@ void MainWindow::setLabels()
 
 void MainWindow::setWindowProperties(QIcon &icon)
 {
+	QApplication::setApplicationVersion(g_app_version);
 	setWindowTitle("Gammy");
 	setWindowIcon(icon);
-	setVisible(cfg["show_on_startup"]);
 
 	QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
 
@@ -71,9 +72,31 @@ void MainWindow::setWindowProperties(QIcon &icon)
 	ui->pollingWidget->hide();
 	ui->line->setPalette(QPalette(qRgb(25, 27, 37)));
 
-	// Move window to bottom right
-	QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
-	move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
+	int x = cfg["wnd_x"].get<int>();
+	int y = cfg["wnd_y"].get<int>();
+
+	if (x == -1 && y == -1) {
+		move(QGuiApplication::screens().at(0)->geometry().center() - frameGeometry().center());
+		return;
+	}
+
+	setPos();
+	if (cfg["wnd_show_on_startup"].get<bool>())
+		show();
+}
+
+void MainWindow::setPos()
+{
+	const int x = cfg["wnd_x"].get<int>();
+	const int y = cfg["wnd_y"].get<int>();
+	move(x, y);
+}
+
+void MainWindow::savePos()
+{
+	const QRect fg = frameGeometry();
+	cfg["wnd_x"] = fg.x();
+	cfg["wnd_y"] = fg.y();
 }
 
 void MainWindow::setSliders()
@@ -95,7 +118,7 @@ void MainWindow::setSliders()
 
 void MainWindow::createTrayIcon(QIcon &icon)
 {
-	QMenu *menu = createMenu();
+	QMenu *menu = createTrayMenu();
 	tray_icon->setContextMenu(menu);
 	tray_icon->setToolTip(QString("Gammy"));
 	tray_icon->setIcon(icon);
@@ -105,7 +128,7 @@ void MainWindow::createTrayIcon(QIcon &icon)
 	systray_available = QSystemTrayIcon::isSystemTrayAvailable();
 
 	if (!systray_available) {
-		this->show();
+		cfg["wnd_show_on_startup"] = true;
 		LOGE << "Systray unavailable. Closing the window will quit the app.";
 	}
 }
@@ -150,44 +173,41 @@ void MainWindow::wakeupSlot(bool status)
 	mediator->notify(this, SYSTEM_WAKE_UP);
 }
 
-void MainWindow::quit(bool prev_gamma)
+void MainWindow::shutdown()
 {
-	this->prev_gamma = prev_gamma;
 	tray_icon->hide();
+
+	// Save the position only if visible to avoid skewed values
+	if (isVisible()) {
+		savePos();
+		hide();
+	}
+
 	mediator->notify(this, prev_gamma ? APP_QUIT : APP_QUIT_PURE_GAMMA);
 	config::write();
-	QApplication::quit();
 }
 
 /**
- * This event gets fired when the window is closed or we quit.
- * We ignore it so that we only hide the window, if the systray is available.
+ * Fired when the window is closed.
+ * Exit only if the systray is unavailable.
  */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	this->hide();
-	config::write();
+	if (!systray_available) {
+		return QApplication::quit();
+	}
 
-	if (!systray_available)
-		this->quit(prev_gamma);
+	if (isVisible()) {
+		savePos();
+		hide();
+	}
+
+	config::write();
 
 	e->ignore();
 }
 
-void MainWindow::showOnTop()
-{
-	if (!isHidden())
-		return;
-
-	// Move the window to bottom right again. For some reason it moves up.
-	QRect scr = QGuiApplication::primaryScreen()->availableGeometry();
-	move(scr.width() - this->width() - wnd_offset_x, scr.height() - this->height() - wnd_offset_y);
-
-	show();
-	updateBrtLabel(cfg["brt_step"]);
-}
-
-QMenu* MainWindow::createMenu()
+QMenu* MainWindow::createTrayMenu()
 {
 	QMenu *menu = new QMenu(nullptr);
 
@@ -202,20 +222,19 @@ QMenu* MainWindow::createMenu()
 	run_startup->setChecked(s == ERROR_SUCCESS);
 #else
 	QAction *show_wnd = new QAction("&Show Gammy", this);
-
-	connect(show_wnd, &QAction::triggered, this, [=] { showOnTop(); });
+	connect(show_wnd, &QAction::triggered, this, [&] { show(); });
 	menu->addAction(show_wnd);
 #endif
 
 	menu->addSeparator();
 
 	QAction *quit_prev = new QAction("&Quit", this);
-	connect(quit_prev, &QAction::triggered, this, [=] { quit(true); });
+	connect(quit_prev, &QAction::triggered, this, [&] { prev_gamma = true; QApplication::quit(); });
 	menu->addAction(quit_prev);
 
 	if (!windows) {
 		QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
-		connect(quit_pure, &QAction::triggered, this, [=] { quit(false); });
+		connect(quit_pure, &QAction::triggered, this, [&] { prev_gamma = false; QApplication::quit(); });
 		menu->addAction(quit_pure);
 	}
 
