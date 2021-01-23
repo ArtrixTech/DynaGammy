@@ -58,6 +58,7 @@ void MainWindow::setLabels()
 void MainWindow::setWindowProperties(QIcon &icon)
 {
 	QApplication::setApplicationVersion(g_app_version);
+	QApplication::setStyle("Fusion");
 	setWindowTitle("Gammy");
 	setWindowIcon(icon);
 

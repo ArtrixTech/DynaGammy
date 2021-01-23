@@ -843,7 +843,16 @@ background-color:rgb(20,22,35);
        <bool>false</bool>
       </property>
       <property name="styleSheet">
-       <string notr="true">QScrollBar::vertical {              
+       <string notr="true">QScrollBar::add-line:vertical{
+      border: none;
+      background: none;
+}
+QScrollBar::sub-line:vertical {
+      border: none;
+      background: none;
+}
+
+QScrollBar::vertical {              
         width:8px;
 		border-radius:4px;
 		background: rgba(0,0,0,0.1);
