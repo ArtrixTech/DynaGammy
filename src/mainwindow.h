@@ -77,9 +77,11 @@ private:
 	void checkTray();
 	bool systray_available = false;
 
-	const int wnd_h_min    = 170;
-	const int wnd_h_normal = 300;
-	const int wnd_h_full   = 485;
+	// Height values
+	const int wnd_h_min                 = 170;
+	const int wnd_h_min_auto_brt_on     = 282;
+	const int c_wdgt_h_max              = 170;
+	const int c_wdgt_h_max_auto_brt_on  = 445;
 };
 
 #endif // MAINWINDOW_H

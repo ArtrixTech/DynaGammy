@@ -36,38 +36,33 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
 	painter.setRenderHint(QPainter::Antialiasing);
 
 	// Background
-	QRectF backgroundRect = QRectF(scLeftRightMargin, (height() - scSliderBarHeight) / 2,
-				   width() - scLeftRightMargin * 2, scSliderBarHeight);
+	QRectF backgroundRect = QRectF(scLeftRightMargin, (height() - scSliderBarHeight) / 2, width() - scLeftRightMargin * 2, scSliderBarHeight);
 
-	QColor teal = QColor(35, 112, 145);
+	QColor teal      = QColor(35, 112, 145);
+	QColor grey      = QColor(76, 76, 76);
 	QColor whiteblue = QColor(235, 225, 255);
+	//QColor darkteal  = QColor(15, 92, 125);
 
-	{
-		painter.setPen(QPen(QColor(15, 92, 125), qreal(0)));
-		painter.setBrush(QColor(15, 92, 125));
-		painter.drawRoundedRect(backgroundRect, qreal(1), qreal(1));
-	}
+	painter.setPen(QPen(grey, qreal(0)));
+	painter.setBrush(grey);
+	painter.drawRoundedRect(backgroundRect, qreal(1), qreal(1));
 
-	{
+	painter.setPen(QPen(whiteblue, qreal(0)));
+	painter.setBrush(whiteblue);
 
-		painter.setPen(QPen(whiteblue, qreal(0)));
-		painter.setBrush(whiteblue);
+	QRectF leftHandleRect = firstHandleRect();
+	painter.drawRoundedRect(leftHandleRect, 4, 4);
+	QRectF rightHandleRect = secondHandleRect();
+	painter.drawRoundedRect(rightHandleRect, 4, 4);
 
-		QRectF leftHandleRect = firstHandleRect();
-		painter.drawRoundedRect(leftHandleRect, 4, 4);
-		QRectF rightHandleRect = secondHandleRect();
-		painter.drawRoundedRect(rightHandleRect, 4, 4);
+	painter.setPen(QPen(teal, qreal(0)));
+	painter.setBrush(QBrush(teal));
 
-		painter.setPen(QPen(teal, qreal(0)));
-		painter.setBrush(QBrush(teal));
+	QRectF selectedRect(backgroundRect);
+	selectedRect.setLeft(leftHandleRect.right() + 0.5);
+	selectedRect.setRight(rightHandleRect.left() - 0.5);
 
-		QRectF selectedRect(backgroundRect);
-		selectedRect.setLeft(leftHandleRect.right() + 0.5);
-		selectedRect.setRight(rightHandleRect.left() - 0.5);
-
-		painter.drawRect(selectedRect);
-	}
-
+	painter.drawRect(selectedRect);
 }
 
 QRectF RangeSlider::firstHandleRect() const

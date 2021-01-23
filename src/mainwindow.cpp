@@ -67,10 +67,11 @@ void MainWindow::setWindowProperties(QIcon &icon)
 	if (windows)
 		ui->extendBr->hide();
 
-	ui->speedWidget->hide();
-	ui->threshWidget->hide();
-	ui->pollingWidget->hide();
-	ui->line->setPalette(QPalette(qRgb(25, 27, 37)));
+	//ui->line->setPalette(QPalette(qRgb(25, 27, 37)));
+
+	// unused for now
+	ui->advBrSettingsBtn->setDisabled(true);
+	ui->advBrSettingsBtn->setVisible(false);
 
 	int x = cfg["wnd_x"].get<int>();
 	int y = cfg["wnd_y"].get<int>();
@@ -79,8 +80,7 @@ void MainWindow::setWindowProperties(QIcon &icon)
 		move(QGuiApplication::screens().at(0)->geometry().center() - frameGeometry().center());
 		// Assume first start, show the window
 		show();
-	}
-	else {
+	} else {
 		setPos();
 		if (cfg["wnd_show_on_startup"].get<bool>())
 			show();
@@ -379,36 +379,27 @@ void MainWindow::on_pollingSlider_valueChanged(int val)
 
 void MainWindow::toggleBrtSliders(bool checked)
 {
-	ui->rangeWidget->setVisible(checked);
-	ui->offsetWidget->setVisible(checked);
+	ui->brtSettings->setVisible(checked);
 
-	// Enable advanced settings button when auto brt is enabled
-	ui->advBrSettingsBtn->setEnabled(checked);
-	ui->advBrSettingsBtn->setChecked(false);
-
-	QString btn_style = "color:rgba(0,0,0,0)";
-	int wnd_h = wnd_h_min;
+	int wnd_h;
+	int cwgt_h;
 
 	if (checked) {
-		btn_style = "color:white";
-		wnd_h = wnd_h_normal;
+		wnd_h  = wnd_h_min_auto_brt_on;
+		cwgt_h = c_wdgt_h_max_auto_brt_on;
+	} else {
+		wnd_h  = wnd_h_min;
+		cwgt_h = c_wdgt_h_max;
 	}
 
-	ui->advBrSettingsBtn->setStyleSheet(btn_style);
-
+	ui->centralWidget->setMaximumHeight(cwgt_h);
 	setMinimumHeight(wnd_h);
-	setMaximumHeight(wnd_h);
+	resize(width(), wnd_h);
 }
 
 void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
 {
-	ui->speedWidget->setVisible(checked);
-	ui->threshWidget->setVisible(checked);
-	ui->pollingWidget->setVisible(checked);
-
-	const int h = checked ? wnd_h_full : wnd_h_normal;
-	setMinimumHeight(h);
-	setMaximumHeight(h);
+	ui->brtSettings->setVisible(checked);
 }
 
 void MainWindow::on_autoBrtCheck_toggled(bool checked)
