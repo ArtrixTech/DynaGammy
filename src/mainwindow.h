@@ -77,6 +77,9 @@ private:
 	void checkTray();
 	bool systray_available = false;
 
+	QAction *tray_brt_toggle;
+	QAction *tray_temp_toggle;
+
 	// Height values
 	const int wnd_h_min                 = 170;
 	const int wnd_h_min_auto_brt_on     = 282;

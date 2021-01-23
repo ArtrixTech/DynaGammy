@@ -18,6 +18,10 @@
 
 MainWindow::MainWindow(): ui(new Ui::MainWindow), tray_icon(new QSystemTrayIcon(this))
 {
+	tray_brt_toggle = new QAction("&Auto brightness", this);
+	tray_brt_toggle->setCheckable(true);
+	tray_temp_toggle = new QAction("&Auto temperature", this);
+	tray_temp_toggle->setCheckable(true);
 	ui->setupUi(this);
 }
 
@@ -214,20 +218,43 @@ QMenu* MainWindow::createTrayMenu()
 {
 	QMenu *menu = new QMenu(nullptr);
 
-#ifdef _WIN32
-	QAction *run_startup = new QAction("&Run at startup", this);
-	run_startup->setCheckable(true);
-
-	connect(run_startup, &QAction::triggered, [=]{ toggleRegkey(run_startup->isChecked()); });
-	menu->addAction(run_startup);
-
-	LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
-	run_startup->setChecked(s == ERROR_SUCCESS);
-#else
 	QAction *show_wnd = new QAction("&Show Gammy", this);
 	connect(show_wnd, &QAction::triggered, this, [&] { show(); });
 	menu->addAction(show_wnd);
-#endif
+
+	menu->addSeparator();
+
+	connect(tray_brt_toggle, &QAction::triggered, this, [=] {
+
+		const bool checked = tray_brt_toggle->isChecked();
+		cfg["brt_auto"] = checked;
+		ui->autoBrtCheck->setChecked(checked);
+
+		// Restore default brt
+		if (!checked) {
+			cfg["brt_step"] = brt_steps_max;
+			ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_steps_max, 0, 100))));
+			ui->brtSlider->setValue(cfg["brt_step"]);
+			mediator->notify(this, GAMMA_SLIDER_MOVED);
+		}
+	});
+	menu->addAction(tray_brt_toggle);
+
+
+	connect(tray_temp_toggle, &QAction::triggered, this, [=] {
+		const bool checked = tray_temp_toggle->isChecked();
+		cfg["temp_auto"] = checked;
+		ui->autoTempCheck->setChecked(checked);
+
+		// Restore default temp
+		if (!checked) {
+			cfg["temp_step"] = 0;
+			ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_k_max));
+			ui->tempSlider->setValue(cfg["temp_step"]);
+			mediator->notify(this, GAMMA_SLIDER_MOVED);
+		}
+	});
+	menu->addAction(tray_temp_toggle);
 
 	menu->addSeparator();
 
@@ -242,6 +269,18 @@ QMenu* MainWindow::createTrayMenu()
 	}
 
 	menu->addSeparator();
+
+#ifdef _WIN32
+	QAction *run_startup = new QAction("&Run at startup", this);
+	run_startup->setCheckable(true);
+	connect(run_startup, &QAction::triggered, [=]{ toggleRegkey(run_startup->isChecked()); });
+	menu->addAction(run_startup);
+
+	LRESULT s = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", L"Gammy", RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
+	run_startup->setChecked(s == ERROR_SUCCESS);
+
+	menu->addSeparator();
+#endif
 
 	QAction *about = new QAction("&Gammy " + QString(g_app_version), this);
 	about->setEnabled(false);
@@ -405,6 +444,7 @@ void MainWindow::on_advBrSettingsBtn_toggled(bool checked)
 
 void MainWindow::on_autoBrtCheck_toggled(bool checked)
 {
+	tray_brt_toggle->setChecked(checked);
 	cfg["brt_auto"] = checked;
 	mediator->notify(this, AUTO_BRT_TOGGLED);
 	toggleBrtSliders(checked);
@@ -412,6 +452,7 @@ void MainWindow::on_autoBrtCheck_toggled(bool checked)
 
 void MainWindow::on_autoTempCheck_toggled(bool checked)
 {
+	tray_temp_toggle->setChecked(checked);
 	cfg["temp_auto"] = checked;
 	this->mediator->notify(this, AUTO_TEMP_TOGGLED);
 }
