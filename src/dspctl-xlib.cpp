@@ -60,7 +60,8 @@ Vidmode::Vidmode()
 		exit(EXIT_FAILURE);
 	}
 
-	init_ramp.resize(3 * size_t(ramp_sz) * sizeof(uint16_t));
+	ramp.resize(3 * ramp_sz * sizeof(uint16_t));
+	init_ramp.resize(3 * ramp_sz * sizeof(uint16_t));
 
 	uint16_t *d = init_ramp.data(),
 	         *r = &d[0 * ramp_sz],
@@ -78,7 +79,7 @@ Vidmode::~Vidmode()
 	init_ramp.clear();
 }
 
-void Vidmode::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const int temp_step)
+void Vidmode::fillRamp(const int brt_step, const int temp_step)
 {
 	/**
 	 * The ramp multiplier equals 32 when ramp_sz = 2048, 64 when 1024, etc.
@@ -86,9 +87,9 @@ void Vidmode::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const in
 	 * the RGB channels look like:
 	 * [ 0, 32, 64, 96, ... UINT16_MAX - 32 ]
 	 */
-	auto r = &ramp[0 * ramp_sz],
-	     g = &ramp[1 * ramp_sz],
-	     b = &ramp[2 * ramp_sz];
+	uint16_t *r = &ramp[0 * ramp_sz];
+	uint16_t *g = &ramp[1 * ramp_sz];
+	uint16_t *b = &ramp[2 * ramp_sz];
 
 	const double r_mult = interpTemp(temp_step, 0),
 	             g_mult = interpTemp(temp_step, 1),
@@ -107,8 +108,7 @@ void Vidmode::fillRamp(std::vector<uint16_t> &ramp, const int brt_step, const in
 
 void Vidmode::setGamma(int scr_br, int temp)
 {
-	std::vector<uint16_t> ramp(3 * ramp_sz * sizeof(uint16_t));
-	fillRamp(ramp, scr_br, temp);
+	fillRamp(scr_br, temp);
 	XF86VidModeSetGammaRamp(dsp, 0, ramp_sz, &ramp[0], &ramp[ramp_sz], &ramp[2 * ramp_sz]);
 }
 

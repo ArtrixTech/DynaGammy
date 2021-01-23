@@ -31,12 +31,12 @@ public:
 	~Vidmode();
 	void setGamma(int, int);
 	void setInitialGamma(bool);
-protected:
+private:
 	int ramp_sz;
 	bool initial_ramp_exists = true;
+	std::vector<uint16_t> ramp;
 	std::vector<uint16_t> init_ramp;
-
-	void fillRamp(std::vector<uint16_t> &ramp, const int brightness, const int temp);
+	void fillRamp(const int brightness, const int temp);
 };
 
 class Xshm : public Vidmode
