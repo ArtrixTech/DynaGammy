@@ -240,7 +240,6 @@ QMenu* MainWindow::createTrayMenu()
 	});
 	menu->addAction(tray_brt_toggle);
 
-
 	connect(tray_temp_toggle, &QAction::triggered, this, [=] {
 		const bool checked = tray_temp_toggle->isChecked();
 		cfg["temp_auto"] = checked;
@@ -258,18 +257,6 @@ QMenu* MainWindow::createTrayMenu()
 
 	menu->addSeparator();
 
-	QAction *quit_prev = new QAction("&Quit", this);
-	connect(quit_prev, &QAction::triggered, this, [&] { prev_gamma = true; QApplication::quit(); });
-	menu->addAction(quit_prev);
-
-	if (!windows) {
-		QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
-		connect(quit_pure, &QAction::triggered, this, [&] { prev_gamma = false; QApplication::quit(); });
-		menu->addAction(quit_pure);
-	}
-
-	menu->addSeparator();
-
 #ifdef _WIN32
 	QAction *run_startup = new QAction("&Run at startup", this);
 	run_startup->setCheckable(true);
@@ -281,6 +268,18 @@ QMenu* MainWindow::createTrayMenu()
 
 	menu->addSeparator();
 #endif
+
+	QAction *quit_prev = new QAction("&Quit", this);
+	connect(quit_prev, &QAction::triggered, this, [&] { prev_gamma = true; QApplication::quit(); });
+	menu->addAction(quit_prev);
+
+	if (!windows) {
+		QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
+		connect(quit_pure, &QAction::triggered, this, [&] { prev_gamma = false; QApplication::quit(); });
+		menu->addAction(quit_pure);
+	}
+
+	menu->addSeparator();
 
 	QAction *about = new QAction("&Gammy " + QString(g_app_version), this);
 	about->setEnabled(false);
