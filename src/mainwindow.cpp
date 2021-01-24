@@ -11,6 +11,7 @@
 #include <QMenu>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusConnection>
+#include <QShortcut>
 #include "cfg.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -23,6 +24,8 @@ MainWindow::MainWindow(): ui(new Ui::MainWindow), tray_icon(new QSystemTrayIcon(
 	tray_brt_toggle->setCheckable(true);
 	tray_temp_toggle = new QAction("Auto temperature", this);
 	tray_temp_toggle->setCheckable(true);
+
+	new QShortcut(QKeySequence(Qt::Key_Escape), this, SLOT(close()));
 
 	ui->setupUi(this);
 }
