@@ -34,7 +34,7 @@ public:
 	void shutdown();
 
 private slots:
-	void iconActivated(QSystemTrayIcon::ActivationReason reason);
+	void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
 	void on_brtSlider_actionTriggered(int action);
 	void on_tempSlider_actionTriggered(int action);
@@ -72,6 +72,8 @@ private:
 	void closeEvent(QCloseEvent *);
 	void setPos();
 	void savePos();
+	void restoreDefaultBrt();
+	void restoreDefaultTemp();
 
 	void createTrayIcon(QIcon &icon);
 	void checkTray();

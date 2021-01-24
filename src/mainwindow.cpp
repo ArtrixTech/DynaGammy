@@ -131,7 +131,7 @@ void MainWindow::createTrayIcon(QIcon &icon)
 	tray_icon->setContextMenu(menu);
 	tray_icon->setToolTip(QString("Gammy"));
 	tray_icon->setIcon(icon);
-	connect(tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+	connect(tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::trayIconActivated);
 	tray_icon->show();
 
 	systray_available = QSystemTrayIcon::isSystemTrayAvailable();
@@ -139,6 +139,30 @@ void MainWindow::createTrayIcon(QIcon &icon)
 	if (!systray_available) {
 		cfg["wnd_show_on_startup"] = true;
 		LOGE << "Systray unavailable. Closing the window will quit the app.";
+	}
+}
+
+void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+	switch (reason) {
+	case QSystemTrayIcon::Trigger:
+		show();
+		break;
+	case QSystemTrayIcon::MiddleClick:
+		if (ui->autoBrtCheck->isChecked() || ui->autoTempCheck->isChecked()) {
+			restoreDefaultBrt();
+			restoreDefaultTemp();
+		} else {
+			ui->autoBrtCheck->setChecked(true);
+			ui->autoTempCheck->setChecked(true);
+		}
+		break;
+	case QSystemTrayIcon::Unknown:
+		break;
+	case QSystemTrayIcon::Context:
+		break;
+	case QSystemTrayIcon::DoubleClick:
+		break;
 	}
 }
 
@@ -235,33 +259,22 @@ QMenu* MainWindow::createTrayMenu()
 
 	connect(tray_brt_toggle, &QAction::triggered, this, [=] {
 
-		const bool checked = tray_brt_toggle->isChecked();
-		cfg["brt_auto"] = checked;
-		ui->autoBrtCheck->setChecked(checked);
-
-		// Restore default brt
-		if (!checked) {
-			cfg["brt_step"] = brt_steps_max;
-			ui->brtLabel->setText(QStringLiteral("%1 %").arg(int(remap(cfg["brt_step"].get<int>(), 0, brt_steps_max, 0, 100))));
-			ui->brtSlider->setValue(cfg["brt_step"]);
-			mediator->notify(this, GAMMA_SLIDER_MOVED);
+		if (tray_brt_toggle->isChecked()) {
+			ui->autoBrtCheck->setChecked(true);
+		} else {
+			restoreDefaultBrt();
 		}
 	});
-	menu->addAction(tray_brt_toggle);
 
 	connect(tray_temp_toggle, &QAction::triggered, this, [=] {
-		const bool checked = tray_temp_toggle->isChecked();
-		cfg["temp_auto"] = checked;
-		ui->autoTempCheck->setChecked(checked);
-
-		// Restore default temp
-		if (!checked) {
-			cfg["temp_step"] = 0;
-			ui->tempLabel->setText(QStringLiteral("%1 K").arg(temp_k_max));
-			ui->tempSlider->setValue(cfg["temp_step"]);
-			mediator->notify(this, GAMMA_SLIDER_MOVED);
+		if (tray_temp_toggle->isChecked()) {
+			ui->autoTempCheck->setChecked(true);
+		} else {
+			restoreDefaultTemp();
 		}
 	});
+
+	menu->addAction(tray_brt_toggle);
 	menu->addAction(tray_temp_toggle);
 
 	menu->addSeparator();
@@ -324,7 +337,7 @@ void MainWindow::on_brtSlider_actionTriggered([[maybe_unused]] int action)
 
 	int val = ui->brtSlider->sliderPosition();
 	cfg["brt_step"] = val;
-	mediator->notify(this, GAMMA_SLIDER_MOVED);
+	mediator->notify(this, GAMMA_STEP_CHANGED);
 	updateBrtLabel(val);
 }
 
@@ -335,8 +348,24 @@ void MainWindow::on_tempSlider_actionTriggered([[maybe_unused]] int action)
 
 	int val = ui->tempSlider->sliderPosition();
 	cfg["temp_step"] = val;
-	mediator->notify(this, GAMMA_SLIDER_MOVED);
+	mediator->notify(this, GAMMA_STEP_CHANGED);
 	updateTempLabel(val);
+}
+
+void MainWindow::restoreDefaultBrt()
+{
+	ui->autoBrtCheck->setChecked(false);
+	cfg["brt_step"] = brt_steps_max;
+	mediator->notify(this, GAMMA_STEP_CHANGED);
+	ui->brtSlider->setValue(brt_steps_max);
+}
+
+void MainWindow::restoreDefaultTemp()
+{
+	ui->autoTempCheck->setChecked(false);
+	cfg["temp_step"] = 0;
+	mediator->notify(this, GAMMA_STEP_CHANGED);
+	ui->tempSlider->setValue(0);
 }
 
 /**
@@ -492,14 +521,6 @@ void MainWindow::setPollingRange(int min, int max)
 
 	ui->pollingLabel->setText(QString::number(poll));
 	ui->pollingSlider->setValue(poll);
-}
-
-void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-	if (reason == QSystemTrayIcon::Trigger) {
-		updateBrtLabel(cfg["brt_step"]);
-		show();
-	}
 }
 
 MainWindow::~MainWindow()

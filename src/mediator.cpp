@@ -26,7 +26,7 @@ void Mediator::notify([[maybe_unused]] Component *sender, Component::Event e) co
 	case Component::TEMP_CHANGED:
 		wnd->setTempSlider(cfg["temp_step"]);
 		break;
-	case Component::GAMMA_SLIDER_MOVED:
+	case Component::GAMMA_STEP_CHANGED:
 		gammactl->setGamma(cfg["brt_step"], cfg["temp_step"]);
 		break;
 	case Component::AUTO_BRT_TOGGLED:
