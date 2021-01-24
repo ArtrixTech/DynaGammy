@@ -18,10 +18,12 @@
 
 MainWindow::MainWindow(): ui(new Ui::MainWindow), tray_icon(new QSystemTrayIcon(this))
 {
-	tray_brt_toggle = new QAction("&Auto brightness", this);
+	tray_wnd_toggle = new QAction(cfg["wnd_show_on_startup"].get<bool>() ? hide_txt : show_txt , this);
+	tray_brt_toggle = new QAction("Auto brightness", this);
 	tray_brt_toggle->setCheckable(true);
-	tray_temp_toggle = new QAction("&Auto temperature", this);
+	tray_temp_toggle = new QAction("Auto temperature", this);
 	tray_temp_toggle->setCheckable(true);
+
 	ui->setupUi(this);
 }
 
@@ -207,10 +209,10 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	if (isVisible()) {
 		savePos();
 		hide();
+		tray_wnd_toggle->setText(show_txt);
 	}
 
 	config::write();
-
 	e->ignore();
 }
 
@@ -218,9 +220,16 @@ QMenu* MainWindow::createTrayMenu()
 {
 	QMenu *menu = new QMenu(nullptr);
 
-	QAction *show_wnd = new QAction("&Show Gammy", this);
-	connect(show_wnd, &QAction::triggered, this, [&] { show(); });
-	menu->addAction(show_wnd);
+	connect(tray_wnd_toggle, &QAction::triggered, this, [&] {
+		if (isHidden()) {
+			show();
+			tray_wnd_toggle->setText(hide_txt);
+		} else {
+			hide();
+			tray_wnd_toggle->setText(show_txt);
+		}
+	});
+	menu->addAction(tray_wnd_toggle);
 
 	menu->addSeparator();
 
@@ -269,19 +278,19 @@ QMenu* MainWindow::createTrayMenu()
 	menu->addSeparator();
 #endif
 
-	QAction *quit_prev = new QAction("&Quit", this);
+	QAction *quit_prev = new QAction("Quit", this);
 	connect(quit_prev, &QAction::triggered, this, [&] { prev_gamma = true; QApplication::quit(); });
 	menu->addAction(quit_prev);
 
 	if (!windows) {
-		QAction *quit_pure = new QAction("&Quit (set pure gamma)", this);
+		QAction *quit_pure = new QAction("Quit (set pure gamma)", this);
 		connect(quit_pure, &QAction::triggered, this, [&] { prev_gamma = false; QApplication::quit(); });
 		menu->addAction(quit_pure);
 	}
 
 	menu->addSeparator();
 
-	QAction *about = new QAction("&Gammy " + QString(g_app_version), this);
+	QAction *about = new QAction("Gammy " + QString(g_app_version), this);
 	about->setEnabled(false);
 	menu->addAction(about);
 

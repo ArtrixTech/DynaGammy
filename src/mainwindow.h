@@ -77,6 +77,10 @@ private:
 	void checkTray();
 	bool systray_available = false;
 
+	QAction *tray_wnd_toggle;
+	const QString show_txt = "Show Gammy";
+	const QString hide_txt = "Hide Gammy";
+
 	QAction *tray_brt_toggle;
 	QAction *tray_temp_toggle;
 
