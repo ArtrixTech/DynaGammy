@@ -90,12 +90,12 @@ void MainWindow::setWindowProperties(QIcon &icon)
 		move(QGuiApplication::screens().at(0)->geometry().center() - frameGeometry().center());
 		// Assume first start, show the window
 		show();
-		tray_brt_toggle->setText(hide_txt);
+		tray_wnd_toggle->setText(hide_txt);
 	} else {
 		setPos();
 		if (cfg["wnd_show_on_startup"].get<bool>()) {
 			show();
-			tray_brt_toggle->setText(hide_txt);
+			tray_wnd_toggle->setText(hide_txt);
 		}
 	}
 }
