@@ -1,9 +1,9 @@
-﻿# Gammy
+# Gammy
 is a GUI tool for adjusting pixel brightness/temperature automatically or manually.
 
 It can dim the screen if its content is too bright, or brighten it otherwise. This can help your eyes adjust when switching between dark and light windows, especially at night or in suboptimal lighting conditions.
 
-Screenshots available on its [website](https://getgammy.com).
+Screenshot available on its [website](https://getgammy.com).
 
 ## Windows
 #### Requirements
@@ -24,11 +24,11 @@ This disables a limit that Windows imposes on how much an app can change screen 
 - g++ or Clang compiler with C++17 support
 
 - Ubuntu/Debian packages:
-```
+```bash
 sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev libxext-dev qt5-default
 ```
 #### Build and run
-```
+```bash
 git clone https://github.com/Fushko/gammy.git
 cd gammy
 qmake
@@ -37,18 +37,14 @@ sudo make install
 gammy
 ```
 
-NOTE: If `make` fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, the Qt version provided by your distro is older than 5.12.
-As a workaround you can delete the offending lines in ui_mainwindow.h, then run `make` again.
+The `qt5ct` plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
 
-
-Additionally, the `qt5ct` plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
-
-```
+```bash
 sudo apt install qt5ct
 ```
 
 To uninstall:
-```
+```bash
 # just removes gammy from /usr/local/bin
 sudo make uninstall
 ```
@@ -62,7 +58,7 @@ AUR packages are available:
 
 #### Gentoo
 
-On Gentoo-based distros, Gammy is included in GURU Gentoo overlay.
+On Gentoo-based distros, Gammy is included in GURU Gentoo overlay:
 ```bash
 # emerge the tool to enable the overlay
 sudo emerge -av app-eselect/eselect-repository
@@ -93,16 +89,29 @@ or from `pkg`, as soon as [accessibility/gammy](https://www.freshports.org/acces
 ```
 
 ## Usage
-Gammy starts minimized in the system tray (or maximized if the tray is absent). Click on the icon to open the settings window.
+The app appears maximized the first time you start it. On subsequent starts, it's minimized in the system tray. This can be changed by setting "wnd_show_on_startup" to *true* in the config. 
 
-- (Linux only) The padlock icon allows the brightness range to go up to 200%.
-- The "Range" slider determines the minimum and maximum brightness.
-- The "Offset" slider adds to the screen brightness calculation. Higher = brighter image.
-- Clicking on the first "..." button shows additional options related to adaptive brightness:
-  - "Adaptation speed" controls how quickly the brightness adapts when a change is detected.
-  - "Threshold" controls how much the screen has to change in order to trigger adaptation.
-  - "Screenshot rate" determines the interval between each screenshot. Lowering this value detects brightness changes faster, but also results in higher CPU usage. Increasing this value on older PCs is recommended.
-- The second "..." button opens a window to control the time schedule for adaptive temperature, as well as the adaptation speed.
+The window is shown by clicking on the tray icon. In some configurations you might need to double click. You can close it by pressing *Esc* when it's focused.
+
+The first "Auto" checkbox activates automatic brightness. The following sliders will be revealed (scroll or expand the window to see them all):
+- **Range**: minimum and maximum brightness.
+- **Offset**: higher = brighter image.
+- **Threshold**": how much the screen has to change in order to trigger adaptation. The default value is generally good in most cases.
+- **Adaptation speed**: how quickly the brightness adapts when a change is detected.
+- **Screenshot rate**: the interval between each screenshot. Lowering this value detects brightness changes faster, but may increase CPU usage.
+
+Automatic adjustments can be toggled on or off with a middle click on the tray icon.
+
+The second "Auto" checkbox activates adaptive temperature. The ellipsis button (...) opens a window to control its time schedule, as well as the adaptation speed.
+
+The padlock icon allows the brightness range to go up to 200%. (Linux only)
+
+## Planned features
+
+- Multi-monitor support
+- Command line interface / configurable hotkeys
+- Location-based temperature adaptation
+- Backlight control
 
 ## Known issues and limitations
 The brightness is adjusted by changing pixel values, instead of the LCD backlight. This has wildly varying results based on the quality of your screen.
@@ -110,15 +119,16 @@ The brightness is adjusted by changing pixel values, instead of the LCD backligh
 Theoretically, this app looks best on OLEDs, since they don't have a backlight. (If you have one, I'd love to know your experience).
 
 Backlight control is planned. However, controlling backlight via software is not supported by most screens.
+
 ### Multimonitor issues
 On Windows, currently the brightness is detected and adjustable only on the monitor that is set as the primary screen. Temperature affects all screens, however.
 
 On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally.
 
-Proper multimonitor support is planned.
-
 ## Troubleshooting
 ### Linux
+When building from source, if `make` fails with ```PlaceholderText is not a member of QPalette``` errors in ui_mainwindow.h, the Qt version provided by your distro is older than 5.12. As a workaround you can delete the offending lines in ui_mainwindow.h, then run `make` again.
+
 If you are using a command to run it on startup, and the tray icon does not appear, try [this.](https://github.com/Fushko/gammy/issues/57#issuecomment-751358770)
 
 If you are experiencing an "Invalid gamma ramp size" fatal error, refer to [this post.](https://github.com/Fushko/gammy/issues/20#issuecomment-584473270)
