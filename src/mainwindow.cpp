@@ -150,6 +150,7 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 	switch (reason) {
 	case QSystemTrayIcon::Trigger:
 		show();
+		tray_wnd_toggle->setText(hide_txt);
 		break;
 	case QSystemTrayIcon::MiddleClick:
 		if (ui->autoBrtCheck->isChecked() || ui->autoTempCheck->isChecked()) {
