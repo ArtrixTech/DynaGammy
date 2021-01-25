@@ -141,8 +141,7 @@ int GDI::getScreenBrightness() noexcept
 
 DXGI::DXGI()
 {
-	if (!(useDXGI = init()) || true) {
-		useDXGI = false;
+	if (!(useDXGI = init())) {
 		LOGD << "DXGI unavailable.";
 		primary_screen_name.clear();
 	}
@@ -152,7 +151,7 @@ DXGI::DXGI()
 
 DXGI::~DXGI()
 {
-	if (duplication)
+	if (duplication && useDXGI)
 		duplication->ReleaseFrame();
 	if (output1)
 		output1->Release();
