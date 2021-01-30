@@ -11,25 +11,15 @@
 #include "cfg.h"
 #include "defs.h"
 
-int calcBrightness(uint8_t *buf, uint64_t buf_sz, int bytes_per_pixel, int skip_mult)
+int calcBrightness(uint8_t *buf, uint64_t buf_sz, int bytes_per_pixel, int stride)
 {
-	const uint64_t res = buf_sz / bytes_per_pixel;
-
-	uint64_t r = 0;
-	uint64_t g = 0;
-	uint64_t b = 0;
-
-	const int inc = bytes_per_pixel * skip_mult;
-
-	for (uint64_t i = 0; i < buf_sz; i += inc) {
-		r += buf[i + 2];
-		g += buf[i + 1];
-		b += buf[i];
+	uint64_t rgb[3] {};
+	for (uint64_t i = 0, inc = stride * bytes_per_pixel; i < buf_sz; i += inc) {
+		rgb[0] += buf[i + 2];
+		rgb[1] += buf[i + 1];
+		rgb[2] += buf[i];
 	}
-
-	int lum = (r * 0.2126 + g * 0.7152 + b * 0.0722) * skip_mult / res;
-
-	return lum;
+	return (rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722) * stride / (buf_sz / bytes_per_pixel);
 }
 
 double lerp(double x, double a, double b)

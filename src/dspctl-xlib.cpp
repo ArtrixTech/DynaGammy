@@ -18,12 +18,12 @@ XLib::XLib()
 		LOGE << "Failed to initialize XThreads. App may crash unexpectedly.";
 	}
 
-	dsp      = XOpenDisplay(nullptr);
-	root_wnd = DefaultRootWindow(dsp);
-	scr      = DefaultScreenOfDisplay(dsp);
-	scr_num  = XDefaultScreen(dsp);
-
-	LOGV << "XDisplay initialized";
+	dsp              = XOpenDisplay(nullptr);
+	default_root_wnd = DefaultRootWindow(dsp);
+	default_scr      = DefaultScreenOfDisplay(dsp);
+	default_scr_num  = XDefaultScreen(dsp);
+	scr_count        = XScreenCount(dsp);
+	LOGV << "XDisplay initialized. Screens: " << scr_count;
 }
 
 XLib::~XLib()
@@ -34,7 +34,7 @@ XLib::~XLib()
 
 int XLib::getScreenBrightness() noexcept
 {
-	const auto img = XGetImage(dsp, root_wnd, 0, 0, scr->width, scr->height, AllPlanes, ZPixmap);
+	const auto img = XGetImage(dsp, default_root_wnd, 0, 0, default_scr->width, default_scr->height, AllPlanes, ZPixmap);
 	int brt = calcBrightness(reinterpret_cast<uint8_t*>(img->data), img->bytes_per_line * img->height, img->bits_per_pixel / 8, 1024);
 	img->f.destroy_image(img);
 	return brt;
@@ -50,7 +50,7 @@ Vidmode::Vidmode()
 		LOGE << "Failed to query VidMode";
 	}
 
-	if (!XF86VidModeGetGammaRampSize(dsp, scr_num, &ramp_sz)) {
+	if (!XF86VidModeGetGammaRampSize(dsp, default_scr_num, &ramp_sz)) {
 		LOGF << "Failed to get gamma ramp size";
 		exit(EXIT_FAILURE);
 	}
@@ -68,7 +68,7 @@ Vidmode::Vidmode()
 	         *g = &d[1 * ramp_sz],
 	         *b = &d[2 * ramp_sz];
 
-	if (!XF86VidModeGetGammaRamp(dsp, scr_num, ramp_sz, r, g, b)) {
+	if (!XF86VidModeGetGammaRamp(dsp, default_scr_num, ramp_sz, r, g, b)) {
 		LOGE << "Failed to get initial gamma ramp";
 		initial_ramp_exists = false;
 	}
@@ -116,7 +116,7 @@ void Vidmode::setInitialGamma(bool set_previous)
 {
 	if (set_previous && initial_ramp_exists) {
 		LOGI << "Setting previous gamma";
-		XF86VidModeSetGammaRamp(dsp, scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
+		XF86VidModeSetGammaRamp(dsp, default_scr_num, ramp_sz, &init_ramp[0*ramp_sz], &init_ramp[1*ramp_sz], &init_ramp[2*ramp_sz]);
 	} else {
 		LOGI << "Setting pure gamma";
 		setGamma(brt_steps_max, 0);
@@ -143,7 +143,7 @@ Xshm::Xshm()
 	LOGV << "XImage support: " << (pixmaps == 1);
 	LOGV << "Pixmap support: " << (pixmaps == 2);
 
-	vis = XDefaultVisual(dsp, 0);
+	default_vis = XDefaultVisual(dsp, 0);
 	shi = createImage();
 
 	if (!shi) {
@@ -160,7 +160,7 @@ Xshm::~Xshm()
 
 XImage* Xshm::createImage()
 {
-	XImage *img = XShmCreateImage(dsp, vis, scr->root_depth, ZPixmap, nullptr, &shminfo, scr->width, scr->height);
+	XImage *img = XShmCreateImage(dsp, default_vis, default_scr->root_depth, ZPixmap, nullptr, &shminfo, default_scr->width, default_scr->height);
 
 	if (!img) {
 		LOGF << "XShmCreateImage failed";
@@ -176,7 +176,7 @@ XImage* Xshm::createImage()
 
 	void *shm = shmat(shminfo.shmid, nullptr, SHM_RDONLY);
 
-	if (shm == (void*) -1) {
+	if (shm == reinterpret_cast<void*>(-1)) {
 		LOGF << "shmat failed";
 		exit(1);
 	}
@@ -195,7 +195,7 @@ XImage* Xshm::createImage()
 
 int Xshm::getScreenBrightness() noexcept
 {
-	XShmGetImage(dsp, root_wnd, shi, 0, 0, AllPlanes);
+	XShmGetImage(dsp, default_root_wnd, shi, 0, 0, AllPlanes);
 	int brt = calcBrightness(reinterpret_cast<uint8_t*>(shi->data), shi->bytes_per_line * shi->height, shi->bits_per_pixel / 8, 1024);
 	return brt;
 }

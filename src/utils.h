@@ -10,7 +10,7 @@
 #include <vector>
 #include "stdint.h"
 
-int    calcBrightness(uint8_t *buf, uint64_t buf_sz, int bytes_per_pixel, int skip_mult);
+int    calcBrightness(uint8_t *buf, uint64_t buf_sz, int bytes_per_pixel, int stride);
 double lerp(double x, double a, double b);
 double normalize(double x, double a, double b);
 double remap(double x, double a, double b, double ay, double by);

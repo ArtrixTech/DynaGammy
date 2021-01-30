@@ -19,9 +19,10 @@ public:
 	int getScreenBrightness() noexcept;
 protected:
 	Display *dsp;
-	Window  root_wnd;
-	Screen  *scr;
-	int     scr_num;
+	int scr_count;
+	Window  default_root_wnd;
+	Screen  *default_scr;
+	int     default_scr_num;
 };
 
 class Vidmode : public XLib
@@ -48,7 +49,7 @@ public:
 private:
 	XShmSegmentInfo shminfo;
 	XImage *shi;
-	Visual *vis;
+	Visual *default_vis;
 	XImage* createImage();
 };
 
