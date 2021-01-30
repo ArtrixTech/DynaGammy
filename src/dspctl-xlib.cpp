@@ -196,7 +196,6 @@ XImage* Xshm::createImage()
 int Xshm::getScreenBrightness() noexcept
 {
 	XShmGetImage(dsp, default_root_wnd, shi, 0, 0, AllPlanes);
-	int brt = calcBrightness(reinterpret_cast<uint8_t*>(shi->data), shi->bytes_per_line * shi->height, shi->bits_per_pixel / 8, 1024);
-	return brt;
+	return calcBrightness(reinterpret_cast<uint8_t*>(shi->data), shi->bytes_per_line * shi->height, shi->bits_per_pixel / 8, 1024);
 }
 
