@@ -43,13 +43,6 @@ void init()
 	signal(SIGQUIT, sig_handler);
 	signal(SIGTERM, sig_handler);
 #else
-	if (cfg["log_level"] == plog::verbose) {
-		FILE *f1, *f2, *f3;
-		AllocConsole();
-		freopen_s(&f1, "CONIN$", "r", stdin);
-		freopen_s(&f2, "CONOUT$", "w", stdout);
-		freopen_s(&f3, "CONOUT$", "w", stderr);
-	}
 	checkGammaRange();
 #endif
 }
