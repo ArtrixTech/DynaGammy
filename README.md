@@ -96,7 +96,7 @@ The window is shown by clicking on the tray icon. In some configurations you mig
 The first "Auto" checkbox activates automatic brightness. The following sliders will be revealed (scroll or expand the window to see them all):
 - **Range**: minimum and maximum brightness.
 - **Offset**: higher = brighter image.
-- **Threshold**": how much the screen has to change in order to trigger adaptation. The default value is generally good in most cases.
+- **Threshold**: how much the screen has to change in order to trigger adaptation. The default value is generally good in most cases.
 - **Adaptation speed**: how quickly the brightness adapts when a change is detected.
 - **Screenshot rate**: the interval between each screenshot. Lowering this value detects brightness changes faster, but may increase CPU usage.
 
@@ -118,9 +118,9 @@ The brightness is adjusted by changing pixel values, instead of the LCD backligh
 
 Theoretically, this app looks best on OLEDs, since they don't have a backlight. (If you have one, I'd love to know your experience).
 
-Backlight control is planned. However, controlling backlight via software is not supported by most screens.
+Backlight control is planned. However, not all screens support backlight control via software.
 
-### Multimonitor issues
+### Multi-monitor issues
 On Windows, currently the brightness is detected and adjustable only on the monitor that is set as the primary screen. Temperature affects all screens, however.
 
 On Linux, currently every screen is treated as one single screen when calculating brightness. Both brightness and temperature are changed globally.
