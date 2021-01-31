@@ -846,10 +846,14 @@ background-color:rgb(20,22,35);
        <string notr="true">QScrollBar::add-line:vertical{
       border: none;
       background: none;
+      width:0;
+      height:0;
 }
 QScrollBar::sub-line:vertical {
       border: none;
       background: none;
+      width:0;
+      height:0;
 }
 
 QScrollBar::vertical {              
@@ -896,7 +900,7 @@ background:rgba(200,200,200, 0.6);
          <x>0</x>
          <y>0</y>
          <width>308</width>
-         <height>274</height>
+         <height>270</height>
         </rect>
        </property>
        <property name="sizePolicy">
