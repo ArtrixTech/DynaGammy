@@ -36,14 +36,13 @@ void MainWindow::init()
 		LOGE << "Gammy is unable to reset the proper brightness / temperature when resuming from suspend.";
 	}
 
-	QIcon icon = QIcon(":res/icons/128x128ball.ico");
-
 	setLabels();
 	setSliders();
 	toggleBrtSliders(cfg["brt_auto"]);
 	ui->autoBrtCheck->setChecked(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
+	QIcon icon = QIcon(":res/icons/gammy-16.ico");
 	createTrayIcon(icon);
 	setWindowProperties(icon);
 
