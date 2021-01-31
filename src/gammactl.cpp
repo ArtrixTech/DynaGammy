@@ -31,9 +31,9 @@ void GammaCtl::start()
 	if (!threads.empty())
 		return;
 
-	threads.push_back(std::thread([this] { adjustTemperature(); }));
-	threads.push_back(std::thread([this] { captureScreen(); }));
-	threads.push_back(std::thread([this] { reapplyGamma(); }));
+	threads.emplace_back(std::thread([this] { adjustTemperature(); }));
+	threads.emplace_back(std::thread([this] { captureScreen(); }));
+	threads.emplace_back(std::thread([this] { reapplyGamma(); }));
 }
 
 void GammaCtl::stop()
