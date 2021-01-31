@@ -167,7 +167,7 @@ XImage* Xshm::createImage()
 		exit(1);
 	}
 
-	shminfo.shmid = shmget(IPC_PRIVATE, img->bytes_per_line * img->height, IPC_CREAT | 0600 | SHM_NORESERVE);
+	shminfo.shmid = shmget(IPC_PRIVATE, img->bytes_per_line * img->height, IPC_CREAT | 0600);
 
 	if (shminfo.shmid == -1) {
 		LOGF << "shmget failed";
