@@ -31,7 +31,7 @@ void init()
 	logger->addAppender(&f);
 
 	if (alreadyRunning()) {
-		LOGE << "Process already running";
+		LOGI << "Process already running";
 		exit(1);
 	}
 

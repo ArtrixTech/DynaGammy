@@ -381,10 +381,6 @@ void GammaCtl::adjustTemperature()
 		first_step_done = true;
 	}
 
-	LOGV << "Temp loop ended. Notifying clock thread";
-
 	clock_cv.notify_one();
 	clock.join();
-
-	LOGV << "Clock thread joined.";
 }
