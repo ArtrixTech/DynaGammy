@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Gammy
+GenericName=Screen control
+Comment=Adaptive screen brightness and temperature
+Exec=gammy
+Terminal=false
+Type=Application
+Icon=gammy
+Categories=Utility;System;
+Keywords=brightness,temperature,screen,control;
+StartupNotify=false

@@ -32,17 +32,30 @@ unix {
     LIBS += -lX11 -lXxf86vm -lXext
 
     isEmpty(PREFIX) {
-        PREFIX = /usr/local
+        PREFIX = /usr
     }
 
     isEmpty(BINDIR) {
         BINDIR = bin
     }
 
-    BINDIR = $$absolute_path($$BINDIR, $$PREFIX)
-    target.path = $$BINDIR
+    isEmpty(DATADIR) {
+        DATADIR = $$PREFIX/share
+    }
 
-    message(Install path: $$target.path)
+    INSTALLPATH = $$absolute_path($$BINDIR, $$PREFIX)
+    DATAPATH    = $$absolute_path($$DATADIR)
+
+    message(Bin path: $$INSTALLPATH)
+    message(Data path: $$DATAPATH)
+
+    target.path   = $$INSTALLPATH
+    desktop.path  = $$DATAPATH/applications
+    desktop.files = gammy.desktop
+    icons.path    = $$DATAPATH/pixmaps
+    icons.files   = icons/gammy.png
+
+    INSTALLS += target desktop icons
 }
 
 HEADERS += src/mainwindow.h src/utils.h \
@@ -67,20 +80,12 @@ FORMS += src/mainwindow.ui \
 
 RESOURCES += res.qrc
 
-UI_DIR = $$PWD/src
-RCC_DIR = res
-MOC_DIR = res/tmp
+UI_DIR      = $$PWD/src
+RCC_DIR     = res
+MOC_DIR     = res/tmp
 OBJECTS_DIR = res/tmp
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-#else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
-
-# Make the compiler emit warnings for deprecated Qt features
 DEFINES += QT_DEPRECATED_WARNINGS
-
-# Uncomment to make the code fail to compile if you use deprecated APIs.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 INCLUDEPATH += $$PWD/includes
