@@ -91,7 +91,7 @@ or from `pkg`, as soon as [accessibility/gammy](https://www.freshports.org/acces
 ## Usage
 The app appears maximized the first time you start it. On subsequent starts, it's minimized in the system tray. This can be changed by setting "wnd_show_on_startup" to *true* in the config. 
 
-The window is shown by clicking on the tray icon. In some configurations you might need to double click. You can close it by pressing *Esc* when it's focused.
+The window is shown or hidden by clicking on the tray icon. In some configurations you might need to double click. You can close it by pressing *Esc* when it's focused.
 
 The first "Auto" checkbox activates automatic brightness. The following sliders will be revealed (scroll or expand the window to see them all):
 - **Range**: minimum and maximum brightness.
