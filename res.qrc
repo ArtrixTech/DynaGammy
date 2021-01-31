@@ -1,10 +1,7 @@
 <RCC>
     <qresource prefix="/res">
-        <file>icons/gammy-64.ico</file>
-        <file>icons/gammy-16.ico</file>
-        <file>icons/gammy-32.ico</file>
         <file>icons/Lock-Open-32.png</file>
         <file>icons/Lock-32.png</file>
-        <file>icons/gammy-128.ico</file>
+        <file>icons/gammy.ico</file>
     </qresource>
 </RCC>

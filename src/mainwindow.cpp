@@ -42,7 +42,7 @@ void MainWindow::init()
 	ui->autoBrtCheck->setChecked(cfg["brt_auto"]);
 	ui->autoTempCheck->setChecked(cfg["temp_auto"]);
 
-	QIcon icon = QIcon(":res/icons/gammy-16.ico");
+	QIcon icon = QIcon(":res/icons/gammy.ico");
 	createTrayIcon(icon);
 	setWindowProperties(icon);
 
