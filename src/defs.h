@@ -18,7 +18,7 @@ constexpr bool windows = true;
 constexpr bool windows = false;
 #endif
 
-constexpr const char* g_app_version = "v0.9.63";
+constexpr const char* g_app_version = "v0.9.64";
 constexpr const char* config_name   = "gammyconf";
 
 constexpr int brt_steps_max  = 500;
