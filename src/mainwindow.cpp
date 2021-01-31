@@ -77,8 +77,6 @@ void MainWindow::setWindowProperties(QIcon &icon)
 	if (windows)
 		ui->extendBr->hide();
 
-	//ui->line->setPalette(QPalette(qRgb(25, 27, 37)));
-
 	// unused for now
 	ui->advBrSettingsBtn->setDisabled(true);
 	ui->advBrSettingsBtn->setVisible(false);
@@ -264,7 +262,6 @@ QMenu* MainWindow::createTrayMenu()
 	menu->addSeparator();
 
 	connect(tray_brt_toggle, &QAction::triggered, this, [=] {
-
 		if (tray_brt_toggle->isChecked()) {
 			ui->autoBrtCheck->setChecked(true);
 		} else {
