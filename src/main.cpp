@@ -27,16 +27,16 @@ void init()
 	static plog::RollingFileAppender<plog::TxtFormatter> f("gammylog.txt", 1024 * 1024 * 5, 1);
 	static plog::ColorConsoleAppender<plog::TxtFormatter> c;
 	plog::init(plog::Severity(plog::debug), &c);
+
 	const auto logger = plog::get();
 	logger->addAppender(&f);
+	config::read();
+	logger->setMaxSeverity(plog::Severity(cfg["log_level"]));
 
 	if (alreadyRunning()) {
 		LOGI << "Process already running";
 		exit(1);
 	}
-
-	config::read();
-	logger->setMaxSeverity(plog::Severity(cfg["log_level"]));
 
 #ifndef _WIN32
 	signal(SIGINT, sig_handler);
