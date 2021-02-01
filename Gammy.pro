@@ -16,7 +16,7 @@ CONFIG(release) {
     CONFIG += optimize_full
 }
 
-win32 {
+win32|win64 {
     HEADERS += winres.h
     HEADERS += src/dspctl-dxgi.h
     SOURCES += src/dspctl-dxgi.cpp
@@ -48,9 +48,9 @@ unix {
 
     target.path   = $$INSTALLPATH
     desktop.path  = $$DATAPATH/applications
-    desktop.files = .data/gammy.desktop
+    desktop.files = data/gammy.desktop
     icons.path    = $$DATAPATH/pixmaps
-    icons.files   = .data/icons/gammy.png
+    icons.files   = data/icons/gammy.png
 
     INSTALLS += target desktop icons
 }
@@ -75,7 +75,7 @@ SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
 FORMS += src/mainwindow.ui \
     src/tempscheduler.ui \
 
-RESOURCES   += .data/res.qrc
+RESOURCES   += data/res.qrc
 UI_DIR       = $$PWD/src
 RCC_DIR      = build/rcc
 MOC_DIR      = build/moc
