@@ -1,52 +1,56 @@
 # Gammy
-is a GUI tool for adjusting pixel brightness/temperature automatically or manually.
+is a tool for adjusting pixel brightness/temperature automatically or manually.
 
 It can dim the screen if its content is too bright, or brighten it otherwise. This can help your eyes adjust when switching between dark and light windows, especially at night or in suboptimal lighting conditions.
 
 Screenshot available on its [website](https://getgammy.com).
+#### Planned features
 
-## Windows
+- Proper multi-monitor support
+- Command line interface / configurable hotkeys
+- Location-based temperature adaptation
+- Backlight control
+## Installation
+
+### Windows
 #### Requirements
 [Visual C++ 2017](https://aka.ms/vs/16/release/vc_redist.x64.exe)
 
-#### Run
-The latest Windows release can be found [here](https://getgammy.com/downloads.html) or [here](https://github.com/Fushko/gammy/releases).
+#### Download
+Get it [here](https://github.com/Fushko/gammy/releases) or [here](https://getgammy.com/downloads.html).
 Unpack and run it, no installation required.
 
-### Important!
+#### Important!
 If the sliders don't work beyond a certain value, start the app in admin mode once, then restart the system.
 
-This disables a limit that Windows imposes on how much an app can change screen values.
+This disables a limit that Windows imposes on how much a program can change screen values.
 
-## Linux (X11 only)
-### Build
-#### Requirements
+### Linux
+#### Building from source
+Requirements:
 - g++ or Clang compiler with C++17 support
-
 - Ubuntu/Debian packages:
-```bash
+```sh
 sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev libxext-dev qt5-default
 ```
-#### Build and run
-```bash
+To install:
+```sh
 git clone https://github.com/Fushko/gammy.git
 cd gammy
 qmake
 make
 sudo make install
-gammy
 ```
-
-The `qt5ct` plugin is recommended if you are running a DE/WM without Qt integration (e.g. GNOME):
-
-```bash
-sudo apt install qt5ct
-```
+You can then find Gammy in your applications.
+To run it from the shell, execute: `gammy`
 
 To uninstall:
-```bash
-# just removes gammy from /usr/local/bin
+```sh
 sudo make uninstall
+```
+On GNOME, the Qt5 Configuration Tool is recommended to improve UI integration:
+```sh
+sudo apt install qt5ct
 ```
 
 ### Packages
@@ -69,8 +73,7 @@ sudo emaint sync -r guru
 sudo emerge -av --autounmask x11-misc/gammy
 ```
 
-## FreeBSD
-
+### FreeBSD
 On FreeBSD, Gammy can be installed from `ports`:
 
 ```sh
@@ -89,11 +92,11 @@ or from `pkg`, as soon as [accessibility/gammy](https://www.freshports.org/acces
 ```
 
 ## Usage
-The app appears maximized the first time you start it. On subsequent starts, it's minimized in the system tray. This can be changed by setting "wnd_show_on_startup" to *true* in the config. 
+The app appears maximized the first time you start it. On subsequent starts, it's minimized in the system tray. This can be changed by setting `wnd_show_on_startup` to `true` in the config file.
 
 The window is shown or hidden by clicking on the tray icon. In some configurations you might need to double click. You can close it by pressing *Esc* when it's focused.
 
-The first "Auto" checkbox activates automatic brightness. The following sliders will be revealed (scroll or expand the window to see them all):
+The first *Auto* checkbox activates automatic brightness. The following sliders will be revealed (scroll or expand the window to see all of them):
 - **Range**: minimum and maximum brightness.
 - **Offset**: higher = brighter image.
 - **Threshold**: how much the screen has to change in order to trigger adaptation. The default value is generally good in most cases.
@@ -102,16 +105,10 @@ The first "Auto" checkbox activates automatic brightness. The following sliders 
 
 Automatic adjustments can be toggled on or off with a middle click on the tray icon.
 
-The second "Auto" checkbox activates adaptive temperature. The ellipsis button (...) opens a window to control its time schedule, as well as the adaptation speed.
+The second *Auto* checkbox activates adaptive temperature. The ellipsis button (...) opens a window to control its time schedule, as well as the adaptation speed.
 
-The padlock icon allows the brightness range to go up to 200%. (Linux only)
+The padlock button allows the brightness range to go up to 200%. (Linux only)
 
-## Planned features
-
-- Multi-monitor support
-- Command line interface / configurable hotkeys
-- Location-based temperature adaptation
-- Backlight control
 
 ## Known issues and limitations
 The brightness is adjusted by changing pixel values, instead of the LCD backlight. This has wildly varying results based on the quality of your screen.
