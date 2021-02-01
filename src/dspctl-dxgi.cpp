@@ -135,8 +135,7 @@ int GDI::getScreenBrightness() noexcept
 	DeleteDC(tmp);
 	DeleteDC(dc);
 
-	int brt = calcBrightness(buf.data(), buf.size(), 4, 1024);
-	return brt;
+	return calcBrightness(buf.data(), buf.size(), 4, 1024);
 }
 
 DXGI::DXGI()
@@ -338,7 +337,7 @@ int  DXGI::getScreenBrightness() noexcept
 
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
 	IDXGIResource           *desktop_res;
-	if (duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK)
+	while (duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK)
 		this->restart();
 
 	ID3D11Texture2D *tex;
@@ -360,32 +359,34 @@ int  DXGI::getScreenBrightness() noexcept
 	staging_tex->Release();
 	d3d_context->Release();
 
-	int brt = calcBrightness(reinterpret_cast<uint8_t*>(map.pData), map.DepthPitch, 4, 1024);
-	return brt;
+	return calcBrightness(reinterpret_cast<uint8_t*>(map.pData), map.DepthPitch, 4, 1024);
 }
 
 void DXGI::restart()
 {
-	HRESULT hr;
+	HRESULT hr =  output1->DuplicateOutput(d3d_device, &duplication);
 
-	do {
-		hr = output1->DuplicateOutput(d3d_device, &duplication);
-		IF_PLOG (plog::debug) {
-			if (hr != S_OK) {
-				LOGE << "Screen capture failed. Reason:";
-				switch (hr) {
-				case E_INVALIDARG:                       LOGE << "E_INVALIDARG"; break;
-				case E_ACCESSDENIED:                     LOGE << "E_ACCESSDENIED"; break;
-				case DXGI_ERROR_UNSUPPORTED:             LOGE << "E_DXGI_ERROR_UNSUPPORTED"; break;
-				case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE: LOGE << "DXGI_ERROR_NOT_CURRENTLY_AVAILABLE"; break;
-				case DXGI_ERROR_SESSION_DISCONNECTED:    LOGE << "DXGI_ERROR_SESSION_DISCONNECTED"; break;
-				}
-				LOGD << "Retrying... (2.5 sec)";
-			}
-		}
-		Sleep(2500);
-	} while (hr != S_OK);
+	switch (hr) {
+	case S_OK:
+		LOGD << "Output duplication restarted.";
+		break;
+	case E_INVALIDARG:
+		LOGE << "E_INVALIDARG";
+		break;
+	case E_ACCESSDENIED:
+		LOGE << "E_ACCESSDENIED";
+		break;
+	case DXGI_ERROR_UNSUPPORTED:
+		LOGE << "E_DXGI_ERROR_UNSUPPORTED";
+		break;
+	case DXGI_ERROR_NOT_CURRENTLY_AVAILABLE:
+		LOGE << "DXGI_ERROR_NOT_CURRENTLY_AVAILABLE";
+		break;
+	case DXGI_ERROR_SESSION_DISCONNECTED:
+		LOGE << "DXGI_ERROR_SESSION_DISCONNECTED";
+		break;
+	}
 
-	LOGI << "Output duplication started.";
+	Sleep(2500);
 	output1->Release();
 }
