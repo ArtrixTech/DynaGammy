@@ -164,52 +164,41 @@ bool DXGI::init()
 {
 	std::vector<IDXGIAdapter1*> gpus;
 	std::vector<IDXGIOutput*>   outputs;
-	IDXGIAdapter1 *gpu;
-
 	// Retrieve a IDXGIFactory to enumerate the adapters
-	{
-		IDXGIFactory1 *factory = nullptr;
-		HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&factory));
-
-		if (hr != S_OK) {
-			LOGE << "Failed to retrieve the IDXGIFactory";
-			return false;
-		}
-
-		int i = 0;
-		while (factory->EnumAdapters1(i++, &gpu) != DXGI_ERROR_NOT_FOUND)
-			gpus.push_back(gpu);
-
-		factory->Release();
+	IDXGIFactory1 *factory = nullptr;
+	if (CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&factory)) != S_OK) {
+		LOGE << "CreateDXGIFactory1 failed";
+		return false;
 	}
 
+	IDXGIAdapter1 *tmp;
+	int i = 0;
+	while (factory->EnumAdapters1(i++, &tmp) != DXGI_ERROR_NOT_FOUND) {
+		gpus.push_back(tmp);
+	}
+	factory->Release();
+	
 	// Get GPU info
-	IF_PLOG(plog::debug) {
-		DXGI_ADAPTER_DESC1 desc;
-		for (UINT i = 0; i < gpus.size(); ++i) {
-			gpu = gpus[i];
-			HRESULT hr = gpu->GetDesc1(&desc);
-			if (hr != S_OK) {
-				LOGE << "Failed to get description for GPU: " << i;
-				continue;
-			}
-			LOGD << "GPU " << i << ": " << desc.Description;
+	DXGI_ADAPTER_DESC1 desc;
+	for (int i = 0; i < gpus.size(); ++i) {
+		if (gpus[i]->GetDesc1(&desc) != S_OK) {
+			LOGE << "Failed to get description for GPU: " << i;
+			continue;
 		}
+		LOGD << "GPU " << i << ": " << desc.Description;
 	}
 
 	// Get the monitors attached to the GPUs
-	{
-		int i = 0;
-		for (auto &gpu : gpus) {
-			int j = 0;
-			IDXGIOutput *output;
-			while (gpu->EnumOutputs(j, &output) != DXGI_ERROR_NOT_FOUND) {
-				LOGD << "Found monitor " << j << " on GPU " << i;
-				outputs.push_back(output);
-				++j;
-			}
-			++i;
+	i = 0;
+	for (const auto &gpu : gpus) {
+		int j = 0;
+		IDXGIOutput *output;
+		while (gpu->EnumOutputs(j, &output) != DXGI_ERROR_NOT_FOUND) {
+			LOGD << "Found monitor " << j << " on GPU " << i;
+			outputs.push_back(output);
+			++j;
 		}
+		++i;
 	}
 
 	if (outputs.empty()) {
@@ -218,106 +207,83 @@ bool DXGI::init()
 	}
 
 	// Get monitor info
-	{
-		int i = 0;
-		for (auto &output : outputs) {
-			DXGI_OUTPUT_DESC desc;
-			HRESULT hr = output->GetDesc(&desc);
-			if (hr != S_OK) {
-				LOGE << "Failed to get description for output " << i;
-				continue;
-			}
-			LOGD << "Output: " << desc.DeviceName << ", attached to desktop: " << desc.AttachedToDesktop;
-			
-			if (i == 0) {
-				this->primary_screen_name = desc.DeviceName;
-			}
-			++i;
+	i = 0;
+	for (const auto &output : outputs) {
+		DXGI_OUTPUT_DESC desc;
+		if (output->GetDesc(&desc) != S_OK) {
+			LOGE << "Failed to get description for output " << i;
+			continue;
 		}
+		LOGD << "Output: " << desc.DeviceName << ", attached to desktop: " << desc.AttachedToDesktop;	
+		if (i == 0) {
+			this->primary_screen_name = desc.DeviceName;
+		}
+		++i;
 	}
 
-	// Create a Direct3D device to access the OutputDuplication interface
-	{
-		// Just get the first GPU for now
-		IDXGIAdapter1 *d3d_adapter = gpus[0];
+	D3D_FEATURE_LEVEL d3d_feature_level;
 
-		if (!d3d_adapter) {
-			LOGE << "The stored adapter is nullptr";
-			return false;
-		}
+	HRESULT hr = D3D11CreateDevice(
+				gpus[0],                  // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
+				D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
+				nullptr,                  // Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicable.
+				NULL,                     // Flags: maybe we need to use D3D11_CREATE_DEVICE_BGRA_SUPPORT because desktop duplication is using this.
+				nullptr,                  // Feature Levels:  what version to use.
+				0,                        // Number of feature levels.
+				D3D11_SDK_VERSION,        // The SDK version, use D3D11_SDK_VERSION
+				&d3d_device,              // OUT: the ID3D11Device object.
+				&d3d_feature_level,       // OUT: the selected feature level.
+				&d3d_context);            // OUT: the ID3D11DeviceContext that represents the above features.
 
-		D3D_FEATURE_LEVEL d3d_feature_level;
+	d3d_context->Release();
+	gpus[0]->Release();
 
-		HRESULT hr = D3D11CreateDevice(
-		                        d3d_adapter,              // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
-		                        D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
-		                        nullptr,                  // Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicable.
-		                        NULL,                     // Flags: maybe we need to use D3D11_CREATE_DEVICE_BGRA_SUPPORT because desktop duplication is using this.
-		                        nullptr,                  // Feature Levels:  what version to use.
-		                        0,                        // Number of feature levels.
-		                        D3D11_SDK_VERSION,        // The SDK version, use D3D11_SDK_VERSION
-		                        &d3d_device,              // OUT: the ID3D11Device object.
-		                        &d3d_feature_level,       // OUT: the selected feature level.
-		                        &d3d_context);            // OUT: the ID3D11DeviceContext that represents the above features.
-
-		d3d_context->Release();
-		d3d_adapter->Release();
-
-		if (hr != S_OK) {
-			LOGE << "Failed to create D3D11 Device.";
-			if (hr == E_INVALIDARG) {
-				LOGE << "Got INVALID arg passed into D3D11CreateDevice.";
-			}
-			return false;
-		}
+	switch (hr) {
+	case S_OK:
+		break;
+	case E_INVALIDARG:
+		LOGE << "D3D11CreateDevice: E_INVALIDARG";
+		[[fallthrough]]; 
+	default:
+		return false;
 	}
 
 	// Currently, auto brightness is only supported on the first screen.
 	const int output_idx = 0;
 
 	// Set texture properties
-	{
-		DXGI_OUTPUT_DESC desc;
-		HRESULT hr = outputs[output_idx]->GetDesc(&desc);
-
-		if (hr != S_OK) {
-			LOGE << "Failed to get description for screen " << output_idx;
-			return false;
-		}
-
-		tex_desc.Width              = desc.DesktopCoordinates.right;
-		tex_desc.Height             = desc.DesktopCoordinates.bottom;
-		tex_desc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM; // 4 bits per pixel
-		tex_desc.Usage              = D3D11_USAGE_STAGING;
-		tex_desc.CPUAccessFlags     = D3D11_CPU_ACCESS_READ;
-		tex_desc.MipLevels          = 1;
-		tex_desc.ArraySize          = 1;
-		tex_desc.SampleDesc.Count   = 1;
-		tex_desc.SampleDesc.Quality = 0;
-		tex_desc.BindFlags          = 0;
-		tex_desc.MiscFlags          = 0;
-		LOGD << "DXGI res: " << tex_desc.Width << "*" << tex_desc.Height;
+	DXGI_OUTPUT_DESC output_desc;
+	if (outputs[output_idx]->GetDesc(&output_desc) != S_OK) {
+		LOGE << "Failed to get description for screen " << output_idx;
+		return false;
 	}
+
+	tex_desc.Width              = output_desc.DesktopCoordinates.right;
+	tex_desc.Height             = output_desc.DesktopCoordinates.bottom;
+	tex_desc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM; // 4 bits per pixel
+	tex_desc.Usage              = D3D11_USAGE_STAGING;
+	tex_desc.CPUAccessFlags     = D3D11_CPU_ACCESS_READ;
+	tex_desc.MipLevels          = 1;
+	tex_desc.ArraySize          = 1;
+	tex_desc.SampleDesc.Count   = 1;
+	tex_desc.SampleDesc.Quality = 0;
+	tex_desc.BindFlags          = 0;
+	tex_desc.MiscFlags          = 0;
+	LOGD << "DXGI res: " << tex_desc.Width << "*" << tex_desc.Height;
 
 	// Initialize output duplication
-	{
-		HRESULT hr = outputs[output_idx]->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1));
-
-		if (hr != S_OK) {
-			LOGE << "Failed to query IDXGIOutput1 interface";
-			return false;
-		}
-
-		hr = output1->DuplicateOutput(d3d_device, &duplication);
-
-		if (hr != S_OK) {
-			LOGE << "DuplicateOutput failed";
-			return false;
-		}
-
-		output1->Release();
-		d3d_device->Release();
+	if (outputs[output_idx]->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&output1)) != S_OK) {
+		LOGE << "Failed to query IDXGIOutput1 interface";
+		return false;
 	}
+
+	if (output1->DuplicateOutput(d3d_device, &duplication) != S_OK) {
+		LOGE << "DuplicateOutput failed";
+		return false;
+	}
+
+	output1->Release();
+	d3d_device->Release();
 
 	for (const auto &gpu : gpus)
 		gpu->Release();
@@ -335,10 +301,12 @@ int  DXGI::getScreenBrightness() noexcept
 		return GDI::getScreenBrightness();
 	}
 
-	DXGI_OUTDUPL_FRAME_INFO frame_info;
 	IDXGIResource           *desktop_res;
-	while (duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK)
-		this->restart();
+	DXGI_OUTDUPL_FRAME_INFO frame_info;
+	while (HRESULT hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK) {
+		Sleep(2500);
+		restart();
+	}
 
 	ID3D11Texture2D *tex;
 	desktop_res->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&tex));
@@ -364,9 +332,9 @@ int  DXGI::getScreenBrightness() noexcept
 
 void DXGI::restart()
 {
-	HRESULT hr =  output1->DuplicateOutput(d3d_device, &duplication);
-
-	switch (hr) {
+	LOGD << "restart";
+	duplication->ReleaseFrame();
+	switch (output1->DuplicateOutput(d3d_device, &duplication)) {
 	case S_OK:
 		LOGD << "Output duplication restarted.";
 		break;
@@ -386,7 +354,6 @@ void DXGI::restart()
 		LOGE << "DXGI_ERROR_SESSION_DISCONNECTED";
 		break;
 	}
-
-	Sleep(2500);
+	
 	output1->Release();
 }
