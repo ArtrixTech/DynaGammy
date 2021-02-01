@@ -1,7 +1,7 @@
 #include <Windows.h>
 #include "winres.h"
 
-IDI_ICON1               ICON    "icons\gammy.ico"
+IDI_ICON1               ICON    ".data\icons\gammy.ico"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION VER_FILEVERSION

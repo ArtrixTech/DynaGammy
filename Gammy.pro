@@ -4,15 +4,12 @@
 #
 #-------------------------------------------------
 
-#QT       += core gui
-QT += dbus
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-message(Qt version: $$[QT_VERSION])
+message(Qt $$[QT_VERSION])
 
-TARGET = gammy
+QT      += widgets dbus
+TARGET   = gammy
 TEMPLATE = app
-
-CONFIG += c++11 c++1z
+CONFIG  += c++1z
 
 CONFIG(release) {
     message(Release build)
@@ -51,9 +48,9 @@ unix {
 
     target.path   = $$INSTALLPATH
     desktop.path  = $$DATAPATH/applications
-    desktop.files = gammy.desktop
+    desktop.files = .data/gammy.desktop
     icons.path    = $$DATAPATH/pixmaps
-    icons.files   = icons/gammy.png
+    icons.files   = .data/icons/gammy.png
 
     INSTALLS += target desktop icons
 }
@@ -78,14 +75,13 @@ SOURCES += src/main.cpp src/mainwindow.cpp src/utils.cpp \
 FORMS += src/mainwindow.ui \
     src/tempscheduler.ui \
 
-RESOURCES += res.qrc
-
-UI_DIR      = $$PWD/src
-RCC_DIR     = res
-MOC_DIR     = res/tmp
-OBJECTS_DIR = res/tmp
+RESOURCES   += .data/res.qrc
+UI_DIR       = $$PWD/src
+RCC_DIR      = build/rcc
+MOC_DIR      = build/moc
+OBJECTS_DIR  = build/obj
+INCLUDEPATH += $$PWD/include
 
 DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += $$PWD/includes
