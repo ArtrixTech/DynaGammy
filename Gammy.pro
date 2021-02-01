@@ -16,11 +16,15 @@ CONFIG(release) {
     CONFIG += optimize_full
 }
 
-win32|win64 {
-    HEADERS += winres.h
+win32 {
     HEADERS += src/dspctl-dxgi.h
     SOURCES += src/dspctl-dxgi.cpp
-    RC_FILE = winres.rc
+
+    VERSION                  = 0.9.6.4
+    RC_ICONS                 = data/icons/gammy.ico
+    QMAKE_TARGET_PRODUCT     = Gammy
+    QMAKE_TARGET_DESCRIPTION = Screen brightness and temperature control
+    QMAKE_TARGET_COPYRIGHT   = Copyright (C) Francesco Fusco
 }
 
 unix {
