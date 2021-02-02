@@ -23,7 +23,7 @@ win32 {
     VERSION                  = 0.9.6.4
     RC_ICONS                 = data/icons/gammy.ico
     QMAKE_TARGET_PRODUCT     = Gammy
-    QMAKE_TARGET_DESCRIPTION = Screen brightness and temperature control
+    QMAKE_TARGET_DESCRIPTION = Gammy
     QMAKE_TARGET_COPYRIGHT   = Copyright (C) Francesco Fusco
 }
 
