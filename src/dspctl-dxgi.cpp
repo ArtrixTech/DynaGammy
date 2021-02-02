@@ -150,14 +150,8 @@ DXGI::DXGI()
 
 DXGI::~DXGI()
 {
-	if (duplication && useDXGI)
-		duplication->ReleaseFrame();
-	if (output1)
-		output1->Release();
-	if (d3d_context)
-		d3d_context->Release();
-	if (d3d_device)
-		d3d_device->Release();
+	//if (useDXGI)
+	//	destroy();
 }
 
 bool DXGI::init()
@@ -177,28 +171,14 @@ bool DXGI::init()
 		gpus.push_back(tmp);
 	}
 	factory->Release();
-	
-	// Get GPU info
-	DXGI_ADAPTER_DESC1 desc;
-	for (int i = 0; i < gpus.size(); ++i) {
-		if (gpus[i]->GetDesc1(&desc) != S_OK) {
-			LOGE << "Failed to get description for GPU: " << i;
-			continue;
-		}
-		LOGD << "GPU " << i << ": " << desc.Description;
-	}
 
 	// Get the monitors attached to the GPUs
-	i = 0;
-	for (const auto &gpu : gpus) {
-		int j = 0;
+	for (size_t i = 0; i < gpus.size(); ++i) {
 		IDXGIOutput *output;
-		while (gpu->EnumOutputs(j, &output) != DXGI_ERROR_NOT_FOUND) {
+		for (int j = 0; gpus[i]->EnumOutputs(j, &output) != DXGI_ERROR_NOT_FOUND; ++j) {
 			LOGD << "Found monitor " << j << " on GPU " << i;
 			outputs.push_back(output);
-			++j;
 		}
-		++i;
 	}
 
 	if (outputs.empty()) {
@@ -206,23 +186,28 @@ bool DXGI::init()
 		return false;
 	}
 
-	// Get monitor info
-	i = 0;
-	for (const auto &output : outputs) {
+	// Get GPU info
+	for (size_t i = 0; i < gpus.size(); ++i) {
+		DXGI_ADAPTER_DESC1 desc;
+		if (gpus[i]->GetDesc1(&desc) == S_OK)
+			LOGD << "GPU " << i << ": " << desc.Description;
+		else
+			LOGE << "Failed to get desc for GPU " << i;
+	}
+
+	// Get screen info and primary screen name
+	for (size_t i = 0; i < outputs.size(); ++i) {
 		DXGI_OUTPUT_DESC desc;
-		if (output->GetDesc(&desc) != S_OK) {
+		if (outputs[i]->GetDesc(&desc) != S_OK) {
 			LOGE << "Failed to get description for output " << i;
 			continue;
 		}
 		LOGD << "Output: " << desc.DeviceName << ", attached to desktop: " << desc.AttachedToDesktop;	
-		if (i == 0) {
-			this->primary_screen_name = desc.DeviceName;
-		}
-		++i;
+		if (i == 0)
+			primary_screen_name = desc.DeviceName;
 	}
 
 	D3D_FEATURE_LEVEL d3d_feature_level;
-
 	HRESULT hr = D3D11CreateDevice(
 				gpus[0],                  // Adapter: The adapter (video card) we want to use. We may use NULL to pick the default adapter.
 				D3D_DRIVER_TYPE_UNKNOWN,  // DriverType: We use the GPU as backing device.
@@ -233,10 +218,12 @@ bool DXGI::init()
 				D3D11_SDK_VERSION,        // The SDK version, use D3D11_SDK_VERSION
 				&d3d_device,              // OUT: the ID3D11Device object.
 				&d3d_feature_level,       // OUT: the selected feature level.
-				&d3d_context);            // OUT: the ID3D11DeviceContext that represents the above features.
+	                        &d3d_context);            // OUT: the ID3D11DeviceContext that represents the above features.
 
 	d3d_context->Release();
-	gpus[0]->Release();
+
+	for (const auto &gpu : gpus)
+		gpu->Release();
 
 	switch (hr) {
 	case S_OK:
@@ -285,16 +272,21 @@ bool DXGI::init()
 	output1->Release();
 	d3d_device->Release();
 
-	for (const auto &gpu : gpus)
-		gpu->Release();
-
 	for (const auto &output : outputs)
 		output->Release();
 
 	return true;
 }
 
-int  DXGI::getScreenBrightness() noexcept
+void DXGI::destroy()
+{
+	if (duplication) {
+		duplication->ReleaseFrame();
+		duplication->Release();
+	}
+}
+
+int  DXGI::getScreenBrightness()
 {
 	if (!useDXGI) {
 		Sleep(cfg["brt_polling_rate"].get<int>());
@@ -303,9 +295,12 @@ int  DXGI::getScreenBrightness() noexcept
 
 	IDXGIResource           *desktop_res;
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
-	while (HRESULT hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK) {
+
+	if (HRESULT hr = duplication->AcquireNextFrame(INFINITE, &frame_info, &desktop_res) != S_OK) {
+		LOGD << "AcquireNextFrame failed (" << hr << ").";
 		Sleep(2500);
 		restart();
+		return 255;
 	}
 
 	ID3D11Texture2D *tex;
@@ -332,11 +327,14 @@ int  DXGI::getScreenBrightness() noexcept
 
 void DXGI::restart()
 {
-	LOGD << "restart";
+	LOGD << "Releasing duplication...";
 	duplication->ReleaseFrame();
+	duplication->Release();
+	LOGD << "Restarting duplication...";
+
 	switch (output1->DuplicateOutput(d3d_device, &duplication)) {
 	case S_OK:
-		LOGD << "Output duplication restarted.";
+		LOGD << "Restarted successfully.";
 		break;
 	case E_INVALIDARG:
 		LOGE << "E_INVALIDARG";
@@ -354,6 +352,6 @@ void DXGI::restart()
 		LOGE << "DXGI_ERROR_SESSION_DISCONNECTED";
 		break;
 	}
-	
+
 	output1->Release();
 }

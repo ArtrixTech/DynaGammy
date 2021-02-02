@@ -52,7 +52,7 @@ public:
 	DXGI();
 	~DXGI();
 
-	int getScreenBrightness() noexcept;
+	int getScreenBrightness();
 private:
 	ID3D11Device*           d3d_device;
 	ID3D11DeviceContext*    d3d_context;
@@ -63,6 +63,7 @@ private:
 
 	bool useDXGI;
 	bool init();
+	void destroy();
 	void restart();
 };
 
