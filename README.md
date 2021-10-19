@@ -31,7 +31,7 @@ Requirements:
 - g++ or Clang compiler with C++17 support
 - Ubuntu/Debian packages:
 ```sh
-sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev libxext-dev qt5-default
+sudo apt install build-essential libgl1-mesa-dev libxxf86vm-dev libxext-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 ```
 To install:
 ```sh
