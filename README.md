@@ -1,3 +1,7 @@
+# ARCHIVED
+
+This project is not being worked on anymore. A new, linux-only version is being developed [here.](https://github.com/Fushko/gummy)
+
 # Gammy
 is a tool for adjusting pixel brightness/temperature automatically or manually.
 
